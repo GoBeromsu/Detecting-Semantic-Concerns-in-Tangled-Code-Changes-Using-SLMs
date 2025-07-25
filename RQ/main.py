@@ -157,50 +157,56 @@ def truncate_dataset(
     return pd.DataFrame(truncated_commits)
 
 
+def run_model_experiments(
+    model_name: str,
+    atomic_df: pd.DataFrame,
+    tangled_df: pd.DataFrame,
+) -> None:
+    commit_types: List[str] = ["with_message", "diff_only"]
+    prompt_types: List[str] = ["Zero-shot", "One-shot", "Two-shot"]
+
+    for commit_type in commit_types:
+        prompt_dir: Path = Path("results") / commit_type
+        prompt_dir.mkdir(parents=True, exist_ok=True)
+
+        # Determine if commit message should be included based on prompt type
+        include_message: bool = commit_type == "with_message"
+
+        for prompt_type in prompt_types:
+            system_prompt: str = prompt.get_prompt_by_type(prompt_type, include_message)
+            for context_window in CONTEXT_WINDOW:
+                print(f"Processing {model_name} {prompt_type} {context_window}")
+                truncated_dataset: pd.DataFrame = truncate_dataset(
+                    atomic_df, tangled_df, context_window, include_message
+                )
+                file_name: str = (
+                    f"{model_name.replace('/', '_')}_{prompt_type.replace('-', '_')}_{context_window}_test.csv"
+                )
+                csv_path: Path = prompt_dir / file_name
+                create_csv_with_headers(csv_path)
+
+                print(
+                    f"\n=== Model: {model_name}, Prompt Type: {commit_type}, Prompt: {prompt_type}, Context Window: {context_window} ==="
+                )
+
+                measure(
+                    model_name,
+                    truncated_dataset,
+                    system_prompt,
+                    csv_path,
+                )
+
+
 def main() -> None:
     tangled_df: pd.DataFrame = eval.load_dataset("test_small")
     atomic_df: pd.DataFrame = eval.load_dataset("atomic")
 
-    commit_types: List[str] = ["with_message", "diff_only"]
-    prompt_types: List[str] = ["Zero-shot", "One-shot", "Two-shot"]
     for model_name in MODEL_NAMES:
         print(f"\n{'='*50}")
         print(f"Processing Model: {model_name}")
         print(f"{'='*50}")
 
-        for commit_type in commit_types:
-            prompt_dir: Path = Path("results") / commit_type
-            prompt_dir.mkdir(parents=True, exist_ok=True)
-
-            # Determine if commit message should be included based on prompt type
-            include_message: bool = commit_type == "with_message"
-
-            for prompt_type in prompt_types:
-                system_prompt: str = prompt.get_prompt_by_type(
-                    prompt_type, include_message
-                )
-                for context_window in CONTEXT_WINDOW:
-                    print(f"Processing {model_name} {prompt_type} {context_window}")
-                    truncated_dataset: pd.DataFrame = truncate_dataset(
-                        atomic_df, tangled_df, context_window, include_message
-                    )
-                    file_name: str = (
-                        f"{model_name.replace('/', '_')}_{prompt_type.replace('-', '_')}_{context_window}_test.csv"
-                    )
-                    csv_path: Path = prompt_dir / file_name
-                    create_csv_with_headers(csv_path)
-
-                    print(
-                        f"\n=== Model: {model_name}, Prompt Type: {commit_type}, Prompt: {prompt_type}, Context Window: {context_window} ==="
-                    )
-
-                    measure(
-                        model_name,
-                        truncated_dataset,
-                        system_prompt,
-                        csv_path,
-                    )
-
+        run_model_experiments(model_name, atomic_df, tangled_df)
         llms.clear_cache()
 
     print(f"\nDataset Summary:")
