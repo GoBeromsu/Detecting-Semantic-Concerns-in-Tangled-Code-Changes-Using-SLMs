@@ -78,7 +78,7 @@ def truncate_commits(
         return f"Diff: {' '.join(diffs)}"
 
 
-def measure(
+def measure_performance(
     model_name: str,
     truncated_dataset: pd.DataFrame,
     system_prompt: str,
@@ -189,7 +189,7 @@ def run_model_experiments(
                     f"\n=== Model: {model_name}, Prompt Type: {commit_type}, Prompt: {prompt_type}, Context Window: {context_window} ==="
                 )
 
-                measure(
+                measure_performance(
                     model_name,
                     truncated_dataset,
                     system_prompt,
