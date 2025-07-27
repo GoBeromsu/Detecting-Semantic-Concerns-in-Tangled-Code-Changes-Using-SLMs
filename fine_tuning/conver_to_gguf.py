@@ -45,17 +45,19 @@ def check_dependencies() -> bool:
         )
         return False
 
-    # Check if convert.py exists
+    # Check if convert_hf_to_gguf.py exists
     convert_script = Path(LLAMA_CPP_DIR) / "convert_hf_to_gguf.py"
     if not convert_script.exists():
-        logger.error(f"convert.py not found at {convert_script}")
+        logger.error(f"convert_hf_to_gguf.py not found at {convert_script}")
         return False
 
-    # Check if quantize binary exists
-    quantize_binary = Path(LLAMA_CPP_DIR) / "quantize"
+    # Check if quantize binary exists (cmake build structure)
+    quantize_binary = Path(LLAMA_CPP_DIR) / "build" / "bin" / "llama-quantize"
     if not quantize_binary.exists():
         logger.warning(f"quantize binary not found at {quantize_binary}")
-        logger.info("Build llama.cpp first: cd ~/llama.cpp && make")
+        logger.info(
+            "Build llama.cpp first: cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release"
+        )
 
     logger.info("✅ Dependencies check completed")
     return True
@@ -103,6 +105,12 @@ def convert_to_gguf_fp16() -> Optional[str]:
     logger.info("Converting to GGUF FP16...")
 
     output_file = f"{GGUF_OUTPUT_DIR}/{MODEL_NAME}-f16.gguf"
+
+    # Check if fp16 file already exists
+    if Path(output_file).exists():
+        logger.info(f"✅ FP16 file already exists, skipping conversion: {output_file}")
+        return output_file
+
     convert_script = f"{LLAMA_CPP_DIR}/convert_hf_to_gguf.py"
 
     cmd = [
@@ -131,10 +139,22 @@ def quantize_model(fp16_file: str, quant_type: str) -> Optional[str]:
     logger.info(f"Quantizing to {quant_type}...")
 
     output_file = f"{GGUF_OUTPUT_DIR}/{MODEL_NAME}-{quant_type}.gguf"
-    quantize_binary = f"{LLAMA_CPP_DIR}/quantize"
+
+    # Check if quantized file already exists
+    if Path(output_file).exists():
+        logger.info(
+            f"✅ {quant_type} file already exists, skipping quantization: {output_file}"
+        )
+        return output_file
+
+    # Use build/bin/llama-quantize from cmake build
+    quantize_binary = f"{LLAMA_CPP_DIR}/build/bin/llama-quantize"
 
     if not Path(quantize_binary).exists():
         logger.error(f"Quantize binary not found: {quantize_binary}")
+        logger.info(
+            "Make sure llama.cpp is built with: cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release"
+        )
         return None
 
     cmd = [quantize_binary, fp16_file, output_file, quant_type]
