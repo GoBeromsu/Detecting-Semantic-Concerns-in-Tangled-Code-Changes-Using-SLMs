@@ -46,7 +46,7 @@ def check_dependencies() -> bool:
         return False
 
     # Check if convert.py exists
-    convert_script = Path(LLAMA_CPP_DIR) / "convert.py"
+    convert_script = Path(LLAMA_CPP_DIR) / "convert_hf_to_gguf.py"
     if not convert_script.exists():
         logger.error(f"convert.py not found at {convert_script}")
         return False
@@ -103,7 +103,7 @@ def convert_to_gguf_fp16() -> Optional[str]:
     logger.info("Converting to GGUF FP16...")
 
     output_file = f"{GGUF_OUTPUT_DIR}/{MODEL_NAME}-f16.gguf"
-    convert_script = f"{LLAMA_CPP_DIR}/convert.py"
+    convert_script = f"{LLAMA_CPP_DIR}/convert_hf_to_gguf.py"
 
     cmd = [
         "python",
