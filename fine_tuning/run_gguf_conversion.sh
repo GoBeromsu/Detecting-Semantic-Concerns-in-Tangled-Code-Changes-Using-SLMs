@@ -23,7 +23,6 @@ mkdir -p logs
 # Setup environment - Match setup_env.sh configuration
 module purge
 module load GCCcore/12.3.0
-module load GCC/11.3.0  # Required for llama.cpp compilation
 module load CUDA/12.1.1
 module load Anaconda3/2022.05
 module load cuDNN/8.9.2.26-CUDA-12.1.1
