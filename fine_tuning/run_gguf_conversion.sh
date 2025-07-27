@@ -27,6 +27,7 @@ module load GCC/11.3.0  # Required for llama.cpp compilation
 module load CUDA/12.1.1
 module load Anaconda3/2022.05
 module load cuDNN/8.9.2.26-CUDA-12.1.1
+module load CMake/3.26.3-GCCcore-12.3.0
 
 # Check if phi4_env exists (should be created by setup_env.sh)
 if ! conda env list | grep -q "phi4_env"; then
@@ -58,10 +59,12 @@ if [ ! -d "$LLAMA_CPP_DIR" ]; then
     # Install Python requirements
     pip install -r requirements.txt
     
-    # Build llama.cpp
-    echo "🔨 Building llama.cpp..."
-    make clean
-    make -j4
+    # Build llama.cpp using CMake (new method)
+    echo "🔨 Building llama.cpp with CMake..."
+    
+    # CMake build configuration with CUDA support
+    cmake -B build -DGGML_CUDA=ON
+    cmake --build build --config Release -j4
     
     if [ $? -eq 0 ]; then
         echo "✅ llama.cpp built successfully"

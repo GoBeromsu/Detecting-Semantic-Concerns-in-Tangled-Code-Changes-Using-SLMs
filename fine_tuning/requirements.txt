@@ -1,8 +1,8 @@
 # Transformers and ML Core
-transformers>=4.40.0            # AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+transformers>=4.51.0            # AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 datasets>=2.15.0                # load_dataset
 accelerate>=0.25.0              # Distributed training and model loading
-huggingface_hub>=0.20.0         # Model hub upload/download operations
+huggingface_hub>=0.25.0         # Model hub upload/download operations
 
 # Fine-tuning Specialized Libraries
 peft>=0.10.0                    # Parameter-Efficient Fine-Tuning
