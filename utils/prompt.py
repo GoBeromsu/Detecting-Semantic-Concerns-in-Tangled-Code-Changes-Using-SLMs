@@ -267,7 +267,7 @@ def get_two_shot_prompt(include_message: bool = True) -> str:
 def get_prompt_by_type(shot_type: str, include_message: bool = True) -> str:
     """Return prompt based on shot type with optional commit message context."""
     if shot_type == "Zero-shot":
-        return get_zero_shot_prompt(include_message)
+        return get_zero_shot_prompt()
     elif shot_type == "One-shot":
         return get_one_shot_prompt(include_message)
     elif shot_type == "Two-shot":

@@ -15,7 +15,6 @@ from .eval import (
     calculate_metrics,
     calculate_batch_metrics,
     save_results,
-    save_metric_csvs,
     plot_graph,
 )
 
@@ -33,6 +32,5 @@ __all__ = [
     "calculate_metrics",
     "calculate_batch_metrics",
     "save_results",
-    "save_metric_csvs",
     "plot_graph",
 ]
