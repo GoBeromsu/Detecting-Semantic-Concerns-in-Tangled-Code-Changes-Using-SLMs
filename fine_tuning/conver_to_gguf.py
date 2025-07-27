@@ -67,7 +67,7 @@ def check_merged_model() -> bool:
 
     required_files = [
         "config.json",
-        "pytorch_model.bin",
+        # "pytorch_model.bin", # This is not needed in safetensor format
         "tokenizer.json",
         "tokenizer_config.json",
     ]
