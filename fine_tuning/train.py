@@ -427,6 +427,20 @@ merged_model.save_pretrained(
 )
 tokenizer.save_pretrained(MERGED_MODEL_DIR)
 
+# Let Trainer automatically create model card and push to Hub
+print("📝 Creating model card and uploading to Hub...")
+
+# Create model card with training details
+trainer.create_model_card(
+    tags=["phi-4", "fine-tuned", "commit-analysis", "software-engineering"],
+    dataset_tags=["Berom0227/tangled-ccs-dataset"],
+    language="en",
+    license="mit",
+    base_model="microsoft/phi-4",
+)
+
 # Push the merged model to Hugging Face Hub
 merged_model.push_to_hub(HF_MODEL_REPO)
 tokenizer.push_to_hub(HF_MODEL_REPO)
+
+print(f"🚀 Model successfully uploaded to: https://huggingface.co/{HF_MODEL_REPO}")
