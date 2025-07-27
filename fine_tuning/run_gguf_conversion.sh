@@ -67,6 +67,30 @@ if [ ! -d "$LLAMA_CPP_DIR" ]; then
     
     if [ $? -eq 0 ]; then
         echo "✅ llama.cpp built successfully"
+        
+        # Verify build outputs exist
+        echo "🔍 Verifying build outputs..."
+        ls -la build/bin/
+        
+        # Check for essential binaries
+        REQUIRED_BINARIES=("llama-quantize" "llama-cli")
+        MISSING_BINARIES=()
+        
+        for binary in "${REQUIRED_BINARIES[@]}"; do
+            if [ ! -f "build/bin/$binary" ]; then
+                MISSING_BINARIES+=("$binary")
+            else
+                echo "✅ Found: build/bin/$binary"
+            fi
+        done
+        
+        if [ ${#MISSING_BINARIES[@]} -gt 0 ]; then
+            echo "❌ Missing required binaries: ${MISSING_BINARIES[*]}"
+            echo "Build may have failed or incomplete"
+            exit 1
+        fi
+        
+        echo "✅ All required binaries found"
     else
         echo "❌ llama.cpp build failed"
         exit 1
