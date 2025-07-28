@@ -30,7 +30,11 @@ OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 MODEL_NAMES = [
     # "microsoft/phi-4",  # LM Studio model
     # "gpt-4o-mini",  # OpenAI model
-    "gpt-4.1-2025-04-14",
+    # "gpt-4.1-2025-04-14",
+    # "phi4-commit"
+    # "microsoft/phi-4-reasoning-plus",
+    "qwen/qwen3-14b",
+    "qwen2.5-coder-14b-instruct-mlx@8bit"
 ]
 
 # Context window sizes for testing
@@ -94,6 +98,7 @@ def measure_performance(
                 commit=commit,
                 system_prompt=system_prompt,
                 api_key=OPENAI_KEY,
+                # temperature=0.7,
             )
 
             predicted_types, inference_time = eval.measure_inference_time(api_call)
@@ -180,7 +185,7 @@ def run_model_experiments(
                     atomic_df, tangled_df, context_window, include_message
                 )
                 file_name: str = (
-                    f"{model_name.replace('/', '_')}_{prompt_type.replace('-', '_')}_{context_window}_test.csv"
+                    f"{model_name.replace('/', '_')}_{prompt_type.replace('-', '_')}_{context_window}.csv"
                 )
                 csv_path: Path = prompt_dir / file_name
                 create_csv_with_headers(csv_path)
@@ -198,7 +203,7 @@ def run_model_experiments(
 
 
 def main() -> None:
-    tangled_df: pd.DataFrame = eval.load_dataset("test_small")
+    tangled_df: pd.DataFrame = eval.load_dataset("test")
     atomic_df: pd.DataFrame = eval.load_dataset("atomic")
 
     for model_name in MODEL_NAMES:
