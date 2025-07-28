@@ -127,6 +127,34 @@ def calculate_metrics(
     }
 
 
+def calculate_metrics_pandas(df: pd.DataFrame, pred_col: str, actual_col: str) -> pd.DataFrame:
+    """
+    Calculate metrics for each row in a DataFrame using pandas vectorization.
+    
+    Args:
+        df: DataFrame containing predictions and actuals
+        pred_col: Column name containing predicted types
+        actual_col: Column name containing actual types
+        
+    Returns:
+        DataFrame with metric columns added
+    """
+    # Calculate metrics using vectorized operations
+    metrics_list = [
+        calculate_metrics(pred, actual) 
+        for pred, actual in zip(df[pred_col], df[actual_col])
+    ]
+    
+    # Convert to DataFrame and ensure numeric types
+    metrics_df = pd.DataFrame(metrics_list)
+    for col in ['precision', 'recall', 'f1']:
+        metrics_df[col] = metrics_df[col].astype(float)
+    metrics_df['exact_match'] = metrics_df['exact_match'].astype(float)
+    
+    # Add metrics to original dataframe
+    return pd.concat([df, metrics_df], axis=1)
+
+
 def save_results(df: pd.DataFrame, metrics: Dict[str, float], output_dir: str) -> None:
     """Save DataFrame as predictions.csv and metrics as metrics.json."""
     output_path = Path(output_dir)

@@ -76,29 +76,33 @@ def preprocess_experimental_data() -> pd.DataFrame:
                 continue
 
             df = pd.read_csv(csv_file)
+            
+            # Skip empty dataframes
+            if df.empty:
+                continue
 
             # Add only the required metadata columns
             df["context_len"] = context_len
             df["with_message"] = with_message
             df["model"] = model
-            df["count"] = df["actual_types"].apply(lambda x: len(eval(x)))
+            
+            # Parse string lists to actual lists
+            df["predicted_types"] = df["predicted_types"].apply(ast.literal_eval)
+            df["actual_types"] = df["actual_types"].apply(ast.literal_eval)
+            df["count"] = df["actual_types"].apply(len)
 
-            # Calculate metrics for each row
-            metrics_df = df.apply(
-                lambda row: eval_utils.calculate_metrics(
-                    eval(row["predicted_types"]), eval(row["actual_types"])
-                ),
-                axis=1,
-                result_type="expand",
-            )
-
-            # Extract individual metrics
-            df["precision"] = metrics_df["precision"]
-            df["recall"] = metrics_df["recall"]
-            df["f1"] = metrics_df["f1"]
-            df["accuracy"] = metrics_df["exact_match"]
+            # Use pandas-optimized metric calculation
+            df = eval_utils.calculate_metrics_pandas(df, "predicted_types", "actual_types")
+            
+            # Rename exact_match to accuracy for consistency
+            df["accuracy"] = df["exact_match"].astype(float)
+            df = df.drop("exact_match", axis=1)
+            
             all_dataframes.append(df)
 
+    if not all_dataframes:
+        raise ValueError("No valid data files found to process")
+    
     result = pd.concat(all_dataframes, ignore_index=True)
     return result
 
