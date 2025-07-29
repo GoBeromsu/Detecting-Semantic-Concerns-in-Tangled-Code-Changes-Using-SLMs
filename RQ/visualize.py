@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import ast
 import sys
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, Final
@@ -11,7 +12,7 @@ import json
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-import utils.eval as eval_utils
+import utils.eval as eval
 
 RESULTS_BASE_DIR = Path("results")
 ANALYSIS_OUTPUT_DIR = Path("results/analysis")
@@ -77,26 +78,39 @@ def preprocess_experimental_data() -> pd.DataFrame:
 
             df = pd.read_csv(csv_file)
 
+            # Skip empty DataFrames
+            if df.empty:
+                print(f"Skipping empty file: {csv_file}")
+                continue
+
             # Add only the required metadata columns
             df["context_len"] = context_len
             df["with_message"] = with_message
             df["model"] = model
-            df["count"] = df["actual_types"].apply(lambda x: len(eval(x)))
 
-            # Calculate metrics for each row
+            # Parse string lists to actual lists
+            df["predicted_types"] = df["predicted_types"].apply(ast.literal_eval)
+            df["actual_types"] = df["actual_types"].apply(ast.literal_eval)
+
+            # Count ground truth labels (concern count)
+            df["concern_count"] = df["actual_types"].apply(len)
+
+            # Print concern count distribution for this CSV file
+            concern_dist = df["concern_count"].value_counts().sort_index()
+            print(f"{csv_file.name}: {dict(concern_dist)} (total: {len(df)})")
+
             metrics_df = df.apply(
-                lambda row: eval_utils.calculate_metrics(
-                    eval(row["predicted_types"]), eval(row["actual_types"])
+                lambda row: pd.Series(
+                    eval.calculate_metrics(row["predicted_types"], row["actual_types"])
                 ),
                 axis=1,
-                result_type="expand",
             )
-
-            # Extract individual metrics
+            # Add metrics as new columns
             df["precision"] = metrics_df["precision"]
             df["recall"] = metrics_df["recall"]
             df["f1"] = metrics_df["f1"]
             df["accuracy"] = metrics_df["exact_match"]
+
             all_dataframes.append(df)
 
     result = pd.concat(all_dataframes, ignore_index=True)
@@ -158,6 +172,64 @@ def create_results_table(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def create_results_table_with_concern_count(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create a summary results table with aggregated metrics grouped by concern count.
+
+    Args:
+        df: Input DataFrame with raw experimental results
+
+    Returns:
+        DataFrame with columns:
+        - Model: Model name
+        - Context Length: Input context length
+        - With Message: Yes/No for message inclusion
+        - Concern Count: Number of concerns in the commit
+        - Accuracy, F1, Precision, Recall: Aggregated metrics
+        - Inference Time: Average inference time in ms
+    """
+    summary_df = (
+        df.groupby(["model", "context_len", "with_message", "concern_count"])
+        .agg({metric: "mean" for metric in AGGREGATION_METRICS})
+        .reset_index()
+    )
+
+    # Transform columns directly (no duplication)
+    summary_df = summary_df.rename(
+        columns={
+            "model": "Model",
+            "context_len": "Context Length",
+            "with_message": "With Message",
+            "concern_count": "Concern Count",
+        }
+    )
+
+    # Format specific columns
+    summary_df["With Message"] = summary_df["With Message"].map({1: "Yes", 0: "No"})
+    summary_df["Inference Time"] = summary_df["inference_time"]
+
+    # Round metrics to 2 decimal places
+    for metric in METRICS:
+        summary_df[metric.capitalize()] = summary_df[metric].round(2)
+
+    # Select and order final columns
+    display_columns = [
+        "Model",
+        "Context Length",
+        "With Message",
+        "Concern Count",
+        "Accuracy",
+        "F1",
+        "Precision",
+        "Recall",
+        "Inference Time",
+    ]
+
+    return summary_df[display_columns].sort_values(
+        ["Model", "Context Length", "With Message", "Concern Count"]
+    )
+
+
 def save_results_table(df: pd.DataFrame, output_path: Path) -> None:
     """
     Save the results table to a CSV file.
@@ -173,5 +245,28 @@ def save_results_table(df: pd.DataFrame, output_path: Path) -> None:
 if __name__ == "__main__":
     """Generate comprehensive visualization report with clear data preprocessing."""
     df = preprocess_experimental_data()
+
+    # Print concern count distribution for verification
+    print("=== Concern Count Distribution ===")
+    concern_distribution = df["concern_count"].value_counts().sort_index()
+    print(concern_distribution)
+    print(f"Total samples: {len(df)}")
+    print(
+        f"Concern count range: {df['concern_count'].min()} - {df['concern_count'].max()}"
+    )
+    print()
+
+    # Generate original results table (without concern count grouping)
     results_table = create_results_table(df)
     save_results_table(results_table, ANALYSIS_OUTPUT_DIR / "results_table.csv")
+    print(f"Generated results_table.csv with {len(results_table)} rows")
+
+    # Generate results table with concern count grouping
+    results_table_with_concern = create_results_table_with_concern_count(df)
+    save_results_table(
+        results_table_with_concern,
+        ANALYSIS_OUTPUT_DIR / "results_table_with_concern_count.csv",
+    )
+    print(
+        f"Generated results_table_with_concern_count.csv with {len(results_table_with_concern)} rows"
+    )
