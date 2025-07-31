@@ -34,7 +34,7 @@ MODEL_NAMES = [
     # "phi4-commit"
     # "microsoft/phi-4-reasoning-plus",
     "qwen/qwen3-14b",
-    "qwen2.5-coder-14b-instruct-mlx@8bit"
+    "qwen2.5-coder-14b-instruct-mlx@8bit",
 ]
 
 # Context window sizes for testing
@@ -212,7 +212,6 @@ def main() -> None:
         print(f"{'='*50}")
 
         run_model_experiments(model_name, atomic_df, tangled_df)
-        llms.clear_cache()
 
     print(f"\nDataset Summary:")
     print(f"Loaded tangled dataset: {len(tangled_df)} samples")

@@ -3,12 +3,7 @@ Utility modules for commit untangler experiments.
 """
 
 from .model import load_model_and_tokenizer, get_prediction
-from .llms import (
-    get_models,
-    load_model,
-    api_call,
-    clear_cache,
-)
+from .llms import get_models, load_model, api_call
 from .eval import (
     load_dataset,
     get_tp_fp_fn,
@@ -25,7 +20,6 @@ __all__ = [
     "get_models",
     "load_model",
     "api_call",
-    "clear_cache",
     # Evaluation utilities
     "load_dataset",
     "get_tp_fp_fn",

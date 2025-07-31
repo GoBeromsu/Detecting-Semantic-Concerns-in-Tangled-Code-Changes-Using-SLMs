@@ -10,7 +10,7 @@ sys.modules["torch"] = Mock()
 sys.modules["transformers"] = Mock()
 sys.modules["huggingface_hub"] = Mock()
 
-from utils.llms.lmstudio import api_call
+from utils.llms.hugging_face import api_call
 
 
 class TestApiCall:

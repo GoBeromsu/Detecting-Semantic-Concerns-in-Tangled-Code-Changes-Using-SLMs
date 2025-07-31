@@ -3,12 +3,11 @@
 from .openai import (
     api_call as openai_api_call,
 )
-from .lmstudio import (
+from .hugging_face import (
     get_models,
     load_model,
-    clear_cache,
 )
-from .lmstudio import api_call as lmstudio_api_call
+from .hugging_face import api_call as hugging_face_api_call
 from .constant import (
     DEFAULT_TEMPERATURE,
     DEFAULT_MAX_TOKENS,
@@ -25,7 +24,7 @@ def detect_provider(model_name: str) -> str:
     """Detect API provider based on model name."""
     if model_name.startswith(("gpt-")):
         return "openai"
-    return "lmstudio"
+    return "hugging_face"
 
 
 def api_call(
@@ -60,8 +59,8 @@ def api_call(
             temperature=temperature,
         )
 
-    else:  # lmstudio
-        return lmstudio_api_call(
+    else:  # hugging_face
+        return hugging_face_api_call(
             model_name=model_name,
             commit=commit,
             system_prompt=system_prompt,
@@ -74,7 +73,6 @@ __all__ = [
     "api_call",  # Unified API call (primary interface)
     "get_models",
     "load_model",
-    "clear_cache",
     "DEFAULT_TEMPERATURE",
     "DEFAULT_MAX_TOKENS",
     "COMMIT_TYPES",
