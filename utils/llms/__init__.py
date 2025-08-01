@@ -8,6 +8,7 @@ from .hugging_face import (
     load_model,
 )
 from .hugging_face import api_call as hugging_face_api_call
+from .lmstudio import api_call as lmstudio_api_call
 from .constant import (
     DEFAULT_TEMPERATURE,
     DEFAULT_MAX_TOKENS,
@@ -20,14 +21,8 @@ from .constant import (
 from typing import List
 
 
-def detect_provider(model_name: str) -> str:
-    """Detect API provider based on model name."""
-    if model_name.startswith(("gpt-")):
-        return "openai"
-    return "hugging_face"
-
-
 def api_call(
+    provider: str,
     model_name: str,
     commit: str,
     system_prompt: str,
@@ -48,8 +43,6 @@ def api_call(
     Returns:
         List of concern types
     """
-    provider = detect_provider(model_name)
-
     if provider == "openai":
         return openai_api_call(
             api_key=api_key,
@@ -59,14 +52,24 @@ def api_call(
             temperature=temperature,
         )
 
-    else:  # hugging_face
+    elif provider == "hugging_face":  # hugging_face
         return hugging_face_api_call(
+            model_name=model_name,
+            commit=commit,
+            system_prompt=system_prompt,
+            temperature=temperature,
+        )
+
+    elif provider == "lmstudio":
+        return lmstudio_api_call(
             model_name=model_name,
             commit=commit,
             system_prompt=system_prompt,
             temperature=temperature,
             max_tokens=max_tokens,
         )
+    else:
+        raise ValueError(f"Invalid provider: {provider}")
 
 
 __all__ = [

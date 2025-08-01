@@ -22,9 +22,10 @@ COMMIT_MESSAGE = "commit_message"
 GIT_DIFF = "git_diff"
 MASKED_COMMIT_MESSAGE_KEY = "masked_commit_message"
 TYPES_KEY = "types"
+PROVIDER = "lmstudio"
 
 # API configuration
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_KEY = os.getenv("OPENAI_API_KEY") or ""
 
 # Model configuration
 MODEL_NAMES = [
@@ -94,6 +95,7 @@ def measure_performance(
         actual_types: List[str] = json.loads(row[TYPES_KEY])
         try:
             api_call = lambda: llms.api_call(
+                provider=PROVIDER,
                 model_name=model_name,
                 commit=commit,
                 system_prompt=system_prompt,
