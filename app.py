@@ -26,6 +26,7 @@ from visual_eval.ui.dataset import (
 )
 from visual_eval.ui.session import (
     get_model_name,
+    get_api_provider,
     set_evaluation_results,
 )
 from visual_eval.ui.setup import render_api_setup_sidebar
@@ -98,8 +99,10 @@ def process_single_case(row: pd.Series, system_prompt: str) -> Dict[str, Any]:
 
         # Get model prediction
         model_name = get_model_name()
+        provider = get_api_provider()
         print(f"Model name: {model_name}")
         predicted_concern_types = llms.api_call(
+            provider=provider,
             model_name=model_name,
             commit=diff,
             system_prompt=system_prompt,
@@ -236,8 +239,10 @@ def show_direct_input() -> None:
         st.header("📊 Analysis Results")
         with st.spinner("Analyzing code diff..."):
             model_name = get_model_name()
+            provider = get_api_provider()
             print(f"Model name: {model_name}")
             predicted_concern_types = llms.api_call(
+                provider=provider,
                 model_name=model_name,
                 commit=diff,
                 system_prompt=system_prompt,
