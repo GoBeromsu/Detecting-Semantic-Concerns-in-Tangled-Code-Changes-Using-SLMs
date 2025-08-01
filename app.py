@@ -137,9 +137,6 @@ def execute_batch_concern_evaluation(df: pd.DataFrame, system_prompt: str) -> No
         f"📋 **Prompt Details:** {examples_count} examples, commit messages: {'✅' if has_commit_msg else '❌'}"
     )
 
-    # Pre-load LM Studio model if needed
-    model_name = get_model_name()
-
     # Create containers for stable rendering
     status_container = st.container()
     results_container = st.container()
