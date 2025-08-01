@@ -1,0 +1,211 @@
+predicted_types,actual_types,inference_time,shas
+"['feat', 'refactor', 'docs']","['refactor', 'docs']",11.438889980316162,"['bf95d5d0b34d32ef2684488feb3de01cb824b2b4', 'eb51316cdfdc7258d287ba13b67ef2f42bd2b8f6']"
+"['feat', 'fix']","['fix', 'feat']",5.661823034286499,"['ab1e60a97c6d5c688dacbd23bca40cb8f20c4ac3', 'f823cf28652987d43c8324b4f5b203240032383a']"
+"['test', 'refactor']",['test'],11.622822046279907,['11ffd5174bd61a2939ae58d2b2d43284302ae490']
+"['build', 'test']","['build', 'refactor']",11.453067064285278,"['e0a977b2d316e7612b5d72cb02cd7d78e75dbc55', '0d23f1b3ed22e615b9611bb4eae01d2241e64dff']"
+"['docs', 'test']","['docs', 'test']",8.136991024017334,"['9ed3c0c4a72af977fc9150512fb6538f20a94b22', 'f87659953e9af59bc7cb314a22dd076d988ef607']"
+"['feat', 'refactor']",['test'],9.467739820480347,['7ece3a9a16780dc6c633bbd903d36ce0aefd6a8a']
+"['test', 'docs']","['docs', 'build', 'test']",8.464915990829468,"['363f84c7da411468b4103da8e0b39ca48cfd8327', '1269431c8a3e7549f10fcbbb4b88ff625c8898b3', '48d5d573886e9fdd0cca1cea47112c4a2f6edf52']"
+"['refactor', 'cicd']","['refactor', 'cicd', 'fix']",6.543667793273926,"['f1bc5a554af4e617c7d7508f7f16f8fd25c78c91', 'e96487ad7ce90b141219d9032fa2bed68d5dae6a', 'c5904a9004fca1e438168ca7334a0deefab536ff']"
+"['docs', 'cicd']","['docs', 'cicd']",2.160946846008301,"['f2f52c23b513dd857350f3c163f676d37189d0d3', '2ac99c0a66a1adc18ee4ef660608f814823dd198']"
+['build'],['build'],1.4591031074523926,['9ab4c61975e073e214646443d088339cfdbaa88d']
+"['feat', 'test']","['test', 'fix']",8.753715991973877,"['c5e86dbc00a13a355bffadeb2db197e2fea5640f', '07452180fee89e98f05e1aeca68f9923d4c7ab63']"
+['feat'],"['build', 'fix']",6.068542957305908,"['607ecc92b5f8c084304e406eec725b7dcfa0a562', '7dc3b70fe40fc7de255a28bb3098bcb8c0d35365']"
+"['feat', 'refactor']","['refactor', 'build', 'feat']",8.9276442527771,"['3346331a963766c8193170fb130adad2e658ada2', 'bfe32bf10e9b6d699f694fbd095af0b3f2e6275f', 'd8d0ba8ea17ed43a04f90213851d2f27056d8cf0']"
+"['docs', 'cicd']","['docs', 'build', 'refactor']",5.1240551471710205,"['cab2cf4d3fffb0ec2b56d455e67ac5fa992b4104', '2236b37bd671fdb71313cbc6ebd7633f0effba34', 'd7972da833257c073403dec3c2ac3a7f297e328a']"
+"['feat', 'fix', 'refactor', 'docs', 'test', 'cicd', 'build']","['build', 'feat', 'test']",11.708614110946655,"['bb3e3d9b96e435c3b92fc208bca93d1ad7e1ad50', '6f4c06076abff94f8bb5c634beaba55483a78b72', '6c7398993bc567ec84e4573b6ededbf50b1ef606']"
+"['feat', 'docs']","['feat', 'refactor', 'docs']",9.085868120193481,"['9114362b39f5194209cd0b330af7076333f3db77', 'ee4bf61fb8836e249fb4ef3507dc938e70696b3f', '12257ce53f94dc902df4ba087de90f52d2840ad4']"
+['cicd'],"['cicd', 'fix']",1.9979288578033447,"['6132632f7517195c7333308e9c667cdb756bf0af', 'c623b3622058b913290120b06ccdc779a4e4413d']"
+"['cicd', 'refactor']","['build', 'fix', 'docs']",7.4281229972839355,"['88129ee45b1d49bc4ff887f3b488464cc7097e29', '61eaa2d0cca9bd27d6c5f0a8f9b34200b77fdbb0', '9ed3c0c4a72af977fc9150512fb6538f20a94b22']"
+"['feat', 'cicd']","['feat', 'cicd', 'build']",8.467122793197632,"['fd8e563cc19ca4684885d4692acee6bebcca4ada', 'e82254c4ca73fe55834f005f08bc2a060496f815', '9ab4c61975e073e214646443d088339cfdbaa88d']"
+"['fix', 'build']","['build', 'feat']",6.565386056900024,"['c323d59c607cabc91f17a78528d998f376f30b10', 'd8d0ba8ea17ed43a04f90213851d2f27056d8cf0']"
+"['feat', 'fix', 'refactor', 'docs']","['refactor', 'fix', 'docs']",7.428501129150391,"['2954a0955ce9af6acb345ed1e8328e145ad30475', '6889543bec720e7e7da66535e1012cb66edfe081', 'eb51316cdfdc7258d287ba13b67ef2f42bd2b8f6']"
+"['feat', 'docs']","['refactor', 'docs']",6.756748199462891,"['cd7e8c3d3549ea05115b3f02586eeba894d86906', 'e0177c25e13812306aab0b0991562d58b6d14767']"
+"['feat', 'test']","['test', 'refactor']",4.065229177474976,"['672cd2b9775fb6dac2d522cb3f4469db47c0556b', '36556bf8e0bce4ab6d26eafacbdad04d9614a5d7']"
+"['fix', 'docs']","['fix', 'docs']",4.618211984634399,"['174f25214caa10ec643db6c81aaa0f3511bf78f4', '04e70ce964b343e28b3dbd0c46d10ccda958ab8c']"
+"['fix', 'refactor']","['refactor', 'fix', 'test']",7.216187000274658,"['a62314d9bb632be6af026686615d14b912250512', '5636313d7c9cfbd9f48578fd104771d65eae9720', '98bed2a8137930149559bc1cae9bd34a1a75e556']"
+"['refactor', 'fix']",['fix'],1.9129619598388672,['c4d9e5023fa0f88ba283b37da27677ceda1cbfbb']
+['refactor'],['refactor'],3.396395206451416,['a50b51999015e210918d9c8e95fd4cac347353be']
+"['feat', 'fix']","['refactor', 'docs']",7.335773229598999,"['7dbbb64c45506ef634180638db800b6d9535523d', '9ed3c0c4a72af977fc9150512fb6538f20a94b22']"
+"['feat', 'fix', 'refactor']","['fix', 'refactor', 'build']",7.5523200035095215,"['c6403b62f8dc0e5bfe25a1c6306fb7040ca447ae', '63eab619e6166eb6cab948028a7b89bf059dd878', 'c55591ba157298a9c5816693c102a89dfd058830']"
+"['feat', 'refactor']",['fix'],1.5883886814117432,['a280a52c8309465276c3509848ddcddbe19732b6']
+"['test', 'fix']","['test', 'docs']",3.5862269401550293,"['f411e58cd510f8a2b980b2f1932003a0c0e9f8f3', 'cccdd8a43fea7614f78b6f1dcf1765100928a3db']"
+['cicd'],['cicd'],2.072856903076172,['7152173d26293f4638920b17ce2dfa8ae995193b']
+"['feat', 'refactor']","['refactor', 'docs']",6.789320230484009,"['bf95d5d0b34d32ef2684488feb3de01cb824b2b4', '3ee672483790ec71c700907a6e93af4698492026']"
+"['feat', 'refactor']",['feat'],2.794067859649658,['4197f2654e8767039dbfd66eca34f261ee3d88c8']
+"['cicd', 'test']","['cicd', 'test']",7.710024118423462,"['f751bb5426b87f82096d620f1cd6203badf45d58', '19feaea1885eb015759b5c7a5d785521f2b8a212']"
+"['cicd', 'test', 'refactor']","['fix', 'test', 'docs']",8.003084182739258,"['9474f58b44a35321e9157ca9890c589a7b3729b2', '47df74d40becf915a9d89cdb887abd259b77def0', 'cb1f48b56ae0de93acb72e48726c7d610a1d538e']"
+"['feat', 'test']","['test', 'refactor', 'cicd']",9.979602098464966,"['48d5d573886e9fdd0cca1cea47112c4a2f6edf52', 'bb2ccc1a778452aebf233cf78b20f1f4bab4354b', 'c5fa7b80438fbd74f4c341f0d3c9bd9e0f4910da']"
+"['feat', 'build']","['build', 'docs', 'cicd']",7.296993017196655,"['4ab28fc2e63e975a0c77e18ae644f34fa5f8771a', 'af880ac5b4fecbc6c4f3d1eee0d95f326e8bd9d1', '74e9de5ec97dc013a52aa063dff0f40ac74c407b']"
+"['feat', 'refactor']","['test', 'fix', 'build']",7.995890855789185,"['7d3e9b3a98b02f6cb1f3444dc7e3a0459aeb26a7', '974e033a3ca7484290a04201ee33856a25da0942', 'ca060bf255a55b99000ddf0c67f7422f28b735a6']"
+"['feat', 'fix', 'refactor']","['build', 'fix', 'feat']",8.28578805923462,"['fab09655d5cc30727289cc3f26e5396fce235cd3', 'bed78248c941d57ad4cc20a455147e186e97c7a1', '6b473cbdc5997af47c56a2a74f5b64da6d4c2ad7']"
+"['fix', 'refactor']",['fix'],3.384009838104248,['bed78248c941d57ad4cc20a455147e186e97c7a1']
+"['fix', 'build']","['build', 'docs']",6.372224807739258,"['a827777f41e90b6332c191d05bae8db525de6f38', 'f2f52c23b513dd857350f3c163f676d37189d0d3']"
+['docs'],['docs'],1.6681859493255615,['94202f01e44c58bee4419044f8a18ac5f1a50dff']
+"['feat', 'fix', 'refactor']","['fix', 'feat', 'build']",8.573108911514282,"['9be725fa3906323d4bc9788f54eccf74109d632b', 'bea32587586ca08f390c901a95e9b9c25263f4df', '4ab28fc2e63e975a0c77e18ae644f34fa5f8771a']"
+"['docs', 'feat', 'test']","['docs', 'cicd', 'test']",8.682659149169922,"['16d4ace80096557fb3fd48396aa09107241c3131', 'f8c7b34bdeedcf1a4628cd50b23920afeaf57cb6', '11ffd5174bd61a2939ae58d2b2d43284302ae490']"
+['docs'],"['docs', 'fix']",7.737478971481323,"['eb51316cdfdc7258d287ba13b67ef2f42bd2b8f6', 'cbce777addb3dd118232a9f28db9d425d4c937b2']"
+"['fix', 'feat']","['fix', 'feat']",3.6291911602020264,"['7dc3b70fe40fc7de255a28bb3098bcb8c0d35365', '6ae067153cd2608018fd3da76bd6d00a08da4b3a']"
+"['fix', 'refactor']","['refactor', 'fix']",6.84442400932312,"['f86944ff00b970d7e2da48abbff43e58bdf29b99', '2561f4ade46fc9d59f289f328cc77733a6443697']"
+"['docs', 'test']","['docs', 'test']",3.2452681064605713,"['88257ee720ed8ba136d49087c0d31373e8397dd5', 'e2e8ad25854bd1e7cdbc7f50b50bbd99e04ad47d']"
+"['feat', 'test']","['build', 'test', 'refactor']",9.260900735855103,"['4ab28fc2e63e975a0c77e18ae644f34fa5f8771a', '6c7398993bc567ec84e4573b6ededbf50b1ef606', 'bb2ccc1a778452aebf233cf78b20f1f4bab4354b']"
+"['docs', 'test', 'cicd']","['docs', 'test', 'cicd']",8.447367191314697,"['cb1f48b56ae0de93acb72e48726c7d610a1d538e', 'b7ce2894fd1794064bd6db4ed730bb6cb7728739', '83934807f4061980e7f5bf46d36eca70e238835d']"
+['cicd'],['build'],1.8936519622802734,['88129ee45b1d49bc4ff887f3b488464cc7097e29']
+"['fix', 'build']","['feat', 'fix']",6.169830322265625,"['1a60540f2bcda48d33f015e31f3728ac2c59a159', 'c623b3622058b913290120b06ccdc779a4e4413d']"
+"['feat', 'refactor']","['refactor', 'fix', 'build']",6.358566999435425,"['d2709cab63295109dcd1a49f57da9418110e9044', 'c4d9e5023fa0f88ba283b37da27677ceda1cbfbb', '2236b37bd671fdb71313cbc6ebd7633f0effba34']"
+"['refactor', 'docs']","['fix', 'build', 'test']",7.691771745681763,"['e9233ae3f7811707945fc2de60971595d83c578d', 'e4a11fd5c34942ba12737f1c8c084489428ee274', 'e2e8ad25854bd1e7cdbc7f50b50bbd99e04ad47d']"
+['cicd'],"['cicd', 'build']",4.590853929519653,"['45837af24a33308a70a3454f0f650f9fe728e272', '411be831591b2ea15ca9138eaf8db81f51b5101e']"
+"['feat', 'fix', 'refactor']","['docs', 'test', 'build']",5.419774055480957,"['c2ee5cd5e709afd15c5565ee009a0d204403a119', 'e2e8ad25854bd1e7cdbc7f50b50bbd99e04ad47d', 'c55591ba157298a9c5816693c102a89dfd058830']"
+"['feat', 'docs']","['docs', 'build', 'cicd']",5.997547149658203,"['f2f52c23b513dd857350f3c163f676d37189d0d3', 'af53b9487f74ff28438928903fb1f2db93fe4fa8', 'e11d55a4922978b89a2c50bf577124b09449e89c']"
+['test'],['test'],3.218798875808716,['6c7398993bc567ec84e4573b6ededbf50b1ef606']
+"['refactor', 'refactor']",['refactor'],11.09443712234497,['3cca5c314ad6feeffbfe1f14cf49ebd0fd9a95a2']
+"['feat', 'fix', 'refactor']","['test', 'fix', 'refactor']",5.433070659637451,"['cd9e6a2ab17c5961b0f977bb8a06f8545da49a97', '1e05a24486f15889ddf6bf1c711ea2bbffc1a88e', '4bfbf60653068ef17df98c021134692bd6d02939']"
+"['build', 'test']","['build', 'test']",3.4879071712493896,"['66f907f2d6ff0956bb5215518678bc79cab83c17', '7e1ece7d3fd41d1e3ee38e479c119494bb269966']"
+"['test', 'feat']","['test', 'build', 'cicd']",9.025142908096313,"['bed86aeae8dad2dd6371635cd24bf8ef3db80361', 'ecc481f9f501aa34b41e06e7bbdde6e79f8ca1bb', 'c3531347fe5a4cc82d426db195026a5bdad15e7a']"
+"['feat', 'test']","['test', 'refactor']",6.61851692199707,"['bed86aeae8dad2dd6371635cd24bf8ef3db80361', '47ef9104e4a89e80d7cc6c1950bc080841da4a7b']"
+"['test', 'refactor']","['test', 'refactor', 'fix']",7.547024965286255,"['21c004b3c40bd3d68f0d32d173a29632765666c8', '3cca5c314ad6feeffbfe1f14cf49ebd0fd9a95a2', 'eebee9ab0bb6d4255ad0402d8422364e96bfef61']"
+"['cicd', 'build']","['cicd', 'fix']",11.102759838104248,"['640cd88df3069a97d8244398414338dd317c5470', '97cabf49e7aca7754edde247003fbcb4ea42dd59']"
+"['test', 'feat', 'fix']","['test', 'fix', 'build']",9.69305682182312,"['e0198f74b81da3663144cfe1d971939319f82a0f', '1e05a24486f15889ddf6bf1c711ea2bbffc1a88e', '7e9bd7c86df1032d53e752654fe4a446951480bb']"
+"['cicd', 'feat', 'refactor']","['cicd', 'fix', 'feat']",9.321195125579834,"['c5fa7b80438fbd74f4c341f0d3c9bd9e0f4910da', '148cd56d096ba972e9706653c47052a07d5f9d08', '9b1c0fc20b614513384a1e562317dbf076eb8ef0']"
+"['refactor', 'test']","['refactor', 'test']",9.03976821899414,"['300ac2e411ef0ebfe1441d42cc88787116a9afa4', 'c5e86dbc00a13a355bffadeb2db197e2fea5640f']"
+"['feat', 'refactor']",['refactor'],3.191019058227539,['535708ae50aecb452560a23356fd396f99ef13a2']
+"['fix', 'cicd']","['cicd', 'feat', 'test']",6.753785133361816,"['02f9e79a755a1dd95e661c674d6966837f378442', 'fd5f211916c989fddc2ee5afeeb7d46e6a2f51cb', 'd2c3f0ba6f85b659b76636a91ea9ab2b5a95a720']"
+"['feat', 'refactor', 'test']","['refactor', 'test', 'build']",8.757277965545654,"['9c0aae64774a6fd864622474cb645371fee114b5', '19feaea1885eb015759b5c7a5d785521f2b8a212', '65574eea5da54bf4722ecb551b42f8ff6088f33b']"
+"['cicd', 'docs']","['cicd', 'docs']",3.7844350337982178,"['6132632f7517195c7333308e9c667cdb756bf0af', 'aca23027da1295c78fdf42ba9687d8ccc88784d7']"
+"['docs', 'test']","['docs', 'refactor']",2.8522961139678955,"['9a60af7fa3b480e2e04bacd646112cad9aaab6d7', 'ad52e1d67fd77f0b6a73fbf989b33f9abf395ecc']"
+"['docs', 'cicd']","['docs', 'cicd']",4.224846839904785,"['ee7cc5d5a940fba774e715b1f029c6361110b108', '2ac99c0a66a1adc18ee4ef660608f814823dd198']"
+"['fix', 'refactor']",['refactor'],7.410459995269775,['8a9a022baa15befc325f87892c6bdae25b35bc33']
+"['test', 'feat']",['test'],4.244724988937378,['e0198f74b81da3663144cfe1d971939319f82a0f']
+"['feat', 'fix']","['build', 'feat', 'test']",11.056437969207764,"['7e04a5e829d7416e312ac342a00a11787745753b', 'ded26d768ff432ad3bde3c0aa1e95ce50726100a', '87427fe39d165bee2acedde8dbaa237cca3fb61e']"
+"['feat', 'refactor']","['feat', 'refactor', 'fix']",3.6601901054382324,"['d3c754f09502be979e5dcc79f968b15052590bd0', '36556bf8e0bce4ab6d26eafacbdad04d9614a5d7', '6889543bec720e7e7da66535e1012cb66edfe081']"
+"['test', 'refactor']",['test'],1.5726382732391357,['cd9e6a2ab17c5961b0f977bb8a06f8545da49a97']
+"['fix', 'test']",['test'],2.2414679527282715,['efeb30f26252ef4791ef2a02d83827b7f0c45462']
+"['fix', 'build']",['build'],2.719507932662964,['81ca000c6a7e7435809081c60be37dda23458ec8']
+"['fix', 'cicd']","['refactor', 'cicd', 'test']",3.8611812591552734,"['b7b1d2b315443e1854403c8fe8f871c4632b5d31', '6786fd5955b064021f5b6d6a630453351d683fae', 'a8d1a60fd48d3fbd76d4271987a1b0f538d498f1']"
+['fix'],['fix'],2.7755019664764404,['2f5718743a830d40ddf272ad46f253dbb6d08cff']
+"['test', 'fix']","['test', 'refactor']",6.990874767303467,"['a8d1a60fd48d3fbd76d4271987a1b0f538d498f1', '0d23f1b3ed22e615b9611bb4eae01d2241e64dff']"
+"['feat', 'fix', 'refactor']","['feat', 'refactor', 'test']",11.100203037261963,"['6f4c06076abff94f8bb5c634beaba55483a78b72', '0d23f1b3ed22e615b9611bb4eae01d2241e64dff', 'b700285c1f27588922d9c56527cee721bb884682']"
+"['docs', 'feat']","['docs', 'build']",2.6785430908203125,"['e0177c25e13812306aab0b0991562d58b6d14767', '573f87edf9bdc19c9c4c3a978fad6ed3ce788f5f']"
+"['refactor', 'test']",['refactor'],10.722842931747437,['1db13ec43727aca872a0f3836e4023ed85db665e']
+['test'],"['test', 'fix']",6.54081916809082,"['19feaea1885eb015759b5c7a5d785521f2b8a212', 'cbce777addb3dd118232a9f28db9d425d4c937b2']"
+"['feat', 'docs']","['fix', 'docs']",3.1964972019195557,"['87d5d4e55ab7149b593d29410f1fe426ba2447d4', '363f84c7da411468b4103da8e0b39ca48cfd8327']"
+"['feat', 'fix']","['build', 'fix']",7.157773017883301,"['af53b9487f74ff28438928903fb1f2db93fe4fa8', '4986a5892fb00bd5a6b2065ad8cfefbc36052dd7']"
+"['fix', 'cicd']","['build', 'fix']",3.115997791290283,"['9a25fe59dfb63d32505afcea3a164ff0b8ea4c71', '87d5d4e55ab7149b593d29410f1fe426ba2447d4']"
+"['feat', 'refactor']","['refactor', 'build']",7.874584913253784,"['8d53d724275ebe4b2a0bb0bd7e2c2dfc399e049b', '63546c15bfb1284ac6d956eee274e6d7cf263a8f']"
+"['cicd', 'refactor']",['cicd'],2.295569896697998,['e11d55a4922978b89a2c50bf577124b09449e89c']
+"['cicd', 'refactor']",['cicd'],4.094319820404053,['45837af24a33308a70a3454f0f650f9fe728e272']
+"['feat', 'fix']","['build', 'fix']",4.048565149307251,"['5d256f937f93e5a5ed003df86d38c44834095a11', 'bed78248c941d57ad4cc20a455147e186e97c7a1']"
+"['feat', 'refactor']","['build', 'docs']",8.004246234893799,"['7e9bd7c86df1032d53e752654fe4a446951480bb', 'aca23027da1295c78fdf42ba9687d8ccc88784d7']"
+['cicd'],['cicd'],1.7872281074523926,['dbb537a26e388a8d7d17faf131abc30c2f7a84e6']
+"['cicd', 'refactor', 'docs']","['cicd', 'fix', 'feat']",6.525509834289551,"['ee824ddd71cbc4ccc26f7c6876d379c4927b79e6', '06e2be4e2019b6fa714e1fcb34485860ef1ede79', '364d9bf18b2ce73c04d5ec3a70aefa3e6b83cc12']"
+"['test', 'fix']","['test', 'fix']",4.249085903167725,"['b7ce2894fd1794064bd6db4ed730bb6cb7728739', '7dc3b70fe40fc7de255a28bb3098bcb8c0d35365']"
+"['cicd', 'feat', 'test']","['cicd', 'build', 'test']",7.173731803894043,"['fb3a231b29bc8bff9270b99dd4aff9dad599f21f', '92e940efeee199b1e0bbbc3c9eea7f3dc8221619', 'c3b5dc77ff3d89d389f6f3a868b17d0a8ca63074']"
+"['feat', 'refactor']","['feat', 'build', 'cicd']",6.116794109344482,"['f0a4b62f4bd2a1ba2caf37c764b117b352a2f2b3', '66f907f2d6ff0956bb5215518678bc79cab83c17', '34875bc0e59b43d9041903101c823d25ec194a21']"
+['docs'],['docs'],3.082098960876465,['9ed3c0c4a72af977fc9150512fb6538f20a94b22']
+"['feat', 'fix', 'refactor', 'docs']","['docs', 'test', 'feat']",5.968780040740967,"['e2821a56c7d867b8b591f1777019843a2ffca797', 'cd9e6a2ab17c5961b0f977bb8a06f8545da49a97', '6b473cbdc5997af47c56a2a74f5b64da6d4c2ad7']"
+['docs'],['docs'],1.4730010032653809,['f2f52c23b513dd857350f3c163f676d37189d0d3']
+['cicd'],['cicd'],2.305694818496704,['b702adc245f679ae20d84de39f0d63b14aabed5d']
+"['feat', 'refactor']",['build'],1.608436107635498,['573f87edf9bdc19c9c4c3a978fad6ed3ce788f5f']
+"['feat', 'refactor']","['fix', 'test']",7.459511995315552,"['4986a5892fb00bd5a6b2065ad8cfefbc36052dd7', '87427fe39d165bee2acedde8dbaa237cca3fb61e']"
+"['test', 'fix']","['test', 'fix']",3.6775081157684326,"['229b53a632ea97d47c4be11f096bdd828fb415d8', '6889543bec720e7e7da66535e1012cb66edfe081']"
+"['build', 'fix']",['build'],2.6020100116729736,['c55591ba157298a9c5816693c102a89dfd058830']
+"['fix', 'cicd']","['fix', 'cicd', 'refactor']",6.713387966156006,"['9be725fa3906323d4bc9788f54eccf74109d632b', 'e11d55a4922978b89a2c50bf577124b09449e89c', '771857b1df9470ebc15357e8879118a72c649d5b']"
+"['refactor', 'build']",['fix'],1.42399001121521,['dc50bd35462a49058c91a939fc8830ae7a9eb692']
+"['refactor', 'cicd']","['refactor', 'cicd', 'build']",9.11397409439087,"['4f86f2570b274c45605cc59d9adb38f7ed30cd17', '9187415f5ee35d2e88dd834e413fc16bf19c5db1', 'bb3e3d9b96e435c3b92fc208bca93d1ad7e1ad50']"
+"['feat', 'fix', 'refactor']","['build', 'fix', 'feat']",9.454828023910522,"['aa30370b796c1f46cc60aa56b2918c3d27c0cf88', '4b5604063fcb8ff457bcb61fdbea85c6b3a5c620', '1a60540f2bcda48d33f015e31f3728ac2c59a159']"
+['refactor'],['refactor'],2.622096300125122,['ee4bf61fb8836e249fb4ef3507dc938e70696b3f']
+"['feat', 'docs', 'build']","['docs', 'cicd', 'fix']",7.2115678787231445,"['12257ce53f94dc902df4ba087de90f52d2840ad4', 'b702adc245f679ae20d84de39f0d63b14aabed5d', 'cbce777addb3dd118232a9f28db9d425d4c937b2']"
+['build'],['build'],2.4466371536254883,['fab09655d5cc30727289cc3f26e5396fce235cd3']
+"['fix', 'docs', 'refactor']","['fix', 'docs', 'refactor']",6.375444173812866,"['9be725fa3906323d4bc9788f54eccf74109d632b', '88257ee720ed8ba136d49087c0d31373e8397dd5', '3cca5c314ad6feeffbfe1f14cf49ebd0fd9a95a2']"
+"['feat', 'fix']","['build', 'feat', 'test']",3.875936985015869,"['573f87edf9bdc19c9c4c3a978fad6ed3ce788f5f', 'd3c754f09502be979e5dcc79f968b15052590bd0', 'a8d1a60fd48d3fbd76d4271987a1b0f538d498f1']"
+"['feat', 'fix', 'refactor', 'docs', 'test', 'cicd', 'build']","['test', 'feat', 'refactor']",8.306086778640747,"['e2e8ad25854bd1e7cdbc7f50b50bbd99e04ad47d', '4d92f352741b04c8709319dfe5c8419654f3682c', '4bfbf60653068ef17df98c021134692bd6d02939']"
+['test'],['test'],6.305394887924194,['c5e86dbc00a13a355bffadeb2db197e2fea5640f']
+"['test', 'feat']","['test', 'build', 'docs']",8.019361019134521,"['bedc7950b24c37809e36a585b7985d5aa5e3e458', '27169897c0e58bc4fbca724f290ad54fa39abec7', '036a0ff49a7dade0e04c9c07071a1ff49133ee24']"
+['docs'],['docs'],3.2090530395507812,['e4c3e2cff769ce46d22d5c8f7dd527510443a8a7']
+"['cicd', 'test', 'fix']","['cicd', 'build', 'test']",9.597731113433838,"['e34bb04baac7574e67bc566d13dea72092e0cfa3', '65574eea5da54bf4722ecb551b42f8ff6088f33b', 'e0198f74b81da3663144cfe1d971939319f82a0f']"
+"['feat', 'refactor']","['fix', 'refactor']",6.536290884017944,"['a280a52c8309465276c3509848ddcddbe19732b6', '4f86f2570b274c45605cc59d9adb38f7ed30cd17']"
+"['feat', 'fix', 'cicd']","['fix', 'cicd']",6.356238126754761,"['34d80114704679118e9bb6058e0d6c7aa03fd4b5', 'e7a67d88173566be3cd3aed7e9eeb7e29aabbc57']"
+"['fix', 'refactor']",['fix'],4.0180888175964355,['06960183db42cba1b1f1a8077660ba8c801c9e18']
+"['docs', 'test']","['docs', 'build', 'test']",9.436558961868286,"['81f37be838d5e3af738908b1bcbf59fea2b45989', 'fab09655d5cc30727289cc3f26e5396fce235cd3', '7ece3a9a16780dc6c633bbd903d36ce0aefd6a8a']"
+"['feat', 'fix', 'cicd']","['test', 'cicd', 'docs']",5.274394273757935,"['4aa3e4c438742ef0fe694ffaf6a181874366d777', 'f8c7b34bdeedcf1a4628cd50b23920afeaf57cb6', 'c2ee5cd5e709afd15c5565ee009a0d204403a119']"
+"['fix', 'build']",['fix'],2.4447128772735596,['eebee9ab0bb6d4255ad0402d8422364e96bfef61']
+"['fix', 'docs']","['build', 'feat', 'cicd']",7.630985975265503,"['f14ef3809f456aadd73523e47cb16c5d15e9a9df', '39d5d1cfe8d2210305df2c8fab4a4ae430732cf7', 'd0c6476df61b9c6ab07b87e1724ea7c5318595bb']"
+"['feat', 'refactor']",['feat'],10.80928087234497,['d1fed3e9907d0a9e3fe45dbfe2ff27bd10b3e1f4']
+"['fix', 'refactor']",['fix'],1.9274818897247314,['933ab6bb86372913c992567cf9660009900911a7']
+"['feat', 'fix']","['docs', 'fix']",4.712572336196899,"['e2821a56c7d867b8b591f1777019843a2ffca797', '06960183db42cba1b1f1a8077660ba8c801c9e18']"
+"['feat', 'fix', 'docs']","['feat', 'build', 'docs']",7.813457012176514,"['f433bcb59c36571e22d4e86c612e0a6a52f73c09', 'c323d59c607cabc91f17a78528d998f376f30b10', '12257ce53f94dc902df4ba087de90f52d2840ad4']"
+"['fix', 'build']","['fix', 'build']",2.49231219291687,"['9be725fa3906323d4bc9788f54eccf74109d632b', '3fcfb20b0feb371b357edc42fcb7c87085c9b82a']"
+"['test', 'docs']","['refactor', 'test', 'docs']",9.193272113800049,"['fba4326c72fc22d81aba6976a9fef1e4b6154fd9', '73eac947689e3fc6b53bf626a6b4604056166d6e', '2ba752d45350a676babe553dd68f019af81b512b']"
+"['refactor', 'docs']","['refactor', 'docs']",4.585752725601196,"['84529bcb10c6fe02e2c0079d069ab6c6ac7683d6', '12257ce53f94dc902df4ba087de90f52d2840ad4']"
+"['feat', 'refactor']","['refactor', 'test', 'build']",6.790907859802246,"['0cb9751b0a1bdd8d2c88b45d4366e760d6b1bbed', '32b76173a259ea1993298289b436cf10c1e800bf', '7f9721dc9bbf66a3712d59352f64ca089da139f0']"
+"['feat', 'fix', 'docs']","['docs', 'build', 'fix']",5.8100738525390625,"['096145f0d32a6b351b1db413b04a685952f04fb3', 'e4a11fd5c34942ba12737f1c8c084489428ee274', '87d5d4e55ab7149b593d29410f1fe426ba2447d4']"
+['fix'],['fix'],1.9894778728485107,['33c25b2f59c931a7f4af994365522221a7821dca']
+"['cicd', 'feat']","['cicd', 'feat']",3.479969024658203,"['9187415f5ee35d2e88dd834e413fc16bf19c5db1', 'd3c754f09502be979e5dcc79f968b15052590bd0']"
+"['feat', 'fix', 'refactor', 'docs']","['refactor', 'docs']",11.156121015548706,"['9e3f295bbfd4098ffda1ae6656699f60b86c1f92', 'eb51316cdfdc7258d287ba13b67ef2f42bd2b8f6']"
+"['feat', 'refactor']",['feat'],2.4744412899017334,['68278b00450f2679761a2999500f6d87a579376b']
+"['feat', 'refactor']","['refactor', 'cicd', 'build']",8.009833097457886,"['bf95d5d0b34d32ef2684488feb3de01cb824b2b4', '7152173d26293f4638920b17ce2dfa8ae995193b', 'aa30370b796c1f46cc60aa56b2918c3d27c0cf88']"
+"['feat', 'test']","['refactor', 'test', 'cicd']",5.831032991409302,"['3e0c4cbf91fe5efc9b93baba93e4df93ef4ab5cd', '6c7398993bc567ec84e4573b6ededbf50b1ef606', 'f8c7b34bdeedcf1a4628cd50b23920afeaf57cb6']"
+"['docs', 'cicd']","['docs', 'cicd']",3.3737030029296875,"['af0a5f7ab9d71fe20aa0888f682368f32b26fe18', '7152173d26293f4638920b17ce2dfa8ae995193b']"
+"['fix', 'cicd']","['test', 'cicd', 'fix']",6.100693941116333,"['efeb30f26252ef4791ef2a02d83827b7f0c45462', 'bc28d536c0dd1061ac96cea0241857c1d4e4e0f2', 'dc50bd35462a49058c91a939fc8830ae7a9eb692']"
+"['feat', 'refactor']",['build'],10.790657043457031,['7e9bd7c86df1032d53e752654fe4a446951480bb']
+['cicd'],['cicd'],4.559544086456299,['c5fa7b80438fbd74f4c341f0d3c9bd9e0f4910da']
+"['feat', 'refactor']",['refactor'],9.040127992630005,['4f86f2570b274c45605cc59d9adb38f7ed30cd17']
+"['feat', 'refactor', 'test']","['refactor', 'build', 'test']",8.380350828170776,"['5d14de6722eb34c6604a124f6f11cb711f16bd44', '7f9721dc9bbf66a3712d59352f64ca089da139f0', 'c5e86dbc00a13a355bffadeb2db197e2fea5640f']"
+"['cicd', 'build']","['cicd', 'docs', 'build']",8.642230033874512,"['640cd88df3069a97d8244398414338dd317c5470', 'f2f52c23b513dd857350f3c163f676d37189d0d3', '607ecc92b5f8c084304e406eec725b7dcfa0a562']"
+"['test', 'feat']","['test', 'docs']",5.678546905517578,"['b700285c1f27588922d9c56527cee721bb884682', 'e12d9e77a6fd531a22325337838a841b1c67f00d']"
+"['feat', 'docs', 'cicd']","['docs', 'cicd']",6.716045141220093,"['94202f01e44c58bee4419044f8a18ac5f1a50dff', '32845e1bbd1efb5dbc16f671049509a409ba25ce']"
+"['feat', 'docs']","['build', 'docs']",3.5280582904815674,"['8911a972222dc80a242f3f1d9b3596321b3fdeaa', '6d405dfc1675dcad64a2dfac0c0cb0fb28381d21']"
+"['fix', 'test']","['test', 'refactor', 'fix']",7.784857988357544,"['21c004b3c40bd3d68f0d32d173a29632765666c8', 'f1bc5a554af4e617c7d7508f7f16f8fd25c78c91', '2f5718743a830d40ddf272ad46f253dbb6d08cff']"
+"['fix', 'refactor']","['fix', 'test']",4.474195957183838,"['bed78248c941d57ad4cc20a455147e186e97c7a1', 'e2e8ad25854bd1e7cdbc7f50b50bbd99e04ad47d']"
+['build'],['build'],1.4119980335235596,['6aa63c9b8d4dcdbb401743adc3c9a1020d943250']
+['cicd'],['cicd'],1.6580829620361328,['6132632f7517195c7333308e9c667cdb756bf0af']
+"['cicd', 'test']","['cicd', 'test', 'build']",9.727248191833496,"['e7a67d88173566be3cd3aed7e9eeb7e29aabbc57', 'c3b5dc77ff3d89d389f6f3a868b17d0a8ca63074', '92e940efeee199b1e0bbbc3c9eea7f3dc8221619']"
+"['fix', 'feat']","['refactor', 'test']",3.1412501335144043,"['a62314d9bb632be6af026686615d14b912250512', '4aa3e4c438742ef0fe694ffaf6a181874366d777']"
+"['fix', 'refactor']",['fix'],3.8380038738250732,['61eaa2d0cca9bd27d6c5f0a8f9b34200b77fdbb0']
+"['feat', 'test']","['fix', 'test', 'cicd']",5.832494735717773,"['c6403b62f8dc0e5bfe25a1c6306fb7040ca447ae', 'b7e2330fa3a8d7b8a9bff01b707c44e64b845c7b', 'dbb537a26e388a8d7d17faf131abc30c2f7a84e6']"
+['refactor'],['refactor'],3.227149724960327,['f86944ff00b970d7e2da48abbff43e58bdf29b99']
+"['feat', 'refactor']",['feat'],2.7654151916503906,['5373c3036866db58b322b424d3be9dedff57a376']
+['test'],['test'],2.5617239475250244,['229b53a632ea97d47c4be11f096bdd828fb415d8']
+"['cicd', 'refactor']","['cicd', 'build']",2.6685421466827393,"['4c44543a3d9eea37e90a2316717feb01c0e0d83a', 'ca060bf255a55b99000ddf0c67f7422f28b735a6']"
+"['feat', 'fix', 'refactor']","['feat', 'build']",8.086661100387573,"['bea32587586ca08f390c901a95e9b9c25263f4df', '63546c15bfb1284ac6d956eee274e6d7cf263a8f']"
+['cicd'],['cicd'],1.3218379020690918,['c444fdb9e85ce44c5c0c99addc777dd7b6085153']
+"['feat', 'refactor']",['refactor'],11.19104814529419,['062daa45cbd5dba6e96e95d8cdcaee89ae30a83c']
+"['docs', 'feat']","['docs', 'fix', 'cicd']",8.586843013763428,"['16d4ace80096557fb3fd48396aa09107241c3131', '5ffc5794808647de14f945141692be26ad143006', 'c5fa7b80438fbd74f4c341f0d3c9bd9e0f4910da']"
+['fix'],['fix'],2.185333013534546,['1e05a24486f15889ddf6bf1c711ea2bbffc1a88e']
+"['cicd', 'feat']","['cicd', 'feat']",2.2240991592407227,"['9117fdedb9b5ce0345c31b3e1fa22ae8554944d4', 'dc5238b2bda98a7c4f2fe9584fc3b0191a408109']"
+"['fix', 'cicd']","['fix', 'cicd', 'docs']",6.201839208602905,"['2f5718743a830d40ddf272ad46f253dbb6d08cff', '4638dcdf7011e8e42d11fde04f068f22ee20fa1d', '9ed3c0c4a72af977fc9150512fb6538f20a94b22']"
+"['feat', 'fix']","['test', 'build']",2.4991698265075684,"['cd9e6a2ab17c5961b0f977bb8a06f8545da49a97', '5b81fde8a72cf2e69a10e9f5c4f0bea0a2b8c3e0']"
+"['docs', 'build']","['docs', 'build', 'test']",9.34862494468689,"['dbb8617214aaa8b56b827deef1265d9ee38765bd', '37b1cbfd3d2c462ef4f2a131e4172c38dc8d9ddf', '19feaea1885eb015759b5c7a5d785521f2b8a212']"
+"['feat', 'refactor']","['feat', 'refactor']",7.752635717391968,"['5373c3036866db58b322b424d3be9dedff57a376', 'cd7e8c3d3549ea05115b3f02586eeba894d86906']"
+['docs'],"['feat', 'fix', 'build']",8.871909141540527,"['9b1c0fc20b614513384a1e562317dbf076eb8ef0', '34d80114704679118e9bb6058e0d6c7aa03fd4b5', 'f46c6c6c26a14312aa05a77ff2a14aebd74e13ac']"
+"['docs', 'feat']",['docs'],3.768275022506714,['fc9af4d0b93d69be4e201ffb18da04324e8a4a87']
+"['feat', 'cicd']","['refactor', 'cicd']",4.42340087890625,"['3346331a963766c8193170fb130adad2e658ada2', '3f2eec37f76c1ad9408e423e49fe5bfe3e17d943']"
+"['test', 'fix']","['refactor', 'test', 'feat']",10.074015855789185,"['15f8d95754a0b6865ea475ca9e515272a07bf6ba', 'b7ce2894fd1794064bd6db4ed730bb6cb7728739', '9c2c7ea1d4935d30e014ca807a4f9cb1665b1e41']"
+"['docs', 'test', 'fix']","['docs', 'test']",5.470026969909668,"['af0a5f7ab9d71fe20aa0888f682368f32b26fe18', 'f2cc48b74bf92fe22cc265cff4224565f910a921']"
+"['feat', 'refactor']","['fix', 'docs', 'cicd']",7.913916826248169,"['9ef5c0d14193a9abb09b39856f58477d1f4b0d77', '363f84c7da411468b4103da8e0b39ca48cfd8327', '45837af24a33308a70a3454f0f650f9fe728e272']"
+"['feat', 'cicd']","['refactor', 'cicd']",3.541674852371216,"['2954a0955ce9af6acb345ed1e8328e145ad30475', '6c9cb638cb4d1ecc42632fcf389c24898c5b3244']"
+"['feat', 'fix', 'test']","['docs', 'fix', 'test']",4.386804103851318,"['94202f01e44c58bee4419044f8a18ac5f1a50dff', 'dc50bd35462a49058c91a939fc8830ae7a9eb692', 'd2c3f0ba6f85b659b76636a91ea9ab2b5a95a720']"
+"['feat', 'test']",['refactor'],6.42965292930603,['4be836f5655fb5356fde5ddd7437125f8574705d']
+"['cicd', 'feat', 'refactor']","['cicd', 'feat', 'test']",8.969584226608276,"['fb3a231b29bc8bff9270b99dd4aff9dad599f21f', '7ab965c55d0e98fdb6179577d0db56599675e400', '48d5d573886e9fdd0cca1cea47112c4a2f6edf52']"
+"['fix', 'cicd']","['fix', 'cicd']",3.9334259033203125,"['5b70e008c57efc89da4061f9adb7d0491b2ea644', '4638dcdf7011e8e42d11fde04f068f22ee20fa1d']"
+"['cicd', 'refactor']","['cicd', 'fix']",4.530451059341431,"['e96487ad7ce90b141219d9032fa2bed68d5dae6a', 'bed78248c941d57ad4cc20a455147e186e97c7a1']"
+"['build', 'fix']","['build', 'docs']",5.4257800579071045,"['65574eea5da54bf4722ecb551b42f8ff6088f33b', '099861ff5b0f83773ca0af4c70e6e39be3b0336c']"
+"['test', 'fix']","['test', 'build', 'fix']",6.352244138717651,"['b7e2330fa3a8d7b8a9bff01b707c44e64b845c7b', 'f14ef3809f456aadd73523e47cb16c5d15e9a9df', '33c25b2f59c931a7f4af994365522221a7821dca']"
+"['feat', 'refactor']","['docs', 'fix', 'feat']",3.7746481895446777,"['9849430b11b92ae58d94cfe4d0b06313c7eab550', 'c5904a9004fca1e438168ca7334a0deefab536ff', 'd3c754f09502be979e5dcc79f968b15052590bd0']"
+"['feat', 'fix']",['build'],5.709222078323364,['27169897c0e58bc4fbca724f290ad54fa39abec7']
+"['docs', 'fix']",['docs'],1.8658561706542969,['c351088bce98594c740a39546ce3655c91554a5d']
+"['fix', 'feat']","['docs', 'fix']",4.891464948654175,"['9849430b11b92ae58d94cfe4d0b06313c7eab550', '2561f4ade46fc9d59f289f328cc77733a6443697']"
+"['refactor', 'docs']",['refactor'],7.041721820831299,['f1bc5a554af4e617c7d7508f7f16f8fd25c78c91']
+"['feat', 'cicd']","['test', 'fix', 'cicd']",3.794234275817871,"['7ab363f7ba2807b3eb9895e47f4fcd058f43ae5e', 'a280a52c8309465276c3509848ddcddbe19732b6', '28e623b294816c4e070971782a75c8697a11966f']"
+"['feat', 'refactor']","['refactor', 'build']",6.344650983810425,"['323cf81961cdd3748a7ba6ba470ecb13e5374e9f', '8911a972222dc80a242f3f1d9b3596321b3fdeaa']"
+"['feat', 'refactor', 'cicd']","['fix', 'build', 'cicd']",6.40750789642334,"['304d0588f634e9e72087a706367c53af9c7f7180', '65574eea5da54bf4722ecb551b42f8ff6088f33b', 'b702adc245f679ae20d84de39f0d63b14aabed5d']"
+"['feat', 'refactor']",['refactor'],11.114796876907349,['9e3f295bbfd4098ffda1ae6656699f60b86c1f92']
+"['fix', 'feat', 'refactor']","['fix', 'refactor', 'feat']",10.259819030761719,"['bed78248c941d57ad4cc20a455147e186e97c7a1', '4be836f5655fb5356fde5ddd7437125f8574705d', 'cad5e45208346528ad02cd04dcac863f90faa037']"
+"['fix', 'refactor']",['fix'],1.908891201019287,['ab1e60a97c6d5c688dacbd23bca40cb8f20c4ac3']
+"['feat', 'fix']","['fix', 'cicd', 'refactor']",8.711645126342773,"['cbce777addb3dd118232a9f28db9d425d4c937b2', 'c81a0c2999454c859b4bf4da5779712960d239be', '8246d024f21d93cc092e19bede5f7b3a5325c8dc']"
+"['feat', 'refactor']",['refactor'],11.142271995544434,['323cf81961cdd3748a7ba6ba470ecb13e5374e9f']
+['docs'],['docs'],1.9842522144317627,['099861ff5b0f83773ca0af4c70e6e39be3b0336c']
+"['fix', 'docs']","['build', 'docs']",7.1529669761657715,"['c44cf88a6ec54e5ddd99d8348bcc57b301ec7945', 'cb1f48b56ae0de93acb72e48726c7d610a1d538e']"
+"['docs', 'fix']",['docs'],3.0373690128326416,['72bc0f5172c0a3d17bde29cfc00db4c60d2fee3a']
+"['cicd', 'build']","['cicd', 'fix', 'build']",9.128392219543457,"['640cd88df3069a97d8244398414338dd317c5470', 'eb513f7eeea7865f15e5bd561a471d1f4381ea70', '607ecc92b5f8c084304e406eec725b7dcfa0a562']"
+"['refactor', 'cicd']","['refactor', 'cicd', 'feat']",8.104768991470337,"['983fef55ef08ca2ca25349bb2d5bdff10ecf89f4', '6132632f7517195c7333308e9c667cdb756bf0af', '4d92f352741b04c8709319dfe5c8419654f3682c']"
