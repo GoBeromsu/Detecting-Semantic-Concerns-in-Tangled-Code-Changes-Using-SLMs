@@ -4,7 +4,8 @@ from typing import List, Tuple
 from pydantic import BaseModel, Field
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from outlines import Generator
+import outlines
+from outlines.inputs import Chat
 from huggingface_hub import scan_cache_dir
 from .constant import (
     DEFAULT_TEMPERATURE,
@@ -38,22 +39,24 @@ def get_models() -> Tuple[List[str], str]:
         return [], f"Error scanning Hugging Face cache: {str(e)}"
 
 
-def load_model(name: str) -> Generator:
+def load_model(name: str):
     """
     Load model with optimized configuration.
 
     Args:
-        model_name: Name of the model to load
+        name: Name of the model to load
 
     Returns:
-        Loaded model instance
+        Outlines model instance
     """
     try:
-        model = AutoModelForCausalLM.from_pretrained(
+        hf_model = AutoModelForCausalLM.from_pretrained(
             name, torch_dtype=torch.bfloat16, device_map="auto"
         )
-        tokenizer = AutoTokenizer.from_pretrained(name)
-        outlines_model = Generator(model, tokenizer)
+        hf_tokenizer = AutoTokenizer.from_pretrained(name)
+
+        # Create Outlines model using the correct method
+        outlines_model = outlines.from_transformers(hf_model, hf_tokenizer)
         return outlines_model
     except Exception as e:
         raise RuntimeError(f"Failed to load model {name}: {e}")
@@ -67,28 +70,25 @@ def api_call(
     max_tokens: int = DEFAULT_MAX_TOKENS,
 ) -> List[str]:
     """
-    Call LM Studio API for commit classification with inference time measurement.
+    Call Hugging Face API for commit classification with ChatML format.
     """
     try:
         model = load_model(model_name)
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": commit},
-        ]
-        # apply_chat_template handles the specific formatting for the chosen model (e.g., ChatML)
-        prompt = model.tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
+        # Create chat input with ChatML format
+        chat = Chat(
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": commit},
+            ]
         )
 
-        # Use `outlines` to generate a structured JSON response
-        # This enforces the output to match the `ConcernResponse` Pydantic model.
-        generator = Generator(model, ConcernResponse)
+        # Create generator with structured output
+        generator = outlines.Generator(model, ConcernResponse)
+
         response = generator(
-            prompt,
+            chat,
             temperature=temperature,
-            max_tokens=max_tokens,
-            seed=1234,  # for reproducibility
         )
         return response.types
 

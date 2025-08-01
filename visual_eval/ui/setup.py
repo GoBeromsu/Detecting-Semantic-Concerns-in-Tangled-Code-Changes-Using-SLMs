@@ -2,7 +2,7 @@
 
 import os
 import streamlit as st
-from utils.llms.lmstudio import get_models
+from utils.llms.hugging_face import get_models
 from utils.llms.constant import DEFAULT_OPENAI_MODEL
 from .session import (
     set_api_provider,
