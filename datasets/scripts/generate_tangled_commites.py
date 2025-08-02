@@ -242,6 +242,8 @@ def main() -> None:
     save_to_csv(train_cases, "train")
     save_to_csv(test_cases, "test")
 
+    # TODO: Hugging face upload
+
 
 if __name__ == "__main__":
     main()
