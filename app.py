@@ -26,6 +26,7 @@ from visual_eval.ui.dataset import (
 )
 from visual_eval.ui.session import (
     get_model_name,
+    get_api_provider,
     set_evaluation_results,
 )
 from visual_eval.ui.setup import render_api_setup_sidebar
@@ -98,8 +99,9 @@ def process_single_case(row: pd.Series, system_prompt: str) -> Dict[str, Any]:
 
         # Get model prediction
         model_name = get_model_name()
-        print(f"Model name: {model_name}")
+        provider = get_api_provider()
         predicted_concern_types = llms.api_call(
+            provider=provider,
             model_name=model_name,
             commit=diff,
             system_prompt=system_prompt,
@@ -133,9 +135,6 @@ def execute_batch_concern_evaluation(df: pd.DataFrame, system_prompt: str) -> No
     st.write(
         f"📋 **Prompt Details:** {examples_count} examples, commit messages: {'✅' if has_commit_msg else '❌'}"
     )
-
-    # Pre-load LM Studio model if needed
-    model_name = get_model_name()
 
     # Create containers for stable rendering
     status_container = st.container()
@@ -199,7 +198,7 @@ def execute_batch_concern_evaluation(df: pd.DataFrame, system_prompt: str) -> No
         render_results_table(evaluation_results_df)
 
         # Store and download results
-        set_evaluation_results(evaluation_results_df)
+        # set_evaluation_results(evaluation_results_df) #TODO : dost it need?
 
         if not evaluation_results_df.empty:
             download_df = evaluation_results_df.drop(
@@ -236,8 +235,10 @@ def show_direct_input() -> None:
         st.header("📊 Analysis Results")
         with st.spinner("Analyzing code diff..."):
             model_name = get_model_name()
+            provider = get_api_provider()
             print(f"Model name: {model_name}")
             predicted_concern_types = llms.api_call(
+                provider=provider,
                 model_name=model_name,
                 commit=diff,
                 system_prompt=system_prompt,
@@ -290,6 +291,7 @@ def show_csv_input() -> None:
     )
 
     if submitted:
+        print("shot_type", shot_type, "include_message", include_message)
         test_dataset = load_dataset(selected_dataset)
         if not test_dataset.empty:
             st.success(

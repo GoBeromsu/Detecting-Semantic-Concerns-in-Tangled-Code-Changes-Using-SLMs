@@ -2,7 +2,7 @@ import json
 import logging
 import random
 from pathlib import Path
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, Tuple
 import pandas as pd
 import numpy as np
 import tiktoken
@@ -10,10 +10,9 @@ import tiktoken
 # Configuration constants
 DATASET_PATH = Path("data/sampled_ccs_dataset.csv")
 CASES_PER_CONCERN_COUNT = 350
-CONCERN_COUNTS = [1, 2, 3]
+CONCERN_COUNTS = [1, 2, 3, 4, 5]
 TOTAL_CASES = CASES_PER_CONCERN_COUNT * len(CONCERN_COUNTS)
 SEED = 42
-OUTPUT_PATH = Path("data/tangled_ccs_dataset.csv")
 
 # Token limit for diff size (16384 - 4096 = 12288)
 MAX_DIFF_TOKENS = 12288
@@ -54,8 +53,10 @@ def load_dataset(file_path: Path) -> pd.DataFrame:
     return df
 
 
-def preprocess_dataset(df: pd.DataFrame) -> Dict[str, np.ndarray]:
-    """Preprocess raw dataset: rename columns, filter, and group by concern type."""
+def preprocess_dataset(
+    df: pd.DataFrame,
+) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    """Preprocess raw dataset: rename columns, filter, and split into train/test by concern type."""
     df_processed = df.rename(columns=COLUMN_MAPPING)
     logging.info(
         f"Renamed columns: {list(COLUMN_MAPPING.keys())} -> {list(COLUMN_MAPPING.values())}"
@@ -67,17 +68,31 @@ def preprocess_dataset(df: pd.DataFrame) -> Dict[str, np.ndarray]:
     # Convert to NumPy structured array - eliminates pandas overhead, reduces memory usage
     data_array = df_processed.to_records(index=False)
 
-    grouped_by_type = {}
+    # Split data into train/test for each concern type
+    train_data = {}
+    test_data = {}
+
     for concern_type in CONCERN_TYPES:
+        # Step 1: Get all data for this concern type
         type_mask = data_array["type"] == concern_type
         type_data = data_array[type_mask]
 
-        grouped_by_type[concern_type] = type_data
-        logging.info(
-            f"Preprocessed {concern_type}: {len(type_data)} records ready for sampling"
-        )
+        # Step 2: Shuffle the data randomly (using numpy random)
+        shuffled_indices = np.random.permutation(len(type_data))
+        shuffled_data = type_data[shuffled_indices]
 
-    return grouped_by_type
+        # Step 3: Calculate split point (80% for train, 20% for test)
+        train_size = int(len(shuffled_data) * 0.8)
+
+        # Step 4: Split using array slicing
+        train_data[concern_type] = shuffled_data[:train_size]
+        test_data[concern_type] = shuffled_data[train_size:]
+
+        logging.info(
+            f"Split {concern_type}: {len(train_data[concern_type])} train, {len(test_data[concern_type])} test "
+            f"(total: {len(type_data)})"
+        )
+    return train_data, test_data
 
 
 def generate_cases_for_concern_count(
@@ -173,11 +188,13 @@ def generate_tangled_cases(grouped_data: Dict[str, np.ndarray]) -> List[Dict[str
     Returns:
         List of generated tangled change cases
     """
+    target_concern_counts = sum(len(data) for data in grouped_data.values())
+
     all_cases = [
         case
         for concern_count in CONCERN_COUNTS
         for case in generate_cases_for_concern_count(
-            grouped_data, concern_count, CASES_PER_CONCERN_COUNT
+            grouped_data, concern_count, target_concern_counts
         )
     ]
 
@@ -185,55 +202,26 @@ def generate_tangled_cases(grouped_data: Dict[str, np.ndarray]) -> List[Dict[str
     return all_cases
 
 
-def save_to_csv(data: List[Dict[str, Any]], output_path: Path) -> None:
-    """Save data to CSV file."""
+def save_to_csv(data: List[Dict[str, Any]], target: str) -> None:
+    """Save data to CSV file with target-specific filename."""
+    # Generate filename based on target: tangled_ccs_dataset_train.csv or tangled_ccs_dataset_test.csv
+    output_path = Path(f"data/tangled_ccs_dataset_{target}.csv")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Create DataFrame and save to CSV using pandas
     df = pd.DataFrame(data, columns=OUTPUT_COLUMNS)
     df.to_csv(output_path, index=False, encoding="utf-8")
 
-    logging.info(f"Saved {len(data)} records to {output_path}")
-
-
-def print_detailed_summary(cases: List[Dict[str, Any]]) -> None:
-    """Print detailed summary of generated cases."""
-    df = pd.DataFrame(cases)
-
-    print(f"\nGenerated {len(cases)} total tangled cases:")
-    print(f"Target: {TOTAL_CASES} cases ({CASES_PER_CONCERN_COUNT} per concern count)")
-
-    # Concern count distribution
-    concern_counts = df["concern_count"].value_counts().sort_index()
-    print(f"\nConcern count distribution:")
-    for concern_count, count in concern_counts.items():
-        percentage = (count / len(cases)) * 100
-        print(f"  {concern_count} concerns: {count} cases ({percentage:.1f}%)")
-
-    # Type combination distribution by concern count
-    print(f"\nType combination distribution:")
-
-    for concern_count in sorted(CONCERN_COUNTS):
-        concern_cases = df[df["concern_count"] == concern_count]
-        print(f"\n  {concern_count} concern combinations:")
-
-        concern_combinations = []
-        for case_types_str in concern_cases["types"]:
-            case_types = json.loads(case_types_str)
-            normalized_combination = "+".join(sorted(case_types))
-            concern_combinations.append(normalized_combination)
-
-        combination_counts = pd.Series(concern_combinations).value_counts()
-        for combination, count in combination_counts.items():
-            percentage = (count / len(concern_cases)) * 100
-            print(f"    {combination}: {count} cases ({percentage:.1f}%)")
+    logging.info(f"Saved {len(data)} {target} records to {output_path}")
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    logging.info("Starting complete CSS tangled dataset generation.")
-    logging.info(f"Target: {CASES_PER_CONCERN_COUNT} cases per concern count (1, 2, 3)")
-    logging.info(f"Total target cases: {TOTAL_CASES}")
+    logging.info(
+        "Starting complete CSS tangled dataset generation with train/test split."
+    )
+    logging.info(f"Target: {CASES_PER_CONCERN_COUNT} cases per concern count (1-5)")
+    logging.info(f"Total target cases per split: {TOTAL_CASES}")
     logging.info(f"Known concern types: {CONCERN_TYPES}")
 
     # Set global random seeds for complete reproducibility
@@ -243,17 +231,18 @@ def main() -> None:
     # Step 1: Load raw dataset from CSV
     df = load_dataset(DATASET_PATH)
 
-    # Step 2: Preprocess dataset (rename, filter, group by type)
-    grouped_data = preprocess_dataset(df)
+    # Step 2: Preprocess dataset and split into train/test (8:2 ratio)
+    train_data, test_data = preprocess_dataset(df)
 
     # Step 3: Generate tangled cases using preprocessed data
-    cases = generate_tangled_cases(grouped_data)
+    train_cases = generate_tangled_cases(train_data)
+    test_cases = generate_tangled_cases(test_data)
 
-    # Step 4: Save results to CSV
-    save_to_csv(cases, OUTPUT_PATH)
+    # Save to target-specific CSV file
+    save_to_csv(train_cases, "train")
+    save_to_csv(test_cases, "test")
 
-    # Step 5: Print detailed summary
-    print_detailed_summary(cases)
+    # TODO: Hugging face upload
 
 
 if __name__ == "__main__":

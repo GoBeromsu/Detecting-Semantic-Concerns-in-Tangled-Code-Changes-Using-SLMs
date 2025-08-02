@@ -7,10 +7,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import outlines
 from outlines.inputs import Chat
 from huggingface_hub import scan_cache_dir
-from .constant import (
-    DEFAULT_TEMPERATURE,
-    DEFAULT_MAX_TOKENS,
-)
+from .constant import DEFAULT_TEMPERATURE
 
 
 class ConcernResponse(BaseModel):
@@ -67,7 +64,6 @@ def api_call(
     commit: str,
     system_prompt: str,
     temperature: float = DEFAULT_TEMPERATURE,
-    max_tokens: int = DEFAULT_MAX_TOKENS,
 ) -> List[str]:
     """
     Call Hugging Face API for commit classification with ChatML format.

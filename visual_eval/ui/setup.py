@@ -6,7 +6,6 @@ from utils.llms.hugging_face import get_models
 from utils.llms.constant import DEFAULT_OPENAI_MODEL
 from .session import (
     set_api_provider,
-    get_model_name,
 )
 
 
@@ -62,13 +61,6 @@ def render_api_setup_sidebar() -> bool:
         True if setup successful, False otherwise
     """
     st.header("🔧 Setup")
-
-    # Show current model status for debugging
-    current_model = get_model_name()
-    if current_model:
-        st.info(f"**Current Model:** {current_model}")
-    else:
-        st.warning("⚠️ No model selected")
 
     api_provider = st.selectbox(
         "Select API Provider:",
