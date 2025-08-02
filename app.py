@@ -279,7 +279,6 @@ def show_csv_input() -> None:
     shot_type = st.session_state.get("global_shot_type", "Two-shot")
     include_message = st.session_state.get("global_include_message", True)
     system_prompt = get_prompt_by_type(shot_type, include_message)
-
     selected_dataset = st.selectbox(
         "📊 Test Dataset",
         available_dataset_files,
@@ -292,6 +291,7 @@ def show_csv_input() -> None:
 
     if submitted:
         print("shot_type", shot_type, "include_message", include_message)
+        print("system_prompt", system_prompt)
         test_dataset = load_dataset(selected_dataset)
         if not test_dataset.empty:
             st.success(
