@@ -28,11 +28,6 @@ def get_model_name() -> str:
     return st.session_state.get(MODEL_NAME_KEY, "")
 
 
-def get_available_models() -> List[str]:
-    """Get list of available LM Studio models."""
-    return st.session_state.get(AVAILABLE_MODELS_KEY, [])
-
-
 def set_evaluation_results(results_df: pd.DataFrame) -> None:
     """Store final evaluation results in session."""
     st.session_state[EVALUATION_RESULTS_KEY] = results_df

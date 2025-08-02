@@ -100,7 +100,6 @@ def process_single_case(row: pd.Series, system_prompt: str) -> Dict[str, Any]:
         # Get model prediction
         model_name = get_model_name()
         provider = get_api_provider()
-        print(f"Model name: {model_name}")
         predicted_concern_types = llms.api_call(
             provider=provider,
             model_name=model_name,
@@ -199,7 +198,7 @@ def execute_batch_concern_evaluation(df: pd.DataFrame, system_prompt: str) -> No
         render_results_table(evaluation_results_df)
 
         # Store and download results
-        set_evaluation_results(evaluation_results_df)
+        # set_evaluation_results(evaluation_results_df) #TODO : dost it need?
 
         if not evaluation_results_df.empty:
             download_df = evaluation_results_df.drop(
@@ -292,6 +291,7 @@ def show_csv_input() -> None:
     )
 
     if submitted:
+        print("shot_type", shot_type, "include_message", include_message)
         test_dataset = load_dataset(selected_dataset)
         if not test_dataset.empty:
             st.success(
