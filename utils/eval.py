@@ -9,6 +9,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 from collections import Counter
+import numpy as np
+from sklearn.metrics import multilabel_confusion_matrix, precision_recall_fscore_support
+from sklearn.preprocessing import MultiLabelBinarizer
+
+from utils.llms.constant import COMMIT_TYPES
 
 
 def measure_inference_time(func: Callable) -> Tuple[Any, float]:
@@ -68,9 +73,7 @@ def get_tp_fp_fn(
     predicted_types: List[str], actual_types: List[str]
 ) -> Tuple[int, int, int]:
     """
-    Core logic: Calculate TP, FP, FN using strict multiset matching.
-
-    This exposes the fundamental metric calculation that counts exact occurrences.
+    Calculate TP, FP, FN using sklearn multilabel_confusion_matrix.
 
     Args:
         predicted_types: List of predicted concern types
@@ -79,14 +82,20 @@ def get_tp_fp_fn(
     Returns:
         Tuple of (true_positives, false_positives, false_negatives)
     """
-    predicted_counter = Counter(predicted_types)
-    actual_counter = Counter(actual_types)
+    # Convert to binary format
+    mlb = MultiLabelBinarizer(classes=COMMIT_TYPES)
+    mlb.fit([COMMIT_TYPES])  # Fit with all possible classes
+    y_true = mlb.transform([actual_types])
+    y_pred = mlb.transform([predicted_types])
 
-    all_types = set(predicted_counter.keys()) | set(actual_counter.keys())
+    # Get confusion matrices for each label
+    mcm = multilabel_confusion_matrix(y_true, y_pred, labels=range(len(COMMIT_TYPES)))
 
-    tp = sum(min(predicted_counter[t], actual_counter[t]) for t in all_types)
-    fp = sum(max(0, predicted_counter[t] - actual_counter[t]) for t in all_types)
-    fn = sum(max(0, actual_counter[t] - predicted_counter[t]) for t in all_types)
+    # Sum across all labels: mcm shape is (n_labels, 2, 2)
+    # mcm[i] = [[tn, fp], [fn, tp]] for label i
+    tp = int(mcm[:, 1, 1].sum())  # True positives
+    fp = int(mcm[:, 0, 1].sum())  # False positives
+    fn = int(mcm[:, 1, 0].sum())  # False negatives
 
     return tp, fp, fn
 
@@ -95,9 +104,7 @@ def calculate_metrics(
     predicted_types: List[str], actual_types: List[str]
 ) -> Dict[str, float]:
     """
-    Calculate precision, recall, F1 from predicted and actual types.
-
-    This is the canonical metric calculation function for concern type evaluation.
+    Calculate precision, recall, F1 using sklearn multilabel metrics.
 
     Args:
         predicted_types: List of predicted concern types
@@ -108,16 +115,17 @@ def calculate_metrics(
     """
     tp, fp, fn = get_tp_fp_fn(predicted_types, actual_types)
 
+    # Exact match check
+    exact_match = Counter(predicted_types) == Counter(actual_types)
+
+    # Calculate precision, recall, f1
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
     f1 = (
-        2 * (precision * recall) / (precision + recall)
+        2 * precision * recall / (precision + recall)
         if (precision + recall) > 0
         else 0.0
     )
-
-    # Exact match check
-    exact_match = Counter(predicted_types) == Counter(actual_types)
 
     return {
         "precision": precision,

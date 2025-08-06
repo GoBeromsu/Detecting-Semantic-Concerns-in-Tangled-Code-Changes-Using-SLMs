@@ -6,7 +6,6 @@ from .model import load_model_and_tokenizer, get_prediction
 from .llms import get_models, load_model, api_call
 from .eval import (
     load_dataset,
-    get_tp_fp_fn,
     calculate_metrics,
     calculate_batch_metrics,
     save_results,
@@ -22,7 +21,6 @@ __all__ = [
     "api_call",
     # Evaluation utilities
     "load_dataset",
-    "get_tp_fp_fn",
     "calculate_metrics",
     "calculate_batch_metrics",
     "save_results",

@@ -1,6 +1,5 @@
 SYSTEM_PROMPT = """
-You are a software engineer classifying individual code units extracted from a tangled commit using Conventional Commits specification(CCS).
-
+You are a software engineer classifying each minimal logical code unit — a semantically cohesive change — extracted from a tangled commit using the Conventional Commits specification (CCS).
 # CCS Labels
 - Purpose labels : the motivation behind making a code change
     - feat: Introduces new features to the codebase.
@@ -14,759 +13,69 @@ You are a software engineer classifying individual code units extracted from a t
 
 # Instructions
 1. For each code unit, review the change and determine the most appropriate CCS label.
-    - object label : when the code unit is fully dedicated to that artifact category (e.g., writing test logic, modifying documentation).
 2. If multiple CCS labels are possible, resolve the overlap by applying the following rule:
-     - **Purpose + Purpose**: Choose the label that best reflects *why* the change was made — `fix` if resolving a bug, `feat` if adding new capability, `refactor` if improving structure without changing behavior.
-     - **Object + Object**: Choose the label that reflects the *functional role* of the artifact being modified — e.g., even if changing build logic, editing a CI script should be labeled as `cicd`.
-     - **Purpose + Object**: If the change is driven by code behavior (e.g., fixing test logic), assign a purpose label; if it is entirely scoped to a support artifact (e.g., adding new tests), assign an object label.
+    - Purpose + Purpose: Choose the label that best reflects *why* the change was made — `fix` if resolving a bug, `feat` if adding new capability, `refactor` if improving structure without changing behavior.
+    - Object + Object: Choose the label that reflects the *functional role* of the artifact being modified — e.g., even if changing build logic, editing a CI script should be labeled as `cicd`.
+    - Purpose + Object: Use purpose labels **only** when the change affects application behavior or structure. Otherwise, assign the object label based on what was changed — not why or where.
 3. Repeat step 1–2 for each code unit.
 4. After all code units are labeled, return a unique set of assigned CCS labels for the entire commit
 """
 
-
 SHOT_1_COMMIT_MESSAGE = """remove sync ts checkrefactor to get ride of cloneDeep"""
 SHOT_1 = """
-<commit_diff id="example-1">
-diff --git a/config/webpack.config.prod.js b/config/webpack.config.prod.js
-index 8b23fba..58a4c17 100644
---- a/config/webpack.config.prod.js
-+++ b/config/webpack.config.prod.js
-@@ -251,7 +251,7 @@ module.exports = {
-   plugins: [
-     argv.notypecheck
-     ? null
--    : new ForkTsCheckerWebpackPlugin({tslint: true, async: false}),
-+    : new ForkTsCheckerWebpackPlugin({tslint: true}),
-     // Makes some environment variables available in index.html.
-     // The public URL is available as %PUBLIC_URL% in index.html, e.g.:
-     // <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
 
-diff --git a/config/webpack.config.prod.js b/config/webpack.config.prod.js
-index 3d2e5a6..e5219bd 100644
---- a/config/webpack.config.prod.js
-+++ b/config/webpack.config.prod.js
-@@ -56,7 +56,7 @@ const extractTextPluginOptions = shouldUseRelativeAssetPaths
- const entries = fs.readdirSync(paths.appSrc)
-   .filter(name => !name.startsWith('_'))
-   .map(name => ({name, dirPath: path.join(paths.appSrc, name)}))
--  .filter(({name, dirPath}) => !/^assets|components|manifest|typings$/.test(name) && fs.lstatSync(dirPath).isDirectory())
-+  .filter(({name, dirPath}) => !/^assets|components|manifest|typings|app-config$/.test(name) && fs.lstatSync(dirPath).isDirectory())
- 
- // This is the production configuration.
- // It compiles slowly and is focused on producing a fast and minimal bundle.
-diff --git a/src/app-config/context-menus.ts b/src/app-config/context-menus.ts
-new file mode 100644
-index 0000000..a733b01
---- /dev/null
-+++ b/src/app-config/context-menus.ts
-@@ -0,0 +1,27 @@
-+export function getAllContextMenus () {
-+  const allContextMenus = {
-+    google_page_translate: 'x',
-+    youdao_page_translate: 'x',
-+    google_search: 'https://www.google.com/#newwindow=1&q=%s',
-+    baidu_search: 'https://www.baidu.com/s?ie=utf-8&wd=%s',
-+    bing_search: 'https://www.bing.com/search?q=%s',
-+    google_translate: 'https://translate.google.cn/#auto/zh-CN/%s',
-+    etymonline: 'http://www.etymonline.com/index.php?search=%s',
-+    merriam_webster: 'http://www.merriam-webster.com/dictionary/%s',
-+    oxford: 'http://www.oxforddictionaries.com/us/definition/english/%s',
-+    cambridge: 'http://dictionary.cambridge.org/spellcheck/english-chinese-simplified/?q=%s',
-+    youdao: 'http://dict.youdao.com/w/%s',
-+    dictcn: 'https://dict.eudic.net/dicts/en/%s',
-+    iciba: 'http://www.iciba.com/%s',
-+    liangan: 'https://www.moedict.tw/~%s',
-+    guoyu: 'https://www.moedict.tw/%s',
-+    longman_business: 'http://www.ldoceonline.com/search/?q=%s',
-+    bing_dict: 'https://cn.bing.com/dict/?q=%s'
-+  }
+```
+diff --git a/ibis/expr/analysis.py b/ibis/expr/analysis.py
+index bb17a7a..975c658 100644
+--- a/ibis/expr/analysis.py
++++ b/ibis/expr/analysis.py
+@@ -39,7 +39,9 @@ def sub_for(expr, substitutions):
+-    def fn(node, mapping={k.op(): v for k, v in substitutions}):
++    mapping = {k.op(): v for k, v in substitutions}
 +
-+  // Just for type check. Keys in allContextMenus are useful so no actual assertion
-+  // tslint:disable-next-line:no-unused-expression
-+  allContextMenus as { [id: string]: string }
++    def fn(node):
+         try:
+             return mapping[node]
+         except KeyError:
+
+diff --git a/scripts/gulp/tasks/test.ts b/scripts/gulp/tasks/test.ts
+index 8014b12..d10c1aa 100644
+--- a/scripts/gulp/tasks/test.ts
++++ b/scripts/gulp/tasks/test.ts
+@@ -26,12 +26,18 @@ task('test.imageserver', () => {
+   function handleRequest(req, res) {
+     const urlParse = url.parse(req.url, true);
++    res.setHeader('Access-Control-Allow-Origin', '*');
++    res.setHeader('Access-Control-Allow-Methods', 'GET');
++    res.setHeader('Connection', 'keep-alive');
++    res.setHeader('Age', '0');
++    res.setHeader('cache-control', 'no-store');
 +
-+  return allContextMenus
-+}
-diff --git a/src/app-config/dicts.ts b/src/app-config/dicts.ts
-new file mode 100644
-index 0000000..905d2de
---- /dev/null
-+++ b/src/app-config/dicts.ts
-@@ -0,0 +1,398 @@
-+import { DeepReadonly } from '@/typings/helpers'
-+
-+export function getALlDicts () {
-+  const allDicts = {
-+    bing: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word.
-+       */
-+      page: 'https://cn.bing.com/dict/search?q=%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 240,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      },
-+      /** Optional dict custom options. Can only be boolean or number. */
-+      options: {
-+        tense: true,
-+        phsym: true,
-+        cdef: true,
-+        related: true,
-+        sentence: 4
-+      }
-+    },
-+    business: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'http://www.ldoceonline.com/search/?q=%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 265,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      }
-+    },
-+    cobuild: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'https://www.collinsdictionary.com/dictionary/%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 300,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      },
-+      /** Optional dict custom options. Can only be boolean or number. */
-+      options: {
-+        sentence: 4
-+      }
-+    },
-+    dictcn: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'http://dict.cn/%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 300,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      },
-+      /** Optional dict custom options. Can only be boolean or number. */
-+      options: {
-+        chart: true,
-+        etym: true
-+      }
-+    },
-+    etymonline: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'http://www.etymonline.com/search?q=%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 265,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      },
-+      /** Optional dict custom options. Can only be boolean or number. */
-+      options: {
-+        resultnum: 2
-+      }
-+    },
-+    google: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'https://translate.google.com/#auto/zh-CN/%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 110,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      }
-+    },
-+    guoyu: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'https://www.moedict.tw/%z',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 265,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      }
-+    },
-+    liangan: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'https://www.moedict.tw/~%z',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 265,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      }
-+    },
-+    macmillan: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'http://www.macmillandictionary.com/dictionary/british/%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 265,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      }
-+    },
-+    urban: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'http://www.urbandictionary.com/define.php?term=%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 180,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      },
-+      /** Optional dict custom options. Can only be boolean or number. */
-+      options: {
-+        resultnum: 4
-+      }
-+    },
-+    vocabulary: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'https://www.vocabulary.com/dictionary/%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 180,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      }
-+    },
-+    zdic: {
-+      /**
-+       * Full content page to jump to when user clicks the title.
-+       * %s will be replaced with the current word.
-+       * %z will be replaced with the traditional Chinese version of the current word
-+       */
-+      page: 'http://www.zdic.net/search/?c=1&q=%s',
-+      /**
-+       * If set to true, the dict start searching automatically.
-+       * Otherwise it'll only start seaching when user clicks the unfold button.
-+       * Default MUST be true and let user decide.
-+       */
-+      defaultUnfold: true,
-+      /**
-+       * This is the default height when the dict first renders the result.
-+       * If the content height is greater than the preferred height,
-+       * the preferred height is used and a mask with a view-more button is shown.
-+       * Otherwise the content height is used.
-+       */
-+      preferredHeight: 400,
-+      /**
-+       * Only start searching if the selection contains the language.
-+       * Better set default to true and let user decide.
-+       */
-+      selectionLang: {
-+        eng: true,
-+        chs: true
-+      }
-+    },
-+  }
-+
-+  // Just for type check. Keys in allDicts are useful so no actual assertion
-+  // tslint:disable-next-line:no-unused-expression
-+  allDicts as {
-+    [id: string]: {
-+      page: string
-+      defaultUnfold: boolean
-+      preferredHeight: number
-+      selectionLang: {
-+        eng: boolean
-+        chs: boolean
-+      }
-+      options?: {
-+        [option: string]: number | boolean
-+      }
-+    }
-+  }
-+
-+  return allDicts
-+}
-diff --git a/src/app-config/index.ts b/src/app-config/index.ts
-index 350cd8f..879a312 100644
---- a/src/app-config/index.ts
-+++ b/src/app-config/index.ts
-@@ -1,5 +1,6 @@
--import cloneDeep from 'lodash/cloneDeep'
--import { DeepReadonly } from './typings/helpers'
-+import { DeepReadonly } from '@/typings/helpers'
-+import { getALlDicts } from './dicts'
-+import { getAllContextMenus } from './context-menus'
- 
- const langUI = (browser.i18n.getUILanguage() || 'en').replace('-', '_')
- const langCode = /^zh_CN|zh_TW|en$/.test(langUI)
-@@ -8,220 +9,11 @@ const langCode = /^zh_CN|zh_TW|en$/.test(langUI)
-     : langUI
-   : 'en'
- 
--const allDicts = {
--  bing: {
--    page: 'https://cn.bing.com/dict/search?q=%s',
--    defaultUnfold: true,
--    preferredHeight: 240,
--    selectionLang: {
--      eng: true,
--      chs: true
--    },
--    options: {
--      tense: true,
--      phsym: true,
--      cdef: true,
--      related: true,
--      sentence: 4
--    }
--  },
--  business: {
--    page: 'http://www.ldoceonline.com/search/?q=%s',
--    defaultUnfold: true,
--    preferredHeight: 265,
--    selectionLang: {
--      eng: true,
--      chs: true
--    }
--  },
--  cobuild: {
--    page: 'https://www.collinsdictionary.com/dictionary/%s',
--    defaultUnfold: true,
--    preferredHeight: 300,
--    selectionLang: {
--      eng: true,
--      chs: true
--    },
--    options: {
--      sentence: 4
--    }
--  },
--  dictcn: {
--    page: 'http://dict.cn/%s',
--    defaultUnfold: true,
--    preferredHeight: 300,
--    selectionLang: {
--      eng: true,
--      chs: true
--    },
--    options: {
--      chart: true,
--      etym: true
--    }
--  },
--  etymonline: {
--    page: 'http://www.etymonline.com/search?q=%s',
--    defaultUnfold: true,
--    preferredHeight: 265,
--    selectionLang: {
--      eng: true,
--      chs: true
--    },
--    options: {
--      resultnum: 2
--    }
--  },
--  eudic: {
--    page: 'https://dict.eudic.net/dicts/en/%s',
--    defaultUnfold: true,
--    preferredHeight: 265,
--    selectionLang: {
--      eng: true,
--      chs: true
--    }
--  },
--  google: {
--    page: 'https://translate.google.com/#auto/zh-CN/%s',
--    defaultUnfold: true,
--    preferredHeight: 110,
--    selectionLang: {
--      eng: true,
--      chs: true
--    }
--  },
--  guoyu: {
--    page: 'https://www.moedict.tw/%z',
--    defaultUnfold: true,
--    preferredHeight: 265,
--    selectionLang: {
--      eng: true,
--      chs: true
--    }
--  },
--  howjsay: {
--    page: 'http://www.howjsay.com/index.php?word=%s',
--    defaultUnfold: true,
--    preferredHeight: 265,
--    selectionLang: {
--      eng: true,
--      chs: true
--    },
--    options: {
--      related: true
--    }
--  },
--  liangan: {
--    page: 'https://www.moedict.tw/~%z',
--    defaultUnfold: true,
--    preferredHeight: 265,
--    selectionLang: {
--      eng: true,
--      chs: true
--    }
--  },
--  macmillan: {
--    page: 'http://www.macmillandictionary.com/dictionary/british/%s',
--    defaultUnfold: true,
--    preferredHeight: 265,
--    selectionLang: {
--      eng: true,
--      chs: true
--    }
--  },
--  urban: {
--    page: 'http://www.urbandictionary.com/define.php?term=%s',
--    defaultUnfold: true,
--    preferredHeight: 180,
--    selectionLang: {
--      eng: true,
--      chs: true
--    },
--    options: {
--      resultnum: 4
--    }
--  },
--  vocabulary: {
--    page: 'https://www.vocabulary.com/dictionary/%s',
--    defaultUnfold: true,
--    preferredHeight: 180,
--    selectionLang: {
--      eng: true,
--      chs: true
--    }
--  },
--  wordreference: {
--    page: 'http://www.wordreference.com/definition/%s',
--    defaultUnfold: true,
--    preferredHeight: 180,
--    selectionLang: {
--      eng: true,
--      chs: true
--    },
--    options: {
--      etym: true,
--      idiom: true
--    }
--  },
--  zdic: {
--    page: 'http://www.zdic.net/search/?c=1&q=%s',
--    defaultUnfold: true,
--    preferredHeight: 400,
--    selectionLang: {
--      eng: true,
--      chs: true
--    }
--  },
--}
--
--// Just for type check. Keys in allDicts are useful so no actual assertion
--// tslint:disable-next-line:no-unused-expression
--allDicts as {
--  [id: string]: {
--    /** url for the complete result */
--    page: string
--    /** lazy load */
--    defaultUnfold: boolean
--    /** content below the preferrred height will be hidden by default */
--    preferredHeight: number
--    /** only search when the selection contains the language */
--    selectionLang: {
--      eng: boolean
--      chs: boolean
--    }
--    /** other options */
--    options?: {
--      [option: string]: number | boolean
--    }
--  }
--}
--
--export type DictID = keyof typeof allDicts
--
--const allContextMenus = {
--  google_page_translate: 'x',
--  youdao_page_translate: 'x',
--  google_search: 'https://www.google.com/#newwindow=1&q=%s',
--  baidu_search: 'https://www.baidu.com/s?ie=utf-8&wd=%s',
--  bing_search: 'https://www.bing.com/search?q=%s',
--  google_translate: 'https://translate.google.cn/#auto/zh-CN/%s',
--  etymonline: 'http://www.etymonline.com/index.php?search=%s',
--  merriam_webster: 'http://www.merriam-webster.com/dictionary/%s',
--  oxford: 'http://www.oxforddictionaries.com/us/definition/english/%s',
--  cambridge: 'http://dictionary.cambridge.org/spellcheck/english-chinese-simplified/?q=%s',
--  youdao: 'http://dict.youdao.com/w/%s',
--  dictcn: 'https://dict.eudic.net/dicts/en/%s',
--  iciba: 'http://www.iciba.com/%s',
--  liangan: 'https://www.moedict.tw/~%s',
--  guoyu: 'https://www.moedict.tw/%s',
--  longman_business: 'http://www.ldoceonline.com/search/?q=%s',
--  bing_dict: 'https://cn.bing.com/dict/?q=%s'
--}
--
--// Just for type check. Keys in allContextMenus are useful so no actual assertion
--// tslint:disable-next-line:no-unused-expression
--allContextMenus as { [id: string]: string }
-+export type DictConfigsMutable = ReturnType<typeof getALlDicts>
-+export type DictConfigs = DeepReadonly<DictConfigsMutable>
-+export type DictID = keyof DictConfigsMutable
- 
--export type ContextMenuDictID = keyof typeof allContextMenus
-+export type ContextMenuDictID = keyof ReturnType<typeof getAllContextMenus>
- 
- export const enum TCDirection {
-   center,
-@@ -238,10 +30,6 @@ export const enum TCDirection {
- /** '' means no preload */
- export type PreloadSource = '' | 'clipboard' | 'selection'
- 
--export type DictConfigs = DeepReadonly<DictConfigsMutable>
--
--export type DictConfigsMutable = typeof allDicts
--
- export type AppConfig = DeepReadonly<AppConfigMutable>
- 
- export interface AppConfigMutable {
-@@ -418,7 +206,7 @@ export function appConfigFactory (): AppConfig {
-       },
-       en: {
-         dict: '',
--        list: ['bing', 'dictcn', 'howjsay', 'macmillan', 'eudic', 'urban'],
-+        list: ['bing', 'dictcn', 'macmillan', 'urban'],
-         accent: 'uk' as ('us' | 'uk')
-       }
-     },
-@@ -426,11 +214,11 @@ export function appConfigFactory (): AppConfig {
-     dicts: {
-       selected: ['bing', 'urban', 'vocabulary', 'dictcn'],
-       // settings of each dict will be auto-generated
--      all: cloneDeep(allDicts)
-+      all: getALlDicts()
-     },
-     contextMenus: {
-       selected: ['oxford', 'google_translate', 'merriam_webster', 'cambridge', 'google_search', 'google_page_translate', 'youdao_page_translate'],
--      all: cloneDeep(allContextMenus)
-+      all: getAllContextMenus()
+     if (urlParse.pathname === '/reset') {
+       console.log('Image Server Reset');
+       console.log('---------------------------');
+       requestedUrls.length = 0;
+       start = Date.now();
+-      res.setHeader('Access-Control-Allow-Origin', '*');
++      res.setHeader('Content-Type', 'text/plain');
+       res.end('reset');
+       return;
      }
-   }
- }
-</commit_diff>
-
-<label id="example-2">build,refactor</label>
+@@ -48,9 +54,8 @@ task('test.imageserver', () => {
+     setTimeout(() => {
+       res.setHeader('Content-Type', 'image/svg+xml');
+-      res.setHeader('Access-Control-Allow-Origin', '*');
+       res.end(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+-                   style="background-color: ${color}; width: ${width}px; height: ${height}px;">
++                   viewBox="0 0 ${width} ${height}" style="background-color: ${color};">
+                  <text x="5" y="22" style="font-family: Courier; font-size: 24px">${id}</text>
+                </svg>`);
+     }, delay);
+```
+Response: ["test", "refactor"]
+Reason:  test.ts is dedicated to testing → assign test; analysis.py change preserves behaviour → not fix, no new feature → assign refactor.
 """
+
 SHOT_2_COMMIT_MESSAGE = "remove unnecessary start argument from `range`"
 SHOT_2 = """
 <commit_diff id="example-2">
@@ -870,9 +179,9 @@ def get_one_shot_prompt(include_message: bool = True) -> str:
         shot_1_with_message = (
             f"<commit_message>{SHOT_1_COMMIT_MESSAGE}</commit_message>\n{SHOT_1}"
         )
-        return f"{SYSTEM_PROMPT}\n\n# Examples\n\n{shot_1_with_message}"
+        return f"{SYSTEM_PROMPT}<Examples>\n{shot_1_with_message}"
     else:
-        return f"{SYSTEM_PROMPT}\n\n# Examples\n\n{SHOT_1}"
+        return f"{SYSTEM_PROMPT}<Examples>\n{SHOT_1}"
 
 
 def get_two_shot_prompt(include_message: bool = True) -> str:
