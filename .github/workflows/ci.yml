@@ -22,7 +22,7 @@ jobs:
         run: pip install uv
 
       - name: Install dependencies
-        run: uv sync
+        run: uv pip install '.[dev]'
 
       - name: Run tests
         run: uv run pytest __test__/ -v
