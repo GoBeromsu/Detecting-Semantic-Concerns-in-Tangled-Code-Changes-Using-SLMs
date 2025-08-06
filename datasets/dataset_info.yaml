@@ -28,3 +28,16 @@ configs:
         dtype: string
       - name: types
         dtype: string
+
+  - config_name: original
+    data_files:
+      - data/sampled_ccs_dataset.csv
+    features:
+      - name: annotated_type
+        dtype: string
+      - name: masked_commit_message
+        dtype: string
+      - name: git_diff
+        dtype: string
+      - name: sha
+        dtype: string
