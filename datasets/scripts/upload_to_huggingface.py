@@ -15,7 +15,7 @@ load_dotenv()
 
 DATASET_REPO_ID = os.getenv(
     "DATASET_REPO_ID",
-    "Berom0227/Untangling-Multi-Concern-Commits-with-Small-Language-Models",
+    "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs",
 )
 DATASETS_PATH = Path(__file__).parent.parent
 DATA_PATH = DATASETS_PATH / "data"
