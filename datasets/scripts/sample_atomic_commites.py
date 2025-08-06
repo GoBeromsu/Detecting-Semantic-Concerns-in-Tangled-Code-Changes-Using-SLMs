@@ -265,7 +265,7 @@ def main() -> None:
     
     for commit_type, commits_df in commits_by_type.items():
         existing_type_count = existing_type_counts.get(commit_type, 0)
-        needed_count = max(0, SAMPLES_PER_TYPE - existing_type_count)
+        needed_count = max(0, SAMPLES_PER_TYPE - existing_type_count) # Skip if target reached
         available_type_count = len(commits_df)
         actual_sample_count = min(needed_count, available_type_count)
         
