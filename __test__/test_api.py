@@ -1,47 +1,54 @@
 """Test module for API call functionality."""
 
 import pytest
-from unittest.mock import patch, MagicMock, Mock
-import sys
+from unittest.mock import MagicMock
 
-# Mock external dependencies before importing
-sys.modules["lmstudio"] = Mock()
-sys.modules["outlines"] = Mock()
-sys.modules["torch"] = Mock()
-sys.modules["transformers"] = Mock()
-sys.modules["huggingface_hub"] = Mock()
 
-from utils.llms.lmstudio import api_call
-from utils.llms.constant import COMMIT_TYPES
+@pytest.fixture
+def lmstudio_mock(monkeypatch):
+    """Mock the lmstudio module chain for API testing."""
+    mock_lms = MagicMock()
+    monkeypatch.setattr("utils.llms.lmstudio.lms", mock_lms)
+    return mock_lms
 
 
 class TestApiCall:
     """Test cases for api_call function."""
 
-    @patch("utils.llms.lmstudio.load_model")
-    def test_api_call_success(self, mock_load_model):
+    def test_api_call_success(self, lmstudio_mock):
         """Should successfully call API and return concern types."""
-        # Mock model and response
+        # Import after fixtures are applied
+        from utils.llms.lmstudio import api_call
+        from utils.llms.constant import COMMIT_TYPES
+        
+        # Arrange
+        expected_types = [COMMIT_TYPES[0], COMMIT_TYPES[1]]  # ["docs", "test"]
         mock_model = MagicMock()
         mock_response = MagicMock()
-        expected_types = [COMMIT_TYPES[0], COMMIT_TYPES[1]]  # ["docs", "test"]
-        mock_response.parsed.get.return_value = expected_types
+        mock_response.parsed = {"types": expected_types}
         mock_model.respond.return_value = mock_response
-        mock_load_model.return_value = mock_model
+        lmstudio_mock.llm.return_value = mock_model
 
+        # Act
         result = api_call("test_model", "test commit", "test system prompt")
 
-        # Verify result
+        # Assert
         assert result == expected_types
         assert isinstance(result, list)
         assert all(commit_type in COMMIT_TYPES for commit_type in result)
+        lmstudio_mock.llm.assert_called_once()
+        mock_model.respond.assert_called_once()
 
-    def test_api_call_raises_runtime_error_on_failure(self):
+    def test_api_call_raises_runtime_error_on_failure(self, lmstudio_mock):
         """Should raise RuntimeError when API call fails."""
-        with patch("utils.llms.lmstudio.load_model") as mock_load:
-            mock_load.side_effect = Exception("Load failed")
+        # Import after fixtures are applied
+        from utils.llms.lmstudio import api_call
+        
+        # Arrange
+        lmstudio_mock.llm.side_effect = Exception("Load failed")
 
-            with pytest.raises(
-                RuntimeError, match="An error occurred while calling LM Studio"
-            ):
-                api_call("test_model", "test commit", "test prompt")
+        # Act & Assert
+        with pytest.raises(
+            RuntimeError, match="An error occurred while calling LM Studio"
+        ):
+            api_call("test_model", "test commit", "test prompt")
