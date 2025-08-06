@@ -5,12 +5,13 @@ Applies atomic sampling strategy with token filtering and SHA deduplication.
 """
 
 import pandas as pd
+
 import tiktoken
 from typing import Dict, List, Set
 
 # Processing configuration
-CONVENTIONAL_COMMIT_TYPES: List[str] = ["cicd", "refactor", "fix", "test"]
-SAMPLES_PER_TYPE: int = 2
+CONVENTIONAL_COMMIT_TYPES: List[str] = ["feat", "fix", "refactor", "test", "docs", "build", "cicd"]
+SAMPLES_PER_TYPE: int = 50
 TARGET_TOKEN_LIMIT: int = 12288  # 16384 - 4096
 ENCODING_MODEL: str = "cl100k_base"  # GPT-4 encoding
 
@@ -30,8 +31,9 @@ OUTPUT_COLUMNS: List[str] = [
 CI_TO_CICD_REPLACEMENT: str = "cicd"
 
 # File paths
-CCS_SOURCE_PATH: str = "data/CCS Dataset Training Data.csv"
+CCS_SOURCE_PATH: str = "data/CCS Dataset.csv"
 SAMPLED_CSV_PATH: str = "data/sampled_ccs_dataset.csv"
+EXCLUDED_COMMITS_PATH: str = "data/excluded_commits.csv"
 DIFF_OUTPUT_DIR: str = "data/types"
 
 
@@ -91,7 +93,7 @@ def apply_sha_deduplication(df: pd.DataFrame, excluded_shas: Set[str]) -> pd.Dat
     return filtered_df
 
 
-def load_existing_shas(file_path: str) -> Set[str]:
+def load_shas(file_path: str) -> Set[str]:
     """Load existing SHAs from sampled dataset to exclude duplicates."""
     try:
         df = pd.read_csv(file_path)
@@ -223,6 +225,17 @@ def extract_diffs(sampled_data: List[Dict[str, str]], output_dir: str) -> None:
 
     print(f"Extracted {len(sampled_data)} diff files to {output_dir}")
 
+def remove_excluded_commits(df: pd.DataFrame, excluded_shas: Set[str]) -> pd.DataFrame:
+    """Remove excluded commits from dataset and print exclusion info."""
+    before_count = len(df)
+    print(f"Initial commit count: {before_count}")
+    mask = ~df[COLUMN_SHA].astype(str).isin(excluded_shas)
+    excluded_count = before_count - mask.sum()
+    print(f"Excluded {excluded_count} commits by SHA")
+    filtered_df = df[mask]
+    print(f"Remaining commit count: {len(filtered_df)}")
+    return filtered_df
+
 
 def main() -> None:
     """
@@ -239,8 +252,13 @@ def main() -> None:
 
     # Step 1: Load dataset and backup SHAs
     print("Step 1: Loading dataset and backup SHAs")
-    excluded_shas = load_existing_shas(SAMPLED_CSV_PATH)
+    existing_shas = load_shas(SAMPLED_CSV_PATH)
+    excluded_shas = load_shas(EXCLUDED_COMMITS_PATH)
     ccs_df = load_ccs_dataset(CCS_SOURCE_PATH)
+
+    # Step 2: Remove excluded commits
+    print("\nStep 2: Removing excluded commits")
+    ccs_df = remove_excluded_commits(ccs_df, excluded_shas)
 
     # Step 2: Apply CI->CICD normalization
     print("\nStep 2: Applying CI->CICD normalization")
@@ -252,7 +270,7 @@ def main() -> None:
 
     # Step 4: Apply SHA deduplication
     print("\nStep 4: Applying SHA deduplication")
-    ccs_df = apply_sha_deduplication(ccs_df, excluded_shas)
+    ccs_df = apply_sha_deduplication(ccs_df, existing_shas)
 
     # Step 5: Group by type and randomly sample
     print("\nStep 5: Grouping by type and random sampling")
