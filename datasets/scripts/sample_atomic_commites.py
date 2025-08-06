@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """
 Sample atomic commits from CCS dataset for concern extraction.
-Implements atomic sampling with token limits and SHA deduplication.
+Implements balanced sampling pipeline with filtering, normalization, and deduplication.
 """
 
 import pandas as pd
 
 import tiktoken
 from typing import Dict, List, Set
+
+# Random seed for reproducibility
+RANDOM_SEED: int = 42
 
 # Processing configuration
 CONVENTIONAL_COMMIT_TYPES: List[str] = ["feat", "fix", "refactor", "test", "docs", "build", "cicd"]
@@ -38,7 +41,7 @@ DIFF_OUTPUT_DIR: str = "data/types"
 
 
 def normalize_dataset(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize CI labels to CICD for consistent categorization."""
+    """Normalize CI commit type labels to CICD for consistent categorization."""
     df[COLUMN_ANNOTATED_TYPE] = (
         df[COLUMN_ANNOTATED_TYPE]
         .str.lower()
@@ -49,8 +52,8 @@ def normalize_dataset(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def apply_token_filtering(df: pd.DataFrame) -> pd.DataFrame:
-    """Filter commits exceeding token limit to prevent context overflow."""
+def remove_long_token_commits(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter out commits exceeding TARGET_TOKEN_LIMIT to prevent model context overflow."""
     encoding = tiktoken.get_encoding(ENCODING_MODEL)
 
     combined_text = (
@@ -70,8 +73,8 @@ def apply_token_filtering(df: pd.DataFrame) -> pd.DataFrame:
     return filtered_df
 
 
-def apply_sha_deduplication(df: pd.DataFrame, excluded_shas: Set[str]) -> pd.DataFrame:
-    """Remove previously sampled commits to avoid training data contamination."""
+def remove_existing_commits(df: pd.DataFrame, excluded_shas: Set[str]) -> pd.DataFrame:
+    """Remove commits with SHAs that already exist in the sampled dataset."""
     original_count = len(df)
     
     sha_mask = ~df[COLUMN_SHA].astype(str).isin(excluded_shas)
@@ -83,7 +86,7 @@ def apply_sha_deduplication(df: pd.DataFrame, excluded_shas: Set[str]) -> pd.Dat
 
 
 def load_shas(file_path: str) -> Set[str]:
-    """Load existing SHAs from sampled dataset to exclude duplicates."""
+    """Load commit SHAs from CSV file for deduplication purposes."""
     try:
         df = pd.read_csv(file_path)
         sha_set = set(df[COLUMN_SHA].astype(str))
@@ -98,7 +101,7 @@ def load_shas(file_path: str) -> Set[str]:
 
 
 def load_ccs_dataset(file_path: str) -> pd.DataFrame:
-    """Load and validate CCS dataset structure."""
+    """Load CCS dataset CSV and validate required columns exist."""
     try:
         df = pd.read_csv(file_path)
         if df.empty:
@@ -118,7 +121,7 @@ def load_ccs_dataset(file_path: str) -> pd.DataFrame:
 def save_to_csv(
     data: List[Dict[str, str]], output_path: str, columns: List[str]
 ) -> None:
-    """Append new samples to existing dataset or create new file."""
+    """Save sampled commit data to CSV file, appending if file exists."""
     import os
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -140,7 +143,7 @@ def save_to_csv(
 def group_commits_by_type(
     df: pd.DataFrame, valid_types: List[str]
 ) -> Dict[str, pd.DataFrame]:
-    """Group commits by concern type for balanced sampling."""
+    """Filter commits by valid types and group into separate DataFrames by type."""
     type_mask = df[COLUMN_ANNOTATED_TYPE].isin(valid_types)
     valid_df = df[type_mask].copy()
 
@@ -158,13 +161,13 @@ def group_commits_by_type(
 def sample_commits_for_type(
     df: pd.DataFrame, count: int, output_columns: List[str]
 ) -> List[Dict[str, str]]:
-    """Sample fixed number of commits per type for balanced dataset."""
-    sampled_df = df.sample(n=count, random_state=None)
+    """Randomly sample specified count of commits from DataFrame."""
+    sampled_df = df.sample(n=count, random_state=RANDOM_SEED)
     return sampled_df[output_columns].to_dict("records")
 
 
 def extract_diffs(sampled_data: List[Dict[str, str]], output_dir: str) -> None:
-    """Extract git diff files organized by type into separate directories."""
+    """Create individual diff files organized by commit type in subdirectories."""
     import os
 
     type_counts = {}
@@ -202,7 +205,7 @@ def extract_diffs(sampled_data: List[Dict[str, str]], output_dir: str) -> None:
     print(f"Extracted {len(sampled_data)} diff files to {output_dir}")
 
 def remove_excluded_commits(df: pd.DataFrame, excluded_shas: Set[str]) -> pd.DataFrame:
-    """Remove manually excluded commits based on quality issues."""
+    """Remove commits with SHAs listed in the excluded commits file."""
     before_count = len(df)
     print(f"Initial commit count: {before_count}")
     
@@ -217,13 +220,14 @@ def remove_excluded_commits(df: pd.DataFrame, excluded_shas: Set[str]) -> pd.Dat
 
 def main() -> None:
     """
-    Main function implementing atomic sampling strategy:
-    1. Load dataset and backup SHAs
-    2. Apply CI->CICD normalization
-    3. Apply token-based filtering
-    4. Apply SHA deduplication
-    5. Group by type and randomly sample
-    6. Save results and extract diffs
+    Execute atomic sampling pipeline for CCS dataset:
+    1. Load dataset and existing SHAs for deduplication
+    2. Remove excluded commits by SHA
+    3. Remove existing commits to prevent duplicates
+    4. Normalize CI commit types to CICD
+    5. Filter commits exceeding token limits
+    6. Group by type and randomly sample balanced dataset
+    7. Save results and extract individual diff files
     """
     print("Starting atomic sampling strategy for CCS dataset")
     print("=" * 50)
@@ -238,17 +242,18 @@ def main() -> None:
     print("\nStep 2: Removing excluded commits")
     ccs_df = remove_excluded_commits(ccs_df, excluded_shas)
 
-    # Step 3: Apply CI->CICD normalization
-    print("\nStep 3: Applying CI->CICD normalization")
+    # Step 3: Remove existing commits
+    print("\nStep 3: Removing existing commits")
+    ccs_df = remove_existing_commits(ccs_df, existing_shas)
+
+    # Step 4: Apply CI->CICD normalization
+    print("\nStep 4: Applying CI->CICD normalization")
     ccs_df = normalize_dataset(ccs_df)
 
-    # Step 4: Apply token-based filtering
-    print("\nStep 4: Applying token-based filtering")
-    ccs_df = apply_token_filtering(ccs_df)
 
-    # Step 5: Apply SHA deduplication
-    print("\nStep 5: Applying SHA deduplication")
-    ccs_df = apply_sha_deduplication(ccs_df, existing_shas)
+    # Step 5: Apply token-based filtering
+    print("\nStep 5: Applying token-based filtering")
+    ccs_df = remove_long_token_commits(ccs_df)
 
     # Step 6: Group by type and randomly sample
     print("\nStep 6: Grouping by type and random sampling")
