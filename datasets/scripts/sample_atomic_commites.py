@@ -7,7 +7,7 @@ Implements balanced sampling pipeline with filtering, normalization, and dedupli
 import pandas as pd
 
 import tiktoken
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 
 # Random seed for reproducibility
 RANDOM_SEED: int = 42
@@ -85,19 +85,21 @@ def remove_existing_commits(df: pd.DataFrame, excluded_shas: Set[str]) -> pd.Dat
     return filtered_df
 
 
-def load_shas(file_path: str) -> Set[str]:
-    """Load commit SHAs from CSV file for deduplication purposes."""
+def load_shas_and_type_counts(file_path: str) -> Tuple[Set[str], Dict[str, int]]:
+    """Load commit SHAs and type counts from CSV file for deduplication and intelligent sampling."""
     try:
         df = pd.read_csv(file_path)
         sha_set = set(df[COLUMN_SHA].astype(str))
+        type_counts = df[COLUMN_ANNOTATED_TYPE].value_counts().to_dict()
         print(f"Loaded {len(sha_set)} SHAs for deduplication")
-        return sha_set
+        print(f"Existing type counts: {type_counts}")
+        return sha_set, type_counts
     except FileNotFoundError:
         print(f"No existing samples found at {file_path}")
-        return set()
+        return set(), {}
     except Exception as e:
-        print(f"Error loading existing SHAs: {e}")
-        return set()
+        print(f"Error loading existing data: {e}")
+        return set(), {}
 
 
 def load_ccs_dataset(file_path: str) -> pd.DataFrame:
@@ -199,7 +201,7 @@ def extract_diffs(sampled_data: List[Dict[str, str]], output_dir: str) -> None:
             record[COLUMN_GIT_DIFF],
         ]
 
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write("\n".join(content_lines))
 
     print(f"Extracted {len(sampled_data)} diff files to {output_dir}")
@@ -221,21 +223,21 @@ def remove_excluded_commits(df: pd.DataFrame, excluded_shas: Set[str]) -> pd.Dat
 def main() -> None:
     """
     Execute atomic sampling pipeline for CCS dataset:
-    1. Load dataset and existing SHAs for deduplication
+    1. Load dataset, existing SHAs and type counts for deduplication and sampling
     2. Remove excluded commits by SHA
     3. Remove existing commits to prevent duplicates
     4. Normalize CI commit types to CICD
     5. Filter commits exceeding token limits
-    6. Group by type and randomly sample balanced dataset
-    7. Save results and extract individual diff files
+    6. Sample needed amounts per type to reach target
+    7. Save results and extract individual diff files (new samples only)
     """
     print("Starting atomic sampling strategy for CCS dataset")
     print("=" * 50)
 
-    # Step 1: Load dataset and backup SHAs
-    print("Step 1: Loading dataset and backup SHAs")
-    existing_shas = load_shas(SAMPLED_CSV_PATH)
-    excluded_shas = load_shas(EXCLUDED_COMMITS_PATH)
+    # Step 1: Load dataset, backup SHAs and existing type counts
+    print("Step 1: Loading dataset, backup SHAs and existing type counts")
+    existing_shas, existing_type_counts = load_shas_and_type_counts(SAMPLED_CSV_PATH)
+    excluded_shas, _ = load_shas_and_type_counts(EXCLUDED_COMMITS_PATH)
     ccs_df = load_ccs_dataset(CCS_SOURCE_PATH)
 
     # Step 2: Remove excluded commits
@@ -255,36 +257,45 @@ def main() -> None:
     print("\nStep 5: Applying token-based filtering")
     ccs_df = remove_long_token_commits(ccs_df)
 
-    # Step 6: Group by type and randomly sample
+    # Step 6: Group by type and sample
     print("\nStep 6: Grouping by type and random sampling")
     commits_by_type = group_commits_by_type(ccs_df, CONVENTIONAL_COMMIT_TYPES)
 
     all_sampled_data = []
-    for commits_df in commits_by_type.values():
+    
+    for commit_type, commits_df in commits_by_type.items():
+        existing_type_count = existing_type_counts.get(commit_type, 0)
+        needed_count = max(0, SAMPLES_PER_TYPE - existing_type_count)
+        available_type_count = len(commits_df)
+        actual_sample_count = min(needed_count, available_type_count)
+        
+        if needed_count == 0:
+            print(f"  {commit_type}: target reached, skipping")
+            continue
+        if actual_sample_count <= 0:
+            print(f"  {commit_type}: no commits available")
+            continue
+    
         sampled_data = sample_commits_for_type(
-            commits_df, SAMPLES_PER_TYPE, OUTPUT_COLUMNS
+            commits_df, actual_sample_count, OUTPUT_COLUMNS
         )
         all_sampled_data.extend(sampled_data)
+        print(f"  {commit_type}: sampled {actual_sample_count} commits")
 
     print(f"Random sampling: generated {len(all_sampled_data)} samples total")
 
     # Step 7: Save results and extract diffs
     print("\nStep 7: Saving results and extracting diffs")
-    save_to_csv(all_sampled_data, SAMPLED_CSV_PATH, OUTPUT_COLUMNS)
-    extract_diffs(all_sampled_data, DIFF_OUTPUT_DIR)
+    if all_sampled_data:
+        save_to_csv(all_sampled_data, SAMPLED_CSV_PATH, OUTPUT_COLUMNS)
+        extract_diffs(all_sampled_data, DIFF_OUTPUT_DIR)
+    else:
+        print("No new samples to save - all types have reached target counts")
 
     # Final summary
     print("\n" + "=" * 50)
     print("Atomic sampling completed successfully!")
-
-    type_counts = {}
-    for record in all_sampled_data:
-        commit_type = record.get(COLUMN_ANNOTATED_TYPE, "")
-        type_counts[commit_type] = type_counts.get(commit_type, 0) + 1
-
-    print("Final sample distribution:")
-    for commit_type in sorted(type_counts.keys()):
-        print(f"  {commit_type}: {type_counts[commit_type]} samples")
+    print(f"New samples added: {len(all_sampled_data)}")
 
 
 if __name__ == "__main__":
