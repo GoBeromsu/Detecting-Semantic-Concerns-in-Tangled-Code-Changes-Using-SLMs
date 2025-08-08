@@ -45,7 +45,6 @@ def measure_performance(
     for row in truncated_dataset.itertuples():
 
         actual_types: List[str] = json.loads(row.types)
-        shas: List[str] = json.loads(row.shas)
         try:
             start_time = time.time()
             predicted_types = llms.openai_api_call(
@@ -59,6 +58,7 @@ def measure_performance(
             )
             end_time = time.time()
             inference_time = end_time - start_time
+
         except Exception as e:
             print(f"[{row.Index}] Error: {e}")
             predicted_types = []
@@ -67,10 +67,10 @@ def measure_performance(
 
         result_df = pd.DataFrame([
             {
-                "predicted_types": predicted_types,
-                "actual_types": actual_types,
+                "predicted_types": json.dumps(predicted_types),
+                "actual_types": row.types,
                 "inference_time": inference_time,
-                "shas": shas,
+                "shas": row.shas,
                 "precision": metrics["precision"],
                 "recall": metrics["recall"],
                 "f1": metrics["f1"],
