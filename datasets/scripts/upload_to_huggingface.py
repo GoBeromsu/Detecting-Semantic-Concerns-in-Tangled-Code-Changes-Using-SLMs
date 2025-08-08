@@ -210,7 +210,7 @@ def check_required_files() -> None:
         file_size = data_file.stat().st_size / (1024 * 1024)
         print(f"  - data/{data_file.name} ({file_size:.1f} MB)")
     
-    specified_scripts = ["clean_ccs_dataset.py", "sample_atomic_commites.py", "generate_tangled_commites.py"]
+    specified_scripts =  ["sample_atomic_commites.py", "generate_tangled_commites.py"]
     print(f"\nScripts to upload ({len(specified_scripts)}):")
     for script_name in specified_scripts:
         script_path = SCRIPTS_PATH / script_name
