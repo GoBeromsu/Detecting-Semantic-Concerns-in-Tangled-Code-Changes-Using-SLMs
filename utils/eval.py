@@ -1,15 +1,8 @@
 """Evaluation utilities for parsing outputs and calculating metrics."""
 
 import time
-from typing import Dict, Any, Set, List, Tuple, Callable
-import json
-import re
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from pathlib import Path
+from typing import Dict, Any, List, Tuple, Callable
 from collections import Counter
-import numpy as np
 from sklearn.metrics import multilabel_confusion_matrix
 from sklearn.preprocessing import MultiLabelBinarizer
 
@@ -21,34 +14,7 @@ def measure_inference_time(func: Callable) -> Tuple[Any, float]:
     start_time = time.time()
     result = func()
     execution_time = time.time() - start_time
-    return result, execution_time
-
-def calculate_batch_metrics(df: pd.DataFrame) -> Dict[str, float]:
-    """
-    Calculate macro-averaged metrics for batch evaluation.
-
-    Args:
-        df: DataFrame with 'predictions' and 'ground_truth' columns containing lists
-
-    Returns:
-        Dict with macro-averaged precision, recall, f1
-    """
-    case_metrics = []
-    for _, row in df.iterrows():
-        metrics = calculate_metrics(row["predictions"], row["ground_truth"])
-        case_metrics.append(metrics)
-
-    # Macro average: average per-case metrics
-    avg_precision = sum(m["precision"] for m in case_metrics) / len(case_metrics)
-    avg_recall = sum(m["recall"] for m in case_metrics) / len(case_metrics)
-    avg_f1 = sum(m["f1"] for m in case_metrics) / len(case_metrics)
-
-    return {
-        "f1": avg_f1,
-        "precision": avg_precision,
-        "recall": avg_recall,
-    }
-
+    return result, execution_time   
 
 def get_tp_fp_fn(
     predicted_types: List[str], actual_types: List[str]
@@ -116,38 +82,3 @@ def calculate_metrics(
     }
 
 
-def save_results(df: pd.DataFrame, metrics: Dict[str, float], output_dir: str) -> None:
-    """Save DataFrame as predictions.csv and metrics as metrics.json."""
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    df.to_csv(output_path / "predictions.csv", index=False)
-
-    with open(output_path / "metrics.json", "w") as f:
-        json.dump(metrics, f, indent=2)
-
-
-def plot_graph(
-    df: pd.DataFrame,
-    x_col: str,
-    y_col: str,
-    output_path: str,
-    title: str = None,
-    xlabel: str = None,
-    ylabel: str = None,
-) -> None:
-    """Create and save a line plot for analysis."""
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(data=df, x=x_col, y=y_col, marker="o")
-
-    if title:
-        plt.title(title)
-    if xlabel:
-        plt.xlabel(xlabel)
-    if ylabel:
-        plt.ylabel(ylabel)
-
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
-    plt.close()
