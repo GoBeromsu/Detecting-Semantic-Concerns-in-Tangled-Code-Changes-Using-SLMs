@@ -9,13 +9,6 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from utils.llms.constant import COMMIT_TYPES
 
 
-def measure_inference_time(func: Callable) -> Tuple[Any, float]:
-    """Measure the execution time of a function."""
-    start_time = time.time()
-    result = func()
-    execution_time = time.time() - start_time
-    return result, execution_time   
-
 def get_tp_fp_fn(
     predicted_types: List[str], actual_types: List[str]
 ) -> Tuple[int, int, int]:
