@@ -3,7 +3,7 @@ import sys
 import json
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import List
 import tiktoken
 import pandas as pd
 from dotenv import load_dotenv
@@ -60,6 +60,8 @@ def measure_performance(
     truncated_dataset: pd.DataFrame,
     system_prompt: str,
     csv_path: Path,
+    context_len: int,
+    include_message: bool,
 ) -> None:
 
     for idx, row in truncated_dataset.iterrows():
@@ -92,6 +94,9 @@ def measure_performance(
                 "recall": [metrics["recall"]],
                 "f1": [metrics["f1"]],
                 "exact_match": [metrics["exact_match"]],
+                "context_len": [context_len],
+                "with_message": [include_message],
+                "concern_count": [len(actual_types)],
             },
             columns=constant.DEFAULT_DF_COLUMNS,
         )
@@ -163,6 +168,8 @@ def run_model_experiments(
                     truncated_dataset,
                     system_prompt,
                     csv_path,
+                    context_window,
+                    include_message,
                 )
 
 
