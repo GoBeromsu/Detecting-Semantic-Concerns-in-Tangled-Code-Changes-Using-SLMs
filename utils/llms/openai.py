@@ -19,6 +19,7 @@ def api_call(
     model: str,
     temperature: float = DEFAULT_TEMPERATURE,
     max_tokens: int = DEFAULT_MAX_TOKENS,
+    seed: int = RANDOM_SEED,
 ) -> List[str]:
     """
     Call OpenAI API with cached client.
@@ -44,7 +45,7 @@ def api_call(
             ],
             temperature=temperature,
             max_tokens=max_tokens,
-            seed=RANDOM_SEED,
+            seed=seed,
             response_format=OPENAI_STRUCTURED_OUTPUT_FORMAT,
         )
         response_json = response.choices[0].message.content or "{'types': []}"

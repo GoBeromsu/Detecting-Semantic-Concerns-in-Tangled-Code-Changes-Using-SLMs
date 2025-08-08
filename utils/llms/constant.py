@@ -1,5 +1,10 @@
 from typing import Dict, List, Any
 
+COMMIT_MESSAGE = "commit_message"
+GIT_DIFF = "git_diff"
+MASKED_COMMIT_MESSAGE_KEY = "masked_commit_message"
+TYPES_KEY = "types"
+
 # API Configuration Constants
 DEFAULT_LMSTUDIO_URL: str = "localhost:1234"
 DEFAULT_OPENAI_MODEL: str = "gpt-4.1-2025-04-14"
@@ -13,6 +18,10 @@ DEFAULT_DF_COLUMNS: List[str] = [
     "actual_types",
     "inference_time",
     "shas",
+    "precision",
+    "recall",
+    "f1",
+    "exact_match",
 ]
 # LM Studio Model Load Configuration (based on https://lmstudio.ai/docs/typescript/api-reference/llm-load-model-config)
 LMSTUDIO_MODEL_CONFIG: Dict[str, Any] = {

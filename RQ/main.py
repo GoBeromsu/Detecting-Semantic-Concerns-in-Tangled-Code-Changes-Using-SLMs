@@ -6,7 +6,7 @@ from typing import Dict, List
 import tiktoken
 import pandas as pd
 from dotenv import load_dotenv
-
+from datasets import load_dataset
 # Load environment variables from .env file
 load_dotenv()
 
@@ -17,11 +17,8 @@ import utils.llms as llms
 import utils.eval as eval
 import utils.prompt as prompt
 
-# Data key constants
-COMMIT_MESSAGE = "commit_message"
-GIT_DIFF = "git_diff"
-MASKED_COMMIT_MESSAGE_KEY = "masked_commit_message"
-TYPES_KEY = "types"
+DATASET_REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"# Data key constants
+
 PROVIDER = "lmstudio"
 
 # API configuration
@@ -45,42 +42,16 @@ CONTEXT_WINDOW = [1024, 2048, 4096, 8192, 12288]
 ENCODING_NAME = "cl100k_base"  # GPT-4 encoding
 
 
-def truncate_commits(
-    commits: Dict[str, Dict[str, str]],
-    context_window: int,
-    include_message: bool = True,
-) -> str:
-    encoding = tiktoken.get_encoding(ENCODING_NAME)
-    concern_count: int = len(commits)
-    available_tokens_per_commit: int = context_window // concern_count
+def _truncate_diffs_equally(diffs: List[str], available_tokens: int, encoding: tiktoken.Encoding) -> str:
+    """Truncate a list of diffs to fit within available_tokens, allocating equally per diff."""
+    if available_tokens <= 0 or len(diffs) == 0:
+        return ""
 
-    messages: List[str] = []
-    diffs: List[str] = []
-
-    for commit_data in commits.values():
-        message: str = commit_data[COMMIT_MESSAGE]
-        diff: str = commit_data[GIT_DIFF]
-
-        if include_message:
-            message_tokens: List[int] = encoding.encode(message)
-            remaining_tokens: int = available_tokens_per_commit - len(message_tokens)
-            messages.append(message)
-        else:
-            remaining_tokens: int = available_tokens_per_commit
-
-        diff_tokens: List[int] = encoding.encode(diff)
-        truncated_diff: str = (
-            diff
-            if len(diff_tokens) <= remaining_tokens
-            else encoding.decode(diff_tokens[:remaining_tokens])
-        )
-
-        diffs.append(truncated_diff)
-
-    if include_message:
-        return f"Commit Message: {' '.join(messages)}\nDiff: {' '.join(diffs)}"
-    else:
-        return f"Diff: {' '.join(diffs)}"
+    tokens_per_diff: int = max(available_tokens // len(diffs), 0)
+    tokenized: List[List[int]] = [encoding.encode(d) for d in diffs]
+    truncated_tokens: List[List[int]] = [t[:tokens_per_diff] for t in tokenized]
+    truncated_texts: List[str] = [encoding.decode(t) for t in truncated_tokens]
+    return "\n".join(truncated_texts)
 
 
 def measure_performance(
@@ -92,16 +63,17 @@ def measure_performance(
 
     for idx, row in truncated_dataset.iterrows():
         commit: str = row["truncated_commit"]
-        actual_types: List[str] = json.loads(row[TYPES_KEY])
+        actual_types: List[str] = json.loads(row["types"])
         try:
-            api_call = lambda: llms.api_call(
-                provider=PROVIDER,
-                model_name=model_name,
-                commit=commit,
-                system_prompt=system_prompt,
-                api_key=OPENAI_KEY,
-                # temperature=0.7,
-            )
+            def api_call() -> List[str]:
+                return llms.api_call(
+                    provider=PROVIDER,
+                    model_name=model_name,
+                    commit=commit,
+                    system_prompt=system_prompt,
+                    api_key=OPENAI_KEY,
+                    # temperature=0.7,
+                )
 
             predicted_types, inference_time = eval.measure_inference_time(api_call)
         except Exception as e:
@@ -126,47 +98,32 @@ def measure_performance(
         )
 
 
-def create_csv_with_headers(csv_path: Path) -> None:
-    """Create CSV file with headers if it doesn't exist."""
-    if not csv_path.exists():
-        df = pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS)
-        df.to_csv(csv_path, index=False)
-
-
 def truncate_dataset(
-    atomic_df: pd.DataFrame,
     tangled_df: pd.DataFrame,
     context_window: int,
     include_message: bool,
 ) -> pd.DataFrame:
-    truncated_commits: List[Dict[str, any]] = []
+    encoding = tiktoken.get_encoding(ENCODING_NAME)
+    truncated_texts: List[str] = []
+
     for _, row in tangled_df.iterrows():
-        shas: List[str] = json.loads(row["shas"])
-        commits: Dict[str, Dict[str, str]] = {}
-        for sha in shas:
-            matching_row: pd.DataFrame = atomic_df[atomic_df["sha"] == sha]
-            commit_message: str = matching_row[MASKED_COMMIT_MESSAGE_KEY].values[0]
-            git_diff: str = matching_row[GIT_DIFF].values[0]
-            commits[sha] = {
-                COMMIT_MESSAGE: commit_message,
-                GIT_DIFF: git_diff,
-            }
-        truncated_commit: str = truncate_commits(
-            commits, context_window, include_message
-        )
-        truncated_commits.append(
-            {
-                "shas": shas,
-                "truncated_commit": truncated_commit,
-                TYPES_KEY: row[TYPES_KEY],
-            }
-        )
-    return pd.DataFrame(truncated_commits)
+        message: str = str(row.get("commit_message", ""))
+        diffs: List[str] = json.loads(row.get("diff", "[]"))
+
+        if include_message:
+            message_tokens: List[int] = encoding.encode(message)
+            remaining_tokens: int = max(context_window - len(message_tokens), 0)
+            truncated_diffs: str = _truncate_diffs_equally(diffs, remaining_tokens, encoding)
+            truncated_texts.append(f"- given commit message:\n {message}\n Diff: {truncated_diffs}")
+        else:
+            truncated_diffs: str = _truncate_diffs_equally(diffs, context_window, encoding)
+            truncated_texts.append(f"- given commit diff: \n {truncated_diffs}")
+
+    return tangled_df.assign(truncated_commit=truncated_texts)
 
 
 def run_model_experiments(
     model_name: str,
-    atomic_df: pd.DataFrame,
     tangled_df: pd.DataFrame,
 ) -> None:
     commit_types: List[str] = ["with_message", "diff_only"]
@@ -183,14 +140,14 @@ def run_model_experiments(
             system_prompt: str = prompt.get_prompt_by_type(prompt_type, include_message)
             for context_window in CONTEXT_WINDOW:
                 print(f"Processing {model_name} {prompt_type} {context_window}")
-                truncated_dataset: pd.DataFrame = truncate_dataset(
-                    atomic_df, tangled_df, context_window, include_message
-                )
+                truncated_dataset: pd.DataFrame = truncate_dataset(tangled_df, context_window, include_message)
                 file_name: str = (
                     f"{model_name.replace('/', '_')}_{prompt_type.replace('-', '_')}_{context_window}.csv"
                 )
                 csv_path: Path = prompt_dir / file_name
-                create_csv_with_headers(csv_path)
+                if not csv_path.exists():
+                    df = pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS)
+                    df.to_csv(csv_path, index=False)
 
                 print(
                     f"\n=== Model: {model_name}, Prompt Type: {commit_type}, Prompt: {prompt_type}, Context Window: {context_window} ==="
@@ -205,21 +162,19 @@ def run_model_experiments(
 
 
 def main() -> None:
-    tangled_df: pd.DataFrame = pd.read_csv("datasets/data/tangled_ccs_dataset_test.csv")
-    atomic_df: pd.DataFrame = pd.read_csv("datasets/data/sampled_ccs_dataset.csv")
+    tangled_df: pd.DataFrame = load_dataset(DATASET_REPO_ID, "test", split="test").to_pandas()
 
     for model_name in MODEL_NAMES:
         print(f"\n{'='*50}")
         print(f"Processing Model: {model_name}")
         print(f"{'='*50}")
 
-        run_model_experiments(model_name, atomic_df, tangled_df)
+        run_model_experiments(model_name, tangled_df)
 
-    print(f"\nDataset Summary:")
+    print("\nDataset Summary:")
     print(f"Loaded tangled dataset: {len(tangled_df)} samples")
-    print(f"Loaded atomic dataset: {len(atomic_df)} samples")
     print(f"Processed models: {', '.join(MODEL_NAMES)}")
-    print(f"Results saved in results/ directory, organized by prompt type")
+    print("Results saved in results/ directory, organized by prompt type")
 
 
 if __name__ == "__main__":
