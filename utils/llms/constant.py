@@ -22,6 +22,10 @@ DEFAULT_DF_COLUMNS: List[str] = [
     "recall",
     "f1",
     "exact_match",
+    # Additional metadata columns appended for analysis/reporting
+    "context_len",
+    "with_message",
+    "concern_count",
 ]
 # LM Studio Model Load Configuration (based on https://lmstudio.ai/docs/typescript/api-reference/llm-load-model-config)
 LMSTUDIO_MODEL_CONFIG: Dict[str, Any] = {

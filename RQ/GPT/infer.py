@@ -22,12 +22,6 @@ load_dotenv()
 MODEL_NAME = "gpt-4.1-2025-04-14"
 DATASET_REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 
-# Paths and experiment constants (experiment script concerns)
-DATASET_TANGLED_PATH: Path = Path("datasets/data/tangled_ccs_dataset_test.csv")
-DATASET_ATOMIC_PATH: Path = Path("datasets/data/sampled_ccs_dataset.csv")
-RESULTS_ROOT: Path = Path("results")
-RESULTS_SUBDIR: str = "gpt"
-
 # Inference constants
 CONTEXT_WINDOWS = [12288]
 MAX_TOKENS = 16384
@@ -41,6 +35,7 @@ def measure_performance(
     truncated_dataset: pd.DataFrame,
     system_prompt: str,
     csv_path: Path,
+    context_len: int,
 ) -> None:
     for row in truncated_dataset.itertuples():
 
@@ -75,6 +70,9 @@ def measure_performance(
                 "recall": metrics["recall"],
                 "f1": metrics["f1"],
                 "exact_match": metrics["exact_match"],
+                "context_len": context_len,
+                "with_message": INCLUDE_MESSAGE,
+                "concern_count": len(actual_types),
            } ],
             columns=constant.DEFAULT_DF_COLUMNS,
         )
@@ -84,7 +82,7 @@ def measure_performance(
             print(f"[{row.Index}] appended to {csv_path}")
 
 def main() -> None:
-    prompt_dir: Path = RESULTS_ROOT / RESULTS_SUBDIR
+    prompt_dir: Path = Path("results/gpt/")
     prompt_dir.mkdir(parents=True, exist_ok=True)
     
     tangled_df: pd.DataFrame = load_dataset(DATASET_REPO_ID, split="test").to_pandas()
@@ -109,6 +107,7 @@ def main() -> None:
             truncated_dataset=truncated_dataset,
             system_prompt=SYSTEM_PROMPT,
             csv_path=csv_path,
+            context_len=cw,
         )
 
 

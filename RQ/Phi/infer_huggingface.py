@@ -43,6 +43,7 @@ def measure_performance(
     truncated_dataset: pd.DataFrame,
     system_prompt: str,
     csv_path: Path,
+    context_len: int,
 ) -> None:
     for row in truncated_dataset.itertuples():
         actual_types: List[str] = json.loads(row.types)
@@ -69,14 +70,17 @@ def measure_performance(
 
         result_df = pd.DataFrame([
             {
-                "predicted_types": predicted_types,
-                "actual_types": actual_types,
+                "predicted_types": json.dumps(predicted_types),
+                "actual_types": row.types,
                 "inference_time": inference_time,
                 "shas": shas,
                 "precision": metrics["precision"],
                 "recall": metrics["recall"],
                 "f1": metrics["f1"],
                 "exact_match": metrics["exact_match"],
+                "context_len": context_len,
+                "with_message": INCLUDE_MESSAGE,
+                "concern_count": len(actual_types),
            } ],
             columns=constant.DEFAULT_DF_COLUMNS,
         )
@@ -138,6 +142,7 @@ def main() -> None:
             truncated_dataset=truncated_dataset,
             system_prompt=system_prompt,
             csv_path=csv_path,
+            context_len=cw,
         )
 
 
