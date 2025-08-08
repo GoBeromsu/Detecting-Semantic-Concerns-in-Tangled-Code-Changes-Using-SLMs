@@ -35,7 +35,17 @@ def load_model(
     filename: str,
     seed: int = RANDOM_SEED,
     chat_format: Optional[str] = None,
-) -> Llama:
+    *,
+    # Performance tuning (optional)
+    n_gpu_layers: Optional[int] = -1,  # Offload all layers to GPU
+    main_gpu: Optional[int] = 0,  # Use first GPU
+    n_batch: Optional[int] = 2048,  # Maximize prompt processing efficiency
+    flash_attn: Optional[bool] = True,  # Enable Flash Attention
+    offload_kqv: Optional[bool] = True,  # Process K/Q/V tensors on GPU
+    use_mlock: Optional[bool] = True,  # Lock model in RAM to eliminate disk I/O delays
+    use_mmap: Optional[bool] = False,  # Disable memory mapping for RAM-fixed model
+    swa_full: Optional[bool] = True,  # Use full SWA cache size
+) -> "Llama":
     """Load a llama.cpp model from Hugging Face and return a ready Llama instance.
 
     Args:
@@ -55,6 +65,14 @@ def load_model(
         verbose=False,
         seed=seed,
         chat_format=chat_format,
+        n_gpu_layers=n_gpu_layers,
+        main_gpu=main_gpu,
+        offload_kqv=offload_kqv,
+        flash_attn=flash_attn,
+        swa_full=swa_full,
+        n_batch=n_batch,
+        use_mlock=use_mlock,
+        use_mmap=use_mmap,
     )
 
     cache_key = f"{repo_id}:{filename}:{chat_format or ''}"
