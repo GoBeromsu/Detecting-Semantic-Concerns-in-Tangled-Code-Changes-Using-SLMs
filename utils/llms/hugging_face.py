@@ -1,6 +1,6 @@
 """Unified Hugging Face API utilities for all experiments."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from huggingface_hub import scan_cache_dir, hf_hub_download
 from .constant import DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS, RANDOM_SEED, RESPONSE_SCHEMA
 from llama_cpp import Llama, LlamaGrammar  
@@ -30,7 +30,12 @@ def get_models() -> Tuple[List[str], str]:
         return [], f"Error scanning Hugging Face cache: {str(e)}"
 
 
-def load_model(repo_id: str, filename: str, seed: int = RANDOM_SEED) -> Llama:
+def load_model(
+    repo_id: str,
+    filename: str,
+    seed: int = RANDOM_SEED,
+    chat_format: Optional[str] = None,
+) -> Llama:
     """Load a llama.cpp model from Hugging Face and return a ready Llama instance.
 
     Args:
@@ -49,9 +54,10 @@ def load_model(repo_id: str, filename: str, seed: int = RANDOM_SEED) -> Llama:
         n_ctx=DEFAULT_MAX_TOKENS,
         verbose=False,
         seed=seed,
+        chat_format=chat_format,
     )
 
-    cache_key = f"{repo_id}:{filename}"
+    cache_key = f"{repo_id}:{filename}:{chat_format or ''}"
     _loaded_models[cache_key] = llm
 
     return llm
@@ -65,6 +71,7 @@ def api_call(
     temperature: float = DEFAULT_TEMPERATURE,
     seed: int = RANDOM_SEED,
     use_schema: bool = False,
+    chat_format: Optional[str] = None,
 ) -> List[str]:
     """Run chat inference via llama.cpp and return predicted commit types.
 
@@ -85,7 +92,7 @@ def api_call(
         first valid JSON object found in the output and returns an empty list if
         none is found.
     """
-    cache_key = f"{repo_id}:{filename}"
+    cache_key = f"{repo_id}:{filename}:{chat_format or ''}"
     llm = _loaded_models[cache_key]
 
     messages = [
