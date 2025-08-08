@@ -33,6 +33,7 @@ LMSTUDIO_MODEL_CONFIG: Dict[str, Any] = {
     "keepModelInMemory": True,  # Keep model in memory for faster access
     "useFp16ForKVCache": True,  # Use FP16 for KV cache to save memory
     "evalBatchSize": 1024,  # Optimal batch size for evaluation
+    "seed": RANDOM_SEED,
 }
 
 # UI Configuration Constants
