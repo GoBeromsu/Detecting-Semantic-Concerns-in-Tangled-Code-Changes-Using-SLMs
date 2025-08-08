@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import time
 from pathlib import Path
 from typing import Dict, List
 import tiktoken
@@ -14,7 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from utils.llms import constant
 import utils.llms as llms
-import utils.eval as eval
+import utils.eval as eval_utils
 import utils.prompt as prompt
 
 DATASET_REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"# Data key constants
@@ -65,21 +66,21 @@ def measure_performance(
         commit: str = row["truncated_commit"]
         actual_types: List[str] = json.loads(row["types"])
         try:
-            def api_call() -> List[str]:
-                return llms.api_call(
-                    provider=PROVIDER,
-                    model_name=model_name,
-                    commit=commit,
-                    system_prompt=system_prompt,
-                    api_key=OPENAI_KEY,
-                    # temperature=0.7,
-                )
-
-            predicted_types, inference_time = eval.measure_inference_time(api_call)
+            start_time = time.time()
+            predicted_types = llms.api_call(
+                provider=PROVIDER,
+                model_name=model_name,
+                commit=commit,
+                system_prompt=system_prompt,
+            )
+            end_time = time.time()
+            inference_time = end_time - start_time
         except Exception as e:
             print(f"Unexpected error processing row {idx}: {e}")
             predicted_types = []
             inference_time = 0.0
+
+        metrics = eval_utils.calculate_metrics(predicted_types=predicted_types, actual_types=actual_types)
 
         result_df = pd.DataFrame(
             {
@@ -87,6 +88,10 @@ def measure_performance(
                 "actual_types": [actual_types],
                 "inference_time": [inference_time],
                 "shas": [row["shas"]],
+                "precision": [metrics["precision"]],
+                "recall": [metrics["recall"]],
+                "f1": [metrics["f1"]],
+                "exact_match": [metrics["exact_match"]],
             },
             columns=constant.DEFAULT_DF_COLUMNS,
         )
