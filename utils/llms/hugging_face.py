@@ -1,16 +1,12 @@
 """Unified Hugging Face API utilities for all experiments."""
 
 from typing import List, Tuple
-from pydantic import BaseModel, Field
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from huggingface_hub import scan_cache_dir
-from .constant import DEFAULT_TEMPERATURE
+from huggingface_hub import scan_cache_dir, hf_hub_download
+from .constant import DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS, RANDOM_SEED, RESPONSE_SCHEMA
+from llama_cpp import Llama, LlamaGrammar  
+import json
 
-
-class ConcernResponse(BaseModel):
-    types: List[str] = Field(description="List of concern types")
-
+_loaded_models = {}
 
 def get_models() -> Tuple[List[str], str]:
     """
@@ -34,69 +30,103 @@ def get_models() -> Tuple[List[str], str]:
         return [], f"Error scanning Hugging Face cache: {str(e)}"
 
 
-def load_model(name: str):
-    """
-    Load model with optimized configuration.
+def load_model(repo_id: str, filename: str, seed: int = RANDOM_SEED) -> Llama:
+    """Load a llama.cpp model from Hugging Face and return a ready Llama instance.
 
     Args:
-        name: Name of the model to load
+        repo_id: Hugging Face repository ID (e.g., "microsoft/phi-4-gguf").
+        filename: GGUF file name inside the repository (e.g., "phi-4-Q4_K.gguf").
+        seed: Random seed for sampling; set a fixed value for reproducible outputs.
 
     Returns:
-        Outlines model instance
+        A `Llama` instance configured with `n_ctx=DEFAULT_MAX_TOKENS` and the given seed.
     """
-    try:
-        hf_model = AutoModelForCausalLM.from_pretrained(
-            name, torch_dtype=torch.bfloat16, device_map="auto"
-        )
-        hf_tokenizer = AutoTokenizer.from_pretrained(name)
+    local_path = hf_hub_download(repo_id=repo_id, filename=filename)
 
-        # Lazy import to avoid hard dependency at module import time
-        try:
-            import outlines  # type: ignore
-        except ImportError as e:
-            raise ImportError(
-                "The 'outlines' package is required for the Hugging Face provider. "
-                "Install dependencies with 'uv sync' or add it via 'uv add outlines'."
-            ) from e
+    # Create llama instance from local file path
+    llm = Llama(
+        model_path=local_path,
+        n_ctx=DEFAULT_MAX_TOKENS,
+        verbose=False,
+        seed=seed,
+    )
 
-        outlines_model = outlines.from_transformers(hf_model, hf_tokenizer)
-        return outlines_model
-    except Exception as e:
-        raise RuntimeError(f"Failed to load model {name}: {e}")
+    cache_key = f"{repo_id}:{filename}"
+    _loaded_models[cache_key] = llm
+
+    return llm
 
 
 def api_call(
-    model_name: str,
+    repo_id: str,
+    filename: str,
     commit: str,
     system_prompt: str,
     temperature: float = DEFAULT_TEMPERATURE,
+    seed: int = RANDOM_SEED,
+    use_schema: bool = False,
 ) -> List[str]:
+    """Run chat inference via llama.cpp and return predicted commit types.
+
+    Args:
+        repo_id: Hugging Face repository ID (e.g., "microsoft/phi-4-gguf").
+        filename: GGUF file name inside the repository.
+        commit: Input text to analyze (e.g., truncated diff + message).
+        system_prompt: Instructional system prompt to steer the model.
+        temperature: Sampling temperature (higher = more random generation).
+        seed: RNG seed used for sampling in this call for reproducibility.
+
+    Returns:
+        List of predicted commit types extracted from the model's JSON output.
+
+    Notes:
+        This function expects the model to output JSON with a top-level key
+        "types" (array of strings). If decoding fails, it attempts to parse the
+        first valid JSON object found in the output and returns an empty list if
+        none is found.
     """
-    Call Hugging Face API for commit classification with ChatML format.
-    """
+    cache_key = f"{repo_id}:{filename}"
+    llm = _loaded_models[cache_key]
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": commit},
+    ]
+
     try:
-        # Lazy imports to avoid module import failure when outlines is not installed
-        try:
-            import outlines  # type: ignore
-            from outlines.inputs import Chat  # type: ignore
-        except ImportError as e:
-            raise ImportError(
-                "The 'outlines' package is required for the Hugging Face provider. "
-                "Install dependencies with 'uv sync' or add it via 'uv add outlines'."
-            ) from e
+        grammar = None
+        if use_schema:
+            grammar = LlamaGrammar.from_json_schema(json.dumps(RESPONSE_SCHEMA))
 
-        model = load_model(model_name)
-
-        chat = Chat(
-            [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": commit},
-            ]
+        result = llm.create_chat_completion(
+            messages=messages,
+            temperature=temperature,
+            max_tokens=DEFAULT_MAX_TOKENS,
+            seed=seed,
+            response_format={"type": "json_object"} if not use_schema else None,
+            grammar=grammar,
         )
+        output_text = (
+            result.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+        )
+    except Exception as exc:
+        raise RuntimeError(f"llama-cpp-python inference failed: {exc}") from exc
 
-        generator = outlines.Generator(model, ConcernResponse)
-        response = generator(chat, temperature=temperature)
-        return response.types
-
-    except Exception as e:
-        raise RuntimeError(f"An error occurred while calling Hugging Face API: {e}")
+    # Parse JSON {"types": [...]}
+    try:
+        data = json.loads(output_text)
+        types = data.get("types", [])
+        return [str(t) for t in types] if isinstance(types, list) else []
+    except json.JSONDecodeError:
+        start = output_text.find("{")
+        end = output_text.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            try:
+                data = json.loads(output_text[start : end + 1])
+                types = data.get("types", [])
+                return [str(t) for t in types] if isinstance(types, list) else []
+            except Exception:
+                return []
+        return []

@@ -12,7 +12,6 @@ dependencies = [
     "torch",
     "transformers",
     "datasets>=2.15.0",
-    "scikit-learn",
     "pandas>=2.1.0",
     "numpy",
     # Hugging Face & API Clients
@@ -33,6 +32,8 @@ dependencies = [
     "lmstudio",
     "outlines>=1.2.0",
     "accelerate>=0.25.0",
+    # GGUF runtime
+    "llama-cpp-python>=0.2.79",
 ]
 
 [project.optional-dependencies]
