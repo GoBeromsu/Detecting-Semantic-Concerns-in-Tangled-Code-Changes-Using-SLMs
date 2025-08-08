@@ -10,7 +10,7 @@ import seaborn as sns
 from pathlib import Path
 from collections import Counter
 import numpy as np
-from sklearn.metrics import multilabel_confusion_matrix, precision_recall_fscore_support
+from sklearn.metrics import multilabel_confusion_matrix
 from sklearn.preprocessing import MultiLabelBinarizer
 
 from utils.llms.constant import COMMIT_TYPES
@@ -22,25 +22,6 @@ def measure_inference_time(func: Callable) -> Tuple[Any, float]:
     result = func()
     execution_time = time.time() - start_time
     return result, execution_time
-
-
-def load_dataset(dataset_split: str) -> pd.DataFrame:
-    """Load dataset from local CSV file."""
-    if dataset_split == "test":
-        csv_path = Path("../datasets/data/tangled_ccs_dataset_test.csv")
-    elif dataset_split == "train":
-        csv_path = Path("../datasets/data/tangled_ccs_dataset_train.csv")
-    elif dataset_split == "test_small":
-        csv_path = Path("../datasets/data/tangled_ccs_dataset_test_small.csv")
-    elif dataset_split == "atomic":
-        csv_path = Path("../datasets/data/sampled_ccs_dataset.csv")
-    else:
-        csv_path = Path("../datasets/data/tangled_ccs_dataset.csv")
-
-    df = pd.read_csv(csv_path)
-    print(f"Loaded {len(df)} samples from {csv_path}")
-    return df
-
 
 def calculate_batch_metrics(df: pd.DataFrame) -> Dict[str, float]:
     """

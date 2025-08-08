@@ -4,8 +4,6 @@ from typing import List, Tuple
 from pydantic import BaseModel, Field
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import outlines
-from outlines.inputs import Chat
 from huggingface_hub import scan_cache_dir
 from .constant import DEFAULT_TEMPERATURE
 
@@ -52,7 +50,15 @@ def load_model(name: str):
         )
         hf_tokenizer = AutoTokenizer.from_pretrained(name)
 
-        # Create Outlines model using the correct method
+        # Lazy import to avoid hard dependency at module import time
+        try:
+            import outlines  # type: ignore
+        except ImportError as e:
+            raise ImportError(
+                "The 'outlines' package is required for the Hugging Face provider. "
+                "Install dependencies with 'uv sync' or add it via 'uv add outlines'."
+            ) from e
+
         outlines_model = outlines.from_transformers(hf_model, hf_tokenizer)
         return outlines_model
     except Exception as e:
@@ -69,9 +75,18 @@ def api_call(
     Call Hugging Face API for commit classification with ChatML format.
     """
     try:
+        # Lazy imports to avoid module import failure when outlines is not installed
+        try:
+            import outlines  # type: ignore
+            from outlines.inputs import Chat  # type: ignore
+        except ImportError as e:
+            raise ImportError(
+                "The 'outlines' package is required for the Hugging Face provider. "
+                "Install dependencies with 'uv sync' or add it via 'uv add outlines'."
+            ) from e
+
         model = load_model(model_name)
 
-        # Create chat input with ChatML format
         chat = Chat(
             [
                 {"role": "system", "content": system_prompt},
@@ -79,13 +94,8 @@ def api_call(
             ]
         )
 
-        # Create generator with structured output
         generator = outlines.Generator(model, ConcernResponse)
-
-        response = generator(
-            chat,
-            temperature=temperature,
-        )
+        response = generator(chat, temperature=temperature)
         return response.types
 
     except Exception as e:

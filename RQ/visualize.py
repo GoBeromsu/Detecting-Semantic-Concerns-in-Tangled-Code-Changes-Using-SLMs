@@ -8,7 +8,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import json
 
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -38,21 +37,6 @@ plt.style.use("default")
 sns.set_palette("husl")
 
 
-def parse_filename(filepath: Path) -> Tuple[str, int]:
-    """
-    Parse model name and context length from filename.
-    Example: microsoft_phi-4_4096.csv -> ('microsoft_phi-4', 4096)
-    """
-    filename = filepath.stem  # Remove .csv extension
-    parts = filename.split("_")
-
-    # Get context_len from the last part
-    context_len = int(parts[-1])
-
-    # Get model name by joining all parts except the last one
-    model = "_".join(parts[:-1])
-
-    return model, context_len
 
 
 def preprocess_experimental_data() -> pd.DataFrame:

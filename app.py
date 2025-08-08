@@ -11,25 +11,21 @@ from utils.prompt import get_system_prompt_with_message, get_prompt_by_type
 from utils.llms.constant import (
     CODE_DIFF_INPUT_HEIGHT,
     SYSTEM_PROMPT_INPUT_HEIGHT,
+)   
+from visual_eval.setup import render_api_setup_sidebar
+from visual_eval.session import get_model_name, get_api_provider
+from visual_eval.dataset import (
+    DIFF_COLUMN,
+    TYPES_COLUMN,
+    SHAS_COLUMN,
+    get_available_datasets,
+    load_dataset,
 )
-from visual_eval.ui.components import (
+from visual_eval.components import (
     render_evaluation_metrics,
     render_results_table,
     create_column_config,
 )
-from visual_eval.ui.dataset import (
-    get_available_datasets,
-    load_dataset,
-    DIFF_COLUMN,
-    TYPES_COLUMN,
-    SHAS_COLUMN,
-)
-from visual_eval.ui.session import (
-    get_model_name,
-    get_api_provider,
-    set_evaluation_results,
-)
-from visual_eval.ui.setup import render_api_setup_sidebar
 from utils.eval import calculate_metrics
 
 # Direct analysis result columns
@@ -114,7 +110,7 @@ def process_single_case(row: pd.Series, system_prompt: str) -> Dict[str, Any]:
             "shas": shas,
             "success": True,
         }
-    except Exception as e:
+    except Exception:
         return {
             "predicted_types": [],
             "actual_types": json.loads(row[TYPES_COLUMN]) if row[TYPES_COLUMN] else [],

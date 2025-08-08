@@ -205,8 +205,8 @@ def run_model_experiments(
 
 
 def main() -> None:
-    tangled_df: pd.DataFrame = eval.load_dataset("test")
-    atomic_df: pd.DataFrame = eval.load_dataset("atomic")
+    tangled_df: pd.DataFrame = pd.read_csv("datasets/data/tangled_ccs_dataset_test.csv")
+    atomic_df: pd.DataFrame = pd.read_csv("datasets/data/sampled_ccs_dataset.csv")
 
     for model_name in MODEL_NAMES:
         print(f"\n{'='*50}")
