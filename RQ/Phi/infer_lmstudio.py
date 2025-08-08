@@ -6,6 +6,7 @@ from typing import List
 from pathlib import Path
 from dotenv import load_dotenv
 import time
+from itertools import product
 
 # Ensure project root on path
 sys.path.append(str(Path(__file__).resolve().parents[2]))
@@ -36,6 +37,8 @@ MAX_TOKENS = 16384
 SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
+# SHOT_TYPES = ["Zero-shot", "One-shot", "Two-shot"]
+SHOT_TYPES = ["Zero-shot"]
 
 
 def measure_performance(
@@ -44,6 +47,7 @@ def measure_performance(
     system_prompt: str,
     csv_path: Path,
     context_len: int,
+    with_message: bool,
 ) -> None:
     for row in truncated_dataset.itertuples():
         actual_types: List[str] = json.loads(row.types)
@@ -80,7 +84,7 @@ def measure_performance(
                     "f1": metrics["f1"],
                     "exact_match": metrics["exact_match"],
                     "context_len": context_len,
-                    "with_message": INCLUDE_MESSAGE,
+                    "with_message": with_message,
                     "concern_count": len(actual_types),
                 }
             ],
@@ -97,12 +101,18 @@ def main() -> None:
     model_dir.mkdir(parents=True, exist_ok=True)
 
     tangled_df: pd.DataFrame = load_dataset(DATASET_REPO_ID, split="test").to_pandas()
-    system_prompt: str = prompt.get_prompt_by_type(
-        shot_type="Zero-shot", include_message=INCLUDE_MESSAGE
-    )
 
-    for cw in CONTEXT_WINDOWS:
-        file_name: str = f"{MODEL_NAME}_{cw}.csv"
+    shot_abbrev_map = {"Zero-shot": "zs", "One-shot": "os", "Two-shot": "ts"}
+
+    for shot_type, cw, include_message in product(
+        SHOT_TYPES, CONTEXT_WINDOWS, (True, False)
+    ):
+        system_prompt: str = prompt.get_prompt_by_type(
+            shot_type=shot_type, include_message=include_message
+        )
+        shot_abbrev: str = shot_abbrev_map.get(shot_type, "custom")
+        msg_flag: str = "msg1" if include_message else "msg0"
+        file_name: str = f"{MODEL_NAME}_{cw}_{shot_abbrev}_{msg_flag}.csv"
         csv_path: Path = model_dir / file_name
         if not csv_path.exists():
             df = pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS)
@@ -111,7 +121,7 @@ def main() -> None:
         truncated_dataset: pd.DataFrame = rq_main.truncate_dataset(
             tangled_df=tangled_df,
             context_window=cw,
-            include_message=INCLUDE_MESSAGE,
+            include_message=include_message,
         )
 
         measure_performance(
@@ -120,6 +130,7 @@ def main() -> None:
             system_prompt=system_prompt,
             csv_path=csv_path,
             context_len=cw,
+            with_message=include_message,
         )
 
 
