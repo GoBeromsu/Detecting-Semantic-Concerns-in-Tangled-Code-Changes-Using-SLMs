@@ -1,10 +1,7 @@
 """Evaluation utilities for parsing outputs and calculating metrics."""
 
-import time
-from typing import Dict, Any, List, Tuple, Callable
+from typing import Dict, List, Tuple
 from collections import Counter
-from sklearn.metrics import multilabel_confusion_matrix
-from sklearn.preprocessing import MultiLabelBinarizer
 
 from utils.llms.constant import COMMIT_TYPES
 
@@ -13,7 +10,10 @@ def get_tp_fp_fn(
     predicted_types: List[str], actual_types: List[str]
 ) -> Tuple[int, int, int]:
     """
-    Calculate TP, FP, FN using sklearn multilabel_confusion_matrix.
+    Calculate TP, FP, FN using set operations filtered by valid classes.
+
+    This avoids any dependency on label ordering and ensures unknown labels
+    are ignored rather than distorting metrics.
 
     Args:
         predicted_types: List of predicted concern types
@@ -22,20 +22,13 @@ def get_tp_fp_fn(
     Returns:
         Tuple of (true_positives, false_positives, false_negatives)
     """
-    # Convert to binary format
-    mlb = MultiLabelBinarizer(classes=COMMIT_TYPES)
-    mlb.fit([COMMIT_TYPES])  # Fit with all possible classes
-    y_true = mlb.transform([actual_types])
-    y_pred = mlb.transform([predicted_types])
+    valid_labels = set(COMMIT_TYPES)
+    predicted_set = {t for t in predicted_types if t in valid_labels}
+    actual_set = {t for t in actual_types if t in valid_labels}
 
-    # Get confusion matrices for each label
-    mcm = multilabel_confusion_matrix(y_true, y_pred, labels=range(len(COMMIT_TYPES)))
-
-    # Sum across all labels: mcm shape is (n_labels, 2, 2)
-    # mcm[i] = [[tn, fp], [fn, tp]] for label i
-    tp = int(mcm[:, 1, 1].sum())  # True positives
-    fp = int(mcm[:, 0, 1].sum())  # False positives
-    fn = int(mcm[:, 1, 0].sum())  # False negatives
+    tp = len(predicted_set & actual_set)
+    fp = len(predicted_set - actual_set)
+    fn = len(actual_set - predicted_set)
 
     return tp, fp, fn
 
@@ -44,7 +37,7 @@ def calculate_metrics(
     predicted_types: List[str], actual_types: List[str]
 ) -> Dict[str, float]:
     """
-    Calculate precision, recall, F1 using sklearn multilabel metrics.
+    Calculate precision, recall, F1 using set operations.
 
     Args:
         predicted_types: List of predicted concern types
