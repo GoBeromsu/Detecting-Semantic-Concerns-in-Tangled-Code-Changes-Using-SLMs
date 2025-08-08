@@ -89,8 +89,8 @@ def measure_performance(
 
 
 def main() -> None:
-    prompt_dir: Path = RESULTS_ROOT / RESULTS_SUBDIR
-    prompt_dir.mkdir(parents=True, exist_ok=True)
+    model_dir: Path = RESULTS_ROOT / MODEL_NAME / RESULTS_SUBDIR
+    model_dir.mkdir(parents=True, exist_ok=True)
 
     tangled_df: pd.DataFrame = load_dataset(DATASET_REPO_ID, split="test").to_pandas()
     system_prompt: str = prompt.get_prompt_by_type(
@@ -98,8 +98,8 @@ def main() -> None:
     )
 
     for cw in CONTEXT_WINDOWS:
-        file_name: str = f"{MODEL_NAME}{cw}.csv"
-        csv_path: Path = prompt_dir / file_name
+        file_name: str = f"{MODEL_NAME}_{cw}.csv"
+        csv_path: Path = model_dir / file_name
         if not csv_path.exists():
             df = pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS)
             df.to_csv(csv_path, index=False)
