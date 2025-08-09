@@ -22,10 +22,6 @@ set -euo pipefail
 
 echo "Setting up HPC environment using uv and pyproject extras..."
 
-# Resolve repo root (script is in scripts/)
-REPO_DIR="$(cd "$(dirname "$0")"/.. && pwd)"
-cd "$REPO_DIR"
-
 mkdir -p logs
 
 module purge
