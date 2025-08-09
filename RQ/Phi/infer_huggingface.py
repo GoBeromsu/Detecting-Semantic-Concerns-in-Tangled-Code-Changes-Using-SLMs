@@ -117,11 +117,10 @@ def main() -> None:
 
     device_info: str = get_compute_device()
     print(f"Hugging Face device: {device_info}")
+    
+    is_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    filename = "phi-4-Q6_K.gguf" if is_mps else "phi-4-bf16.gguf"
 
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        filename = "phi-4-Q6_K.gguf"
-    else:
-        filename = "phi-4-bf16.gguf"
 
     # Preload/caches model with chatml format for reproducibility
     llms.load_model(repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT)
