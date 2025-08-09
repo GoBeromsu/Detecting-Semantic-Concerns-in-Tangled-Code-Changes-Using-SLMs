@@ -30,14 +30,14 @@ RESULTS_ROOT: Path = Path("results")
 RESULTS_SUBDIR: str = "huggingface"
 
 # Inference constants
-CONTEXT_WINDOWS = [12288]
+CONTEXT_WINDOWS = [1024, 2048, 4096, 8192, 12288]
 MAX_TOKENS = 16384
 SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
 CHAT_FORMAT = "chatml"
-# SHOT_TYPES = ["Zero-shot", "One-shot", "Two-shot"]
-SHOT_TYPES = ["Zero-shot"]
+SHOT_TYPES = ["Zero-shot", "One-shot", "Two-shot"]
+# SHOT_TYPES = ["Zero-shot", "One-shot"]
 
 
 def measure_performance(
@@ -119,7 +119,7 @@ def main() -> None:
     print(f"Hugging Face device: {device_info}")
 
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        filename = "phi-4-Q4_K.gguf"
+        filename = "phi-4-Q6_K.gguf"
     else:
         filename = "phi-4-bf16.gguf"
 
@@ -157,8 +157,6 @@ def main() -> None:
             context_len=cw,
             with_message=include_message,
         )
-
-
 if __name__ == "__main__":
     main()
 
