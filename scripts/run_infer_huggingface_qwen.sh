@@ -32,11 +32,27 @@ module load cuDNN/8.9.2.26-CUDA-12.1.1
 echo "🔧 Activating phi4_env..."
 source activate phi4_env
 
+# Start periodic GPU utilization logging (every 60 s)
+GPU_LOG="logs/gpu_usage_${SLURM_JOB_ID}.csv"
+echo "timestamp,power.draw[W],gpu.util[%],mem.util[%],mem.used[MiB]" > "$GPU_LOG"
+(
+  while true; do
+    nvidia-smi --query-gpu=timestamp,power.draw,utilization.gpu,utilization.memory,memory.used --format=csv,noheader >> "$GPU_LOG"
+    sleep 60
+  done
+) &
+GPU_MON_PID=$!
+
+# Ensure GPU logger is terminated on script exit
+cleanup() {
+  kill "$GPU_MON_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
+
 echo "🚀 Starting inference at $(date)"
-python RQ/Qwen/infer_huggingface.py
+# python RQ/Qwen/infer_huggingface.py  # Commented out to enable tee-based logging below
+python -u RQ/Qwen/infer_huggingface.py | tee -a "logs/qwen_infer_output_${SLURM_JOB_ID}.log"
 
 echo "✅ Inference completed at $(date)"
 
 source deactivate
-
-
