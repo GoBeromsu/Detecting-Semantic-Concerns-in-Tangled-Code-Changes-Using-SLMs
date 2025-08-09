@@ -130,6 +130,7 @@ def main() -> None:
     for shot_type, cw, include_message in product(
         SHOT_TYPES, CONTEXT_WINDOWS, (True, False)
     ):
+        print(f"Running {shot_type} {cw} {include_message}")
         system_prompt: str = prompt.get_prompt_by_type(
             shot_type=shot_type, include_message=include_message
         )
