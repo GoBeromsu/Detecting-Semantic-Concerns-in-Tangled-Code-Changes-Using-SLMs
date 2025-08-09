@@ -33,7 +33,7 @@ echo "🔧 Activating phi4_env..."
 source activate phi4_env
 
 echo "🚀 Starting inference at $(date)"
-uv run python RQ/Phi/infer_huggingface.py
+python RQ/Phi/infer_huggingface.py
 
 echo "✅ Inference completed at $(date)"
 
