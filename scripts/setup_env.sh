@@ -22,6 +22,10 @@ set -euo pipefail
 
 echo "Setting up HPC environment using uv and pyproject extras..."
 
+# Resolve repository root (this script lives in scripts/)
+REPO_DIR="$(cd "$(dirname "$0")"/.. && pwd)"
+cd "$REPO_DIR"
+
 mkdir -p logs
 
 module purge
@@ -38,7 +42,7 @@ if conda env list | grep -q "phi4_env"; then
     echo "Found existing conda env phi4_env. Reusing."
 else
     echo "Creating conda env from scripts/environment.yml..."
-    conda env create -f environment.yml || { echo "Failed to create conda env"; exit 1; }
+    conda env create -f "$REPO_DIR/scripts/environment.yml" || { echo "Failed to create conda env"; exit 1; }
 fi
 
 # Activate via 'source activate' (required when Anaconda is provided via module)
