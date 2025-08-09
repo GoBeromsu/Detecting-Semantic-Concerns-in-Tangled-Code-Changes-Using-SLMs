@@ -63,11 +63,13 @@ python -m pip install flash-attn==2.7.4.post1 --no-build-isolation
 # Install application dependencies from pyproject extras (.[hpc])
 # Editable install to develop within the repo
 echo "Installing project with HPC extras via uv (editable)..."
-# Build llama-cpp-python with CUDA support (cuBLAS)
-# Docs: https://github.com/abetlen/llama-cpp-python#installation
-export CMAKE_ARGS="-DLLAMA_CUBLAS=on -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS"
 cd "$REPO_DIR"
 uv pip install -e ".[hpc]"
+
+echo "Installing GPU-enabled llama-cpp-python (CUDA 12.1, SM_90)..."
+uv pip uninstall llama-cpp-python -- -y
+CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=90 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON" \
+uv pip install llama-cpp-python --no-binary llama-cpp-python -v
 
 echo "Environment setup completed. To activate later: source activate phi4_env"
 
