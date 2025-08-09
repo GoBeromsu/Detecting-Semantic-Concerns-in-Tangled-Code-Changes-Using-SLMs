@@ -323,7 +323,7 @@ model = AutoModelForCausalLM.from_pretrained(
 
 args = SFTConfig(
     output_dir=MODEL_OUTPUT_DIR,
-    eval_strategy="steps",
+    evaluation_strategy="steps",
     do_eval=True,
     optim="adamw_torch",
     per_device_train_batch_size=1,  # Reduce memory usage
@@ -345,7 +345,8 @@ args = SFTConfig(
     push_to_hub=True,
     hub_strategy="every_save",
     hub_model_id=HF_MODEL_REPO + "-adapter",
-    max_length=MAX_SEQ_LENGTH,
+    max_seq_length=MAX_SEQ_LENGTH,
+    packing=True,
 )
 
 peft_config = LoraConfig(
@@ -389,6 +390,16 @@ else:
 # The model will be saved in the directory specified by 'output_dir' in the training arguments.
 trainer.save_model()
 
+# Create model card before freeing trainer
+print("📝 Creating model card and uploading to Hub...")
+trainer.create_model_card(
+    tags=["phi-4", "fine-tuned", "commit-analysis", "software-engineering"],
+    dataset_tags=["Berom0227/tangled-ccs-dataset"],
+    language="en",
+    license="mit",
+    base_model="microsoft/phi-4",
+)
+
 ###############
 # Merge Model and Adapter
 ###############
@@ -425,18 +436,6 @@ merged_model.save_pretrained(
     MERGED_MODEL_DIR, trust_remote_code=True, safe_serialization=True
 )
 tokenizer.save_pretrained(MERGED_MODEL_DIR)
-
-# Let Trainer automatically create model card and push to Hub
-print("📝 Creating model card and uploading to Hub...")
-
-# Create model card with training details
-trainer.create_model_card(
-    tags=["phi-4", "fine-tuned", "commit-analysis", "software-engineering"],
-    dataset_tags=["Berom0227/tangled-ccs-dataset"],
-    language="en",
-    license="mit",
-    base_model="microsoft/phi-4",
-)
 
 # Push the merged model to Hugging Face Hub
 merged_model.push_to_hub(HF_MODEL_REPO)
