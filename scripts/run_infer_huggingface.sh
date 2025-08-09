@@ -2,7 +2,7 @@
 #SBATCH --job-name=phi4_infer_hf
 #SBATCH --time=12:00:00
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:h100:1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128GB
 #SBATCH --nodes=1
