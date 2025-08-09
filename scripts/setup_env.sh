@@ -22,11 +22,10 @@ set -euo pipefail
 
 echo "Setting up HPC environment using uv and pyproject extras..."
 
+mkdir -p logs
+
 # Resolve repository root (this script lives in scripts/)
 REPO_DIR="$(cd "$(dirname "$0")"/.. && pwd)"
-cd "$REPO_DIR"
-
-mkdir -p logs
 
 module purge
 # Compiler toolchain and CUDA stack
@@ -64,6 +63,7 @@ python -m pip install flash-attn==2.7.4.post1 --no-build-isolation
 # Install application dependencies from pyproject extras (.[hpc])
 # Editable install to develop within the repo
 echo "Installing project with HPC extras via uv (editable)..."
+cd "$REPO_DIR"
 uv pip install -e ".[hpc]"
 
 echo "Environment setup completed. To activate later: source activate phi4_env"
