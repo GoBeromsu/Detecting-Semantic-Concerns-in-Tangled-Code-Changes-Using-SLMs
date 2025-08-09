@@ -9,6 +9,7 @@ Usage: python train.py
 """
 
 # Reference : https://github.com/microsoft/PhiCookBook/blob/main/code/03.Finetuning/Phi-3-finetune-lora-python.ipynb
+import json
 import sys
 import logging
 import os
@@ -51,7 +52,6 @@ def get_system_prompt():
     return """
 You are a software engineer classifying individual code units extracted from a tangled commit.
 Each change unit (e.g., function, method, class, or code block) represents a reviewable atomic change, and must be assigned exactly one label.
-
 Label selection must assign exactly one concern from the following unified set:
 - Purpose labels : the motivation behind making a code change (feat, fix, refactor)
 - Object labels : the essence of the code changes that have been made(docs, test, cicd, build)
@@ -192,9 +192,8 @@ def create_message_column(row) -> Dict[str, Any]:
     """Create messages column for multi-concern commit classification."""
     # Create structured prompt for commit analysis
     user_content = f"# Commit Message\n{row['commit_message']}\n\n# Diff\n```diff\n{row['diff']}\n```\n"
-    assistant_content = (
-        f"# Reasoning\n{row['reason']}\n# Result types\n{row['types']}\n"
-    )
+    parsed_types = json.loads(row["types"])
+    assistant_content = json.dumps({"types": parsed_types}, ensure_ascii=False)
 
     messages = [
         {"role": "system", "content": get_system_prompt()},
