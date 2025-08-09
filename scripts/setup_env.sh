@@ -38,7 +38,7 @@ if conda env list | grep -q "phi4_env"; then
     echo "Found existing conda env phi4_env. Reusing."
 else
     echo "Creating conda env from scripts/environment.yml..."
-    conda env create -f scripts/environment.yml || { echo "Failed to create conda env"; exit 1; }
+    conda env create -f environment.yml || { echo "Failed to create conda env"; exit 1; }
 fi
 
 # Activate via 'source activate' (required when Anaconda is provided via module)
