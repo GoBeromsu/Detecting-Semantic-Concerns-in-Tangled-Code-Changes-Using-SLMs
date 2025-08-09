@@ -179,9 +179,9 @@ def get_one_shot_prompt(include_message: bool = True) -> str:
         shot_1_with_message = (
             f"<commit_message>{SHOT_1_COMMIT_MESSAGE}</commit_message>\n{SHOT_1}"
         )
-        return f"{SYSTEM_PROMPT}<Examples>\n{shot_1_with_message}"
+        return f"{SYSTEM_PROMPT}\n\n# Examples\n{shot_1_with_message}"
     else:
-        return f"{SYSTEM_PROMPT}<Examples>\n{SHOT_1}"
+        return f"{SYSTEM_PROMPT}\n\n# Examples\n{SHOT_1}"
 
 
 def get_two_shot_prompt(include_message: bool = True) -> str:
@@ -193,9 +193,9 @@ def get_two_shot_prompt(include_message: bool = True) -> str:
         shot_2_with_message = (
             f"<commit_message>{SHOT_2_COMMIT_MESSAGE}</commit_message>\n{SHOT_2}"
         )
-        return f"{SYSTEM_PROMPT}\n\n# Examples\n\n{shot_1_with_message}\n\n{shot_2_with_message}"
+        return f"{SYSTEM_PROMPT}\n\n# Examples\n{shot_1_with_message}\n{shot_2_with_message}"
     else:
-        return f"{SYSTEM_PROMPT}\n\n# Examples\n\n{SHOT_1}\n\n{SHOT_2}"
+        return f"{SYSTEM_PROMPT}\n\n# Examples\n{SHOT_1}\n{SHOT_2}"
 
 
 def get_prompt_by_type(shot_type: str, include_message: bool = True) -> str:
