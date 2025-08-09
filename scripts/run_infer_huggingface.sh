@@ -32,16 +32,11 @@ module load cuDNN/8.9.2.26-CUDA-12.1.1
 echo "🔧 Activating phi4_env..."
 source activate phi4_env
 
-# Environment variables
-export CUDA_VISIBLE_DEVICES=0
-export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
-export TOKENIZERS_PARALLELISM=false
-export NCCL_DEBUG=INFO
-
 echo "🚀 Starting inference at $(date)"
-python RQ/Phi/infer_huggingface.py
+uv run python RQ/Phi/infer_huggingface.py
 
 echo "✅ Inference completed at $(date)"
+
 source deactivate
 
 
