@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import time
 import torch
 from itertools import product
+from datetime import datetime
 
 # Ensure project root on path
 sys.path.append(str(Path(__file__).resolve().parents[2]))
@@ -28,6 +29,7 @@ MODEL_NAME = "Phi-4"
 # Paths and experiment constants (experiment script concerns)
 RESULTS_ROOT: Path = Path("results")
 RESULTS_SUBDIR: str = "huggingface"
+START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M")
 
 # Inference constants
 # CONTEXT_WINDOWS = [1024, 2048, 4096, 8192, 12288]
@@ -108,7 +110,7 @@ def get_compute_device() -> str:
 
 
 def main() -> None:
-    model_dir: Path = RESULTS_ROOT / MODEL_NAME / RESULTS_SUBDIR
+    model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}" / RESULTS_SUBDIR
     model_dir.mkdir(parents=True, exist_ok=True)
 
     tangled_df: pd.DataFrame = load_dataset(

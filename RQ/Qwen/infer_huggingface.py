@@ -3,6 +3,7 @@ import json
 import time
 from pathlib import Path
 from itertools import product
+from datetime import datetime
 from typing import List
 
 import pandas as pd
@@ -29,6 +30,7 @@ MODEL_NAME = "Qwen3-14B"
 # Paths and experiment constants
 RESULTS_ROOT: Path = Path("results")
 RESULTS_SUBDIR: str = "huggingface"
+START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M")
 
 # Inference constants (mirror Phi)
 CONTEXT_WINDOWS = [12288, 8192, 4096, 2048, 1024]
@@ -38,7 +40,7 @@ TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
 
 # llama.cpp preferred chat template for Qwen
-CHAT_FORMAT = "qwen2"
+CHAT_FORMAT = "qwen"
 
 SHOT_TYPES = ["Zero-shot", "One-shot", "Two-shot"]
 
@@ -113,7 +115,7 @@ def get_compute_device() -> str:
 
 
 def main() -> None:
-    model_dir: Path = RESULTS_ROOT / MODEL_NAME / RESULTS_SUBDIR
+    model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}" / RESULTS_SUBDIR
     model_dir.mkdir(parents=True, exist_ok=True)
 
     tangled_df: pd.DataFrame = load_dataset(

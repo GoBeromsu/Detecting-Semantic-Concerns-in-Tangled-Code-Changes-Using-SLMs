@@ -7,6 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import time
 from itertools import product
+from datetime import datetime
 
 # Ensure project root on path
 sys.path.append(str(Path(__file__).resolve().parents[2]))
@@ -30,6 +31,7 @@ DATASET_REPO_ID = (
 # Paths and experiment constants (experiment script concerns)
 RESULTS_ROOT: Path = Path("results")
 RESULTS_SUBDIR: str = "lmstudio"
+START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M")
 
 # Inference constants
 CONTEXT_WINDOWS = [12288]
@@ -97,7 +99,7 @@ def measure_performance(
 
 
 def main() -> None:
-    model_dir: Path = RESULTS_ROOT / MODEL_NAME / RESULTS_SUBDIR
+    model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}" / RESULTS_SUBDIR
     model_dir.mkdir(parents=True, exist_ok=True)
 
     tangled_df: pd.DataFrame = load_dataset(DATASET_REPO_ID, split="test").to_pandas()

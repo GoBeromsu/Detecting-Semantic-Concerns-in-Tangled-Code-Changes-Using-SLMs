@@ -7,6 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import time
 from itertools import product
+from datetime import datetime
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
@@ -30,6 +31,7 @@ MAX_TOKENS = 16384
 SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
+START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M")
 
 
 def measure_performance(
@@ -85,7 +87,7 @@ def measure_performance(
             print(f"[{row.Index}] appended to {csv_path}")
 
 def main() -> None:
-    prompt_dir: Path = Path("results/gpt/")
+    prompt_dir: Path = Path(f"results/gpt/{MODEL_NAME}_{START_TIME_STR}")
     prompt_dir.mkdir(parents=True, exist_ok=True)
     
     tangled_df: pd.DataFrame = load_dataset(DATASET_REPO_ID, split="test").to_pandas()
