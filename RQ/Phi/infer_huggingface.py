@@ -33,14 +33,14 @@ START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M")
 
 # Inference constants
 # CONTEXT_WINDOWS = [1024, 2048, 4096, 8192, 12288]
-CONTEXT_WINDOWS = [12288,8192,4096,2048,1024]
+CONTEXT_WINDOWS = [12288]
 MAX_TOKENS = 16384
 SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
 CHAT_FORMAT = "chatml"
-SHOT_TYPES = ["Zero-shot", "One-shot", "Two-shot"]
-# SHOT_TYPES = ["Zero-shot", "One-shot"]
+# SHOT_TYPES = ["Zero-shot", "One-shot", "Two-shot"]
+SHOT_TYPES = ["Zero-shot", "One-shot"]
 
 
 def measure_performance(
