@@ -94,12 +94,16 @@ HF_MODEL_REPO: str = "Berom0227/" + NEW_MODEL
 # https://docs.hpc.shef.ac.uk/en/latest/hpc/filestore.html
 # Fastdata areas (/mnt/parscratch/users/$USER/) are designed for large files and avoid "Disk quota exceeded" errors in home directories
 USER = os.getenv("USER", "acq24bk")  # Fallback to your username if USER env var not set
-FASTDATA_BASE = f"/mnt/parscratch/users/{USER}"
+FASTDATA_BASE = os.getenv("FASTDATA_BASE", f"/mnt/parscratch/users/{USER}")
 MODEL_OUTPUT_DIR = f"{FASTDATA_BASE}/models/{MODEL_NAME}-LoRA"
 MERGED_MODEL_DIR = f"{FASTDATA_BASE}/models/merged_model"
+HF_CACHE_DIR = os.getenv("TRANSFORMERS_CACHE", f"{FASTDATA_BASE}/.cache/huggingface/transformers")
+HF_DATASETS_CACHE = os.getenv("HF_DATASETS_CACHE", f"{FASTDATA_BASE}/.cache/huggingface/datasets")
 
 # Create necessary directories
 os.makedirs(f"{FASTDATA_BASE}/models", exist_ok=True)
+os.makedirs(HF_CACHE_DIR, exist_ok=True)
+os.makedirs(HF_DATASETS_CACHE, exist_ok=True)
 
 # Experiment tracking configuration
 WANDB_PROJECT: str = "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
@@ -156,11 +160,13 @@ wandb.init(project=WANDB_PROJECT, name=EXPERIMENT_NAME)
 train_dataset = load_dataset(
     DATASET_NAME,
     split="train",
+    cache_dir=HF_DATASETS_CACHE,
 )
 
 test_dataset = load_dataset(
     DATASET_NAME,
     split="test",
+    cache_dir=HF_DATASETS_CACHE,
 )
 
 # Load tokenizer to prepare the dataset (First tokenizer - for data formatting only)
@@ -168,7 +174,7 @@ tokenizer_id = MODEL_ID
 
 # 'AutoTokenizer.from_pretrained' is a method that loads a tokenizer from the Hugging Face Model Hub.
 # 'tokenizer_id' is passed as an argument to specify which tokenizer to load.
-tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
+tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, cache_dir=HF_CACHE_DIR)
 
 # 'tokenizer.padding_side' is a property that specifies which side to pad when the input sequence is shorter than the maximum sequence length.
 # Setting it to 'right' means that padding tokens will be added to the right (end) of the sequence.
@@ -266,7 +272,7 @@ else:
 # 'add_eos_token' is set to True to add an end-of-sentence token to the tokenizer.
 # 'use_fast' is set to True to use the fast version of the tokenizer.
 tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_ID, trust_remote_code=True, add_eos_token=True, use_fast=True
+    MODEL_ID, trust_remote_code=True, add_eos_token=True, use_fast=True, cache_dir=HF_CACHE_DIR
 )
 
 # The padding token is set to the unknown token.
@@ -288,6 +294,7 @@ model = AutoModelForCausalLM.from_pretrained(
     trust_remote_code=True,
     device_map=DEVICE_MAP,
     attn_implementation=attn_implementation,
+    cache_dir=HF_CACHE_DIR,
 )
 
 
@@ -426,6 +433,7 @@ new_model = AutoPeftModelForCausalLM.from_pretrained(
     torch_dtype=compute_dtype,
     trust_remote_code=True,
     device_map=DEVICE_MAP,
+    cache_dir=HF_CACHE_DIR,
 )
 
 # Merge the model and adapter
