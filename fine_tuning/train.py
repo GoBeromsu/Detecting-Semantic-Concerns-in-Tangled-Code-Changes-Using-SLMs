@@ -330,7 +330,7 @@ model = AutoModelForCausalLM.from_pretrained(
 
 args = SFTConfig(
     output_dir=MODEL_OUTPUT_DIR,
-    evaluation_strategy="steps",
+    eval_strategy="steps",
     do_eval=True,
     optim="adamw_torch",
     per_device_train_batch_size=1,  # Reduce memory usage
@@ -352,7 +352,7 @@ args = SFTConfig(
     push_to_hub=True,
     hub_strategy="every_save",
     hub_model_id=HF_MODEL_REPO + "-adapter",
-    max_seq_length=MAX_SEQ_LENGTH,
+    max_length=MAX_SEQ_LENGTH,
     packing=True,
 )
 
@@ -377,6 +377,7 @@ trainer = SFTTrainer(
     eval_dataset=processed_test_dataset,
     peft_config=peft_config,
     processing_class=tokenizer,
+    tokenizer=tokenizer,
     args=args,
 )
 
