@@ -73,16 +73,6 @@ def compute_pearson_correlations(combined_results_df: pd.DataFrame) -> Dict[str,
 # Heatmap removed per user request; focus on factor-to-metric scatter relationships
 
 
-def compute_explanatory_factor_pair_correlation(
-    combined_results_df: pd.DataFrame,
-) -> Tuple[float, float]:
-    """Compute Pearson correlation between context_len and concern_count."""
-    correlation_coefficient, p_value = stats.pearsonr(
-        combined_results_df["context_len"], combined_results_df["concern_count"]
-    )
-    return correlation_coefficient, p_value
-
-
 def plot_correlation_visualizations(
     combined_results_df: pd.DataFrame,
     pearson_correlation_by_factor_metric: Dict[str, Dict[str, Tuple[float, float]]],
@@ -146,12 +136,60 @@ def plot_correlation_visualizations(
             plt.savefig(output_path, dpi=300, bbox_inches="tight")
             plt.close(fig)
 
+    # Additional factor-to-factor plot: concern_count vs contextlength
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+    ax.scatter(
+        combined_results_df["concern_count"],
+        combined_results_df["context_len"],
+        alpha=0.6,
+        s=30,
+    )
+    linear_coefficients = np.polyfit(
+        combined_results_df["concern_count"], combined_results_df["context_len"], 1
+    )
+    linear_model = np.poly1d(linear_coefficients)
+    ax.plot(
+        combined_results_df["concern_count"],
+        linear_model(combined_results_df["concern_count"]),
+        "r--",
+        alpha=0.8,
+    )
+    corr_coef, p_value = stats.pearsonr(
+        combined_results_df["concern_count"], combined_results_df["context_len"]
+    )
+    significance_stars = (
+        "***"
+        if p_value < 0.001
+        else "**"
+        if p_value < 0.01
+        else "*"
+        if p_value < P_VALUE_SIGNIFICANCE_THRESHOLD
+        else ""
+    )
+    ax.set_title(
+        f"concern_count vs contextlength\nr={corr_coef:.3f}, p={p_value:.4f} {significance_stars}"
+    )
+    ax.set_xlabel("concern_count")
+    ax.set_ylabel("contextlength")
+    ax.set_yscale("log")
+    fig.text(
+        0.5,
+        0.01,
+        f"Significance threshold: p < {P_VALUE_SIGNIFICANCE_THRESHOLD}",
+        ha="center",
+        va="bottom",
+        fontsize=9,
+    )
+    plt.tight_layout(rect=(0, 0.03, 1, 1))
+    pair_output_path = analysis_output_dir / "concern_count_vs_contextlength.png"
+    plt.savefig(pair_output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
 
 def generate_report(
     pearson_correlation_by_factor_metric: Dict[str, Dict[str, Tuple[float, float]]],
     combined_results_df: pd.DataFrame,
     num_input_files: int,
-    factor_pair_correlation: Tuple[float, float],
 ) -> str:
     """Generate text report of correlation analysis."""
     report_lines: List[str] = ["Correlation Analysis Report", "=" * 50, ""]
@@ -194,17 +232,6 @@ def generate_report(
             f"{metric_name}: {stronger_factor} has stronger correlation ({context_abs_corr:.3f} vs {concern_abs_corr:.3f})"
         )
 
-    # Factor-to-factor correlation
-    report_lines.append("\nFactor-to-Factor Correlation:")
-    report_lines.append("-" * 28)
-    ff_r, ff_p = factor_pair_correlation
-    ff_significance = (
-        "***" if ff_p < 0.001 else "**" if ff_p < 0.01 else "*" if ff_p < 0.05 else ""
-    )
-    report_lines.append(
-        f"context_len vs concern_count: r={ff_r:6.3f}, p={ff_p:6.4f} {ff_significance}"
-    )
-
     return "\n".join(report_lines)
 
 
@@ -238,84 +265,6 @@ def save_results(
     summary_statistics_df.to_csv(analysis_output_dir / "summary_statistics.csv")
 
 
-def plot_explanatory_factor_pair_visualization(
-    combined_results_df: pd.DataFrame,
-    factor_pair_correlation: Tuple[float, float],
-    analysis_output_dir: Path,
-) -> None:
-    """Create and save scatter plot for context_len vs concern_count."""
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
-
-    ax.scatter(
-        combined_results_df["context_len"],
-        combined_results_df["concern_count"],
-        alpha=0.6,
-        s=30,
-    )
-
-    linear_coefficients = np.polyfit(
-        combined_results_df["context_len"], combined_results_df["concern_count"], 1
-    )
-    linear_model = np.poly1d(linear_coefficients)
-    ax.plot(
-        combined_results_df["context_len"],
-        linear_model(combined_results_df["context_len"]),
-        "r--",
-        alpha=0.8,
-    )
-
-    correlation_coefficient, p_value = factor_pair_correlation
-    significance_stars = (
-        "***"
-        if p_value < 0.001
-        else "**"
-        if p_value < 0.01
-        else "*"
-        if p_value < P_VALUE_SIGNIFICANCE_THRESHOLD
-        else ""
-    )
-    ax.set_title(
-        f"context_len vs concern_count\nr={correlation_coefficient:.3f}, p={p_value:.4f} {significance_stars}"
-    )
-    ax.set_xlabel("context_len")
-    ax.set_ylabel("concern_count")
-    ax.set_xscale("log")
-
-    fig.text(
-        0.5,
-        0.01,
-        f"Significance threshold: p < {P_VALUE_SIGNIFICANCE_THRESHOLD}",
-        ha="center",
-        va="bottom",
-        fontsize=9,
-    )
-
-    plt.tight_layout(rect=(0, 0.03, 1, 1))
-    output_path = analysis_output_dir / "context_len_vs_concern_count.png"
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
-    plt.close(fig)
-
-
-def save_explanatory_factor_pair_results(
-    factor_pair_correlation: Tuple[float, float], analysis_output_dir: Path
-) -> None:
-    """Save the context_len vs concern_count correlation to CSV."""
-    ff_r, ff_p = factor_pair_correlation
-    df = pd.DataFrame(
-        [
-            {
-                "factor_x": "context_len",
-                "factor_y": "concern_count",
-                "correlation": ff_r,
-                "p_value": ff_p,
-                "abs_correlation": abs(ff_r),
-                "significant": ff_p < 0.05,
-            }
-        ]
-    )
-    df.to_csv(analysis_output_dir / "factor_pair_correlation.csv", index=False)
-
-
 def main() -> None:
     """Main analysis function."""
     print("Starting correlation analysis...")
@@ -335,7 +284,6 @@ def main() -> None:
 
     # Calculate correlations
     pearson_correlation_by_factor_metric = compute_pearson_correlations(combined_results_df)
-    factor_pair_correlation = compute_explanatory_factor_pair_correlation(combined_results_df)
 
     # Create output directory
     analysis_output_dir = ANALYSIS_OUTPUT_DIR_BASE / f"correlation_analysis_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}"
@@ -343,20 +291,17 @@ def main() -> None:
 
     # Generate visualizations (scatter plots only)
     plot_correlation_visualizations(combined_results_df, pearson_correlation_by_factor_metric, analysis_output_dir)
-    plot_explanatory_factor_pair_visualization(combined_results_df, factor_pair_correlation, analysis_output_dir)
 
     # Generate and print report
     correlation_text_report = generate_report(
         pearson_correlation_by_factor_metric,
         combined_results_df,
         num_input_files=len(input_csv_paths),
-        factor_pair_correlation=factor_pair_correlation,
     )
     print("\n" + correlation_text_report)
 
     # Save results
     save_results(pearson_correlation_by_factor_metric, combined_results_df, analysis_output_dir)
-    save_explanatory_factor_pair_results(factor_pair_correlation, analysis_output_dir)
 
     print(f"\nResults saved to: {analysis_output_dir}")
 
