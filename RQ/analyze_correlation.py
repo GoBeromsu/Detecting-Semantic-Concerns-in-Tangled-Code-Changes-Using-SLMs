@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Correlation Analysis: Context Length vs Concern Count Impact on Performance Metrics
-Analyzes which factor has stronger correlation with precision, recall, f1 scores.
+Analyzes which factor has stronger correlation with precision, recall, f1 scores, and inference_time.
 """
 import pandas as pd
 import numpy as np
@@ -23,7 +23,7 @@ INPUT_CSV_PATHS: List[Path] = [
     Path("results/gpt/gpt-4.1-2025-04-14_12288_zs_msg1.csv"),
 ]
 
-PERFORMANCE_METRICS = ["precision", "recall", "f1"]
+PERFORMANCE_METRICS = ["precision", "recall", "f1", "inference_time"]
 EXPLANATORY_FACTORS = ["context_len", "concern_count"]
 
 
@@ -73,20 +73,20 @@ def plot_correlation_visualizations(
     pearson_correlation_by_factor_metric: Dict[str, Dict[str, Tuple[float, float]]],
     analysis_output_dir: Path,
 ) -> None:
-    """Create scatter plots for each factor-metric pair."""
+    """Create and save individual scatter plots for each factor-metric pair."""
     analysis_output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Scatter plots for each factor-metric pair
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+    for factor_name in EXPLANATORY_FACTORS:
+        for metric_name in PERFORMANCE_METRICS:
+            fig, ax = plt.subplots(1, 1, figsize=(6, 4))
 
-    for row_index, factor_name in enumerate(EXPLANATORY_FACTORS):
-        for col_index, metric_name in enumerate(PERFORMANCE_METRICS):
-            ax = axes[row_index, col_index]
+            ax.scatter(
+                combined_results_df[factor_name],
+                combined_results_df[metric_name],
+                alpha=0.6,
+                s=30,
+            )
 
-            # Scatter plot
-            ax.scatter(combined_results_df[factor_name], combined_results_df[metric_name], alpha=0.6, s=30)
-
-            # Add trend line
             linear_coefficients = np.polyfit(
                 combined_results_df[factor_name], combined_results_df[metric_name], 1
             )
@@ -98,34 +98,38 @@ def plot_correlation_visualizations(
                 alpha=0.8,
             )
 
-            # Correlation info
             correlation_coefficient, p_value = pearson_correlation_by_factor_metric[factor_name][metric_name]
             significance_stars = (
-                "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < P_VALUE_SIGNIFICANCE_THRESHOLD else ""
+                "***"
+                if p_value < 0.001
+                else "**"
+                if p_value < 0.01
+                else "*"
+                if p_value < P_VALUE_SIGNIFICANCE_THRESHOLD
+                else ""
             )
             ax.set_title(
-                f"{factor_name} vs {metric_name}\nr={correlation_coefficient:.3f}, p={p_value:.3f} {significance_stars}"
+                f"{factor_name} vs {metric_name}\nr={correlation_coefficient:.3f}, p={p_value:.4f} {significance_stars}"
             )
             ax.set_xlabel(factor_name)
             ax.set_ylabel(metric_name)
 
-            # Format axes
             if factor_name == "context_len":
                 ax.set_xscale("log")
 
-    # Add significance threshold note
-    fig.text(
-        0.5,
-        0.01,
-        f"Significance threshold: p < {P_VALUE_SIGNIFICANCE_THRESHOLD}",
-        ha="center",
-        va="bottom",
-        fontsize=10,
-    )
+            fig.text(
+                0.5,
+                0.01,
+                f"Significance threshold: p < {P_VALUE_SIGNIFICANCE_THRESHOLD}",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+            )
 
-    plt.tight_layout(rect=(0, 0.03, 1, 1))
-    plt.savefig(analysis_output_dir / "correlation_scatter_plots.png", dpi=300, bbox_inches="tight")
-    plt.close()
+            plt.tight_layout(rect=(0, 0.03, 1, 1))
+            output_path = analysis_output_dir / f"{factor_name}_vs_{metric_name}.png"
+            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            plt.close(fig)
 
 
 def generate_report(
@@ -158,7 +162,7 @@ def generate_report(
                 "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < 0.05 else ""
             )
             report_lines.append(
-                f"  {metric_name}: r={correlation_coefficient:6.3f}, p={p_value:6.3f} {significance}"
+                f"  {metric_name}: r={correlation_coefficient:6.3f}, p={p_value:6.4f} {significance}"
             )
 
     # Summary comparison
