@@ -203,6 +203,41 @@ def run_model_comparison(
         comparison_result.loc[combined_results[llm_metric_col] == combined_results[slm_metric_col]] = RELATION_VALUES[1]  # "Equal"
         combined_results[comparison_col] = comparison_result
 
+    # Additionally: export rows where only one model is exactly correct (exact_match)
+    slm_full_df = pd.read_csv(slm_results_path)
+    llm_full_df = pd.read_csv(llm_results_path)
+
+    exact_slm_col = "exact_match_SLM"
+    exact_llm_col = "exact_match_LLM"
+    if exact_slm_col not in combined_results.columns or exact_llm_col not in combined_results.columns:
+        raise KeyError("Missing exact_match columns in combined results")
+
+    only_slm_correct_mask = (combined_results[exact_slm_col] == 1.0) & (combined_results[exact_llm_col] == 0.0)
+    only_llm_correct_mask = (combined_results[exact_slm_col] == 0.0) & (combined_results[exact_llm_col] == 1.0)
+
+    only_slm_row_ids = combined_results.loc[only_slm_correct_mask, "row_id"].astype(int).tolist()
+    only_llm_row_ids = combined_results.loc[only_llm_correct_mask, "row_id"].astype(int).tolist()
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save SLM-only-correct rows (from SLM source CSV)
+    slm_only_path = output_dir / "exact_match_only_slm_correct.csv"
+    if len(only_slm_row_ids) > 0:
+        slm_only_rows = slm_full_df.iloc[only_slm_row_ids].copy()
+        slm_only_rows.insert(0, "row_id", only_slm_row_ids)
+        slm_only_rows.to_csv(slm_only_path, index=False)
+    else:
+        pd.DataFrame(columns=["row_id", *slm_full_df.columns]).to_csv(slm_only_path, index=False)
+
+    # Save LLM-only-correct rows (from LLM source CSV)
+    llm_only_path = output_dir / "exact_match_only_llm_correct.csv"
+    if len(only_llm_row_ids) > 0:
+        llm_only_rows = llm_full_df.iloc[only_llm_row_ids].copy()
+        llm_only_rows.insert(0, "row_id", only_llm_row_ids)
+        llm_only_rows.to_csv(llm_only_path, index=False)
+    else:
+        pd.DataFrame(columns=["row_id", *llm_full_df.columns]).to_csv(llm_only_path, index=False)
+
     # Generate outputs for each metric
     for metric_name in METRICS:
         metric_columns = [
