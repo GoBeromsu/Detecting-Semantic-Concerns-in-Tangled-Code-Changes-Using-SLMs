@@ -30,7 +30,7 @@ MODEL_NAME = "Qwen3-14B"
 # Paths and experiment constants
 RESULTS_ROOT: Path = Path("results")
 RESULTS_SUBDIR: str = "huggingface"
-START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M")
+START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Inference constants (mirror Phi)
 CONTEXT_WINDOWS = [12288, 8192, 4096, 2048, 1024]
