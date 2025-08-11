@@ -20,7 +20,7 @@ METRICS: Tuple[str, str, str, str] = ("precision", "recall", "f1", "exact_match"
  
 
 
-def load_and_prepare(csv_path: Path, role_suffix: str) -> pd.DataFrame:
+def load_and_prepare_data(csv_path: Path, model_type: str) -> pd.DataFrame:
     """Load CSV and prepare columns for comparison.
 
     Returns a DataFrame with: row_id, <metric>_<role_suffix> for each metric.
@@ -32,61 +32,61 @@ def load_and_prepare(csv_path: Path, role_suffix: str) -> pd.DataFrame:
 
     row_id = df.index.astype(int)
 
-    prepared = pd.DataFrame({"row_id": row_id})
+    data = pd.DataFrame({"row_id": row_id})
 
     for metric in METRICS:
         if metric not in df.columns:
             raise ValueError(f"Missing metric column '{metric}' in {csv_path}")
-        prepared[f"{metric}_{role_suffix}"] = pd.to_numeric(df[metric], errors="coerce").astype(float)
+        data[f"{metric}_{model_type}"] = pd.to_numeric(df[metric], errors="coerce").astype(float)
 
-    return prepared
+    return data
 
 
 
-def save_metric_winners_csv(df: pd.DataFrame, metric: str, output_dir: Path) -> Path:
+def save_metric_comparison_csv(comparison_data: pd.DataFrame, metric_name: str, output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / f"{metric}_winner.csv"
-    df.to_csv(out_path, index=False)
-    return out_path
+    csv_path = output_dir / f"{metric_name}_results.csv"
+    comparison_data.to_csv(csv_path, index=False)
+    return csv_path
 
 
-def save_overall_classification(merged: pd.DataFrame, output_dir: Path) -> Path:
-    relation_cols = [f"relation_{m}" for m in METRICS]
-    base = merged[["row_id", *relation_cols]].copy()
+def save_overall_summary(comparison_results: pd.DataFrame, output_dir: Path) -> Path:
+    comparison_columns = [f"relation_{m}" for m in METRICS]
+    summary = comparison_results[["row_id", *comparison_columns]].copy()
 
-    llm_better = (base[relation_cols] == RELATION_VALUES[0]).sum(axis=1)
-    equal = (base[relation_cols] == RELATION_VALUES[1]).sum(axis=1)
-    slm_better = (base[relation_cols] == RELATION_VALUES[2]).sum(axis=1)
+    llm_wins_count = (summary[comparison_columns] == RELATION_VALUES[0]).sum(axis=1)
+    equal_count = (summary[comparison_columns] == RELATION_VALUES[1]).sum(axis=1)
+    slm_wins_count = (summary[comparison_columns] == RELATION_VALUES[2]).sum(axis=1)
 
-    base["llm_better"] = llm_better
-    base["equal"] = equal
-    base["slm_better"] = slm_better
-    base["label"] = (
-        "LLM_" + llm_better.astype(str)
-        + "_Equal_" + equal.astype(str)
-        + "_SLM_" + slm_better.astype(str)
+    summary["llm_wins_count"] = llm_wins_count
+    summary["equal_count"] = equal_count
+    summary["slm_wins_count"] = slm_wins_count
+    summary["overall_pattern"] = (
+        "LLM_" + llm_wins_count.astype(str)
+        + "_Equal_" + equal_count.astype(str)
+        + "_SLM_" + slm_wins_count.astype(str)
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / "overall_classification.csv"
-    base.to_csv(out_path, index=False)
-    return out_path
+    summary_path = output_dir / "comparison_summary.csv"
+    summary.to_csv(summary_path, index=False)
+    return summary_path
 
 
-def plot_scatter(metric_df: pd.DataFrame, metric: str, output_dir: Path) -> Path:
-    x_col = f"{metric}_SLM"
-    y_col = f"{metric}_LLM"
+def create_scatter_plot(comparison_data: pd.DataFrame, metric_name: str, output_dir: Path) -> Path:
+    slm_values_col = f"{metric_name}_SLM"
+    llm_values_col = f"{metric_name}_LLM"
 
-    color_map = {"LLM>SLM": "#2ca02c", "Equal": "#7f7f7f", "SLM>LLM": "#ff7f0e"}
-    colors = metric_df[f"relation_{metric}"].map(color_map)
+    relation_colors = {"LLM>SLM": "#2ca02c", "Equal": "#7f7f7f", "SLM>LLM": "#ff7f0e"}
+    point_colors = comparison_data[f"relation_{metric_name}"].map(relation_colors)
 
     fig, ax = plt.subplots(figsize=(6, 5))
-    ax.scatter(metric_df[x_col], metric_df[y_col], c=colors, alpha=0.7, edgecolor="none")
+    ax.scatter(comparison_data[slm_values_col], comparison_data[llm_values_col], c=point_colors, alpha=0.7, edgecolor="none")
     ax.set_xlim(0.0, 1.0)
     ax.set_ylim(0.0, 1.0)
-    ax.set_xlabel(f"SLM: {metric}")
-    ax.set_ylabel(f"LLM: {metric}")
-    ax.set_title(f"Scatter — {metric}")
+    ax.set_xlabel(f"SLM: {metric_name}")
+    ax.set_ylabel(f"LLM: {metric_name}")
+    ax.set_title(f"Scatter — {metric_name}")
 
     # Guideline at 0.5 and y=x line
     ax.axvline(0.5, color="gray", linestyle="--", linewidth=1)
@@ -96,135 +96,137 @@ def plot_scatter(metric_df: pd.DataFrame, metric: str, output_dir: Path) -> Path
     fig.tight_layout()
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / f"scatter_{metric}.png"
-    fig.savefig(out_path, dpi=150)
+    plot_path = output_dir / f"{metric_name}_scatter.png"
+    fig.savefig(plot_path, dpi=150)
     plt.close(fig)
-    return out_path
+    return plot_path
 
 
-def plot_winner_counts(metric_df: pd.DataFrame, metric: str, output_dir: Path) -> Path:
-    relation_series = metric_df[f"relation_{metric}"].astype(str).copy()
-    categories: List[str] = list(RELATION_VALUES)
-    colors = ["#1f77b4", "#7f7f7f", "#ff7f0e"]
+def create_comparison_bar_chart(comparison_data: pd.DataFrame, metric_name: str, output_dir: Path) -> Path:
+    relation_values = comparison_data[f"relation_{metric_name}"].astype(str).copy()
+    comparison_categories: List[str] = list(RELATION_VALUES)
+    bar_colors = ["#1f77b4", "#7f7f7f", "#ff7f0e"]
 
-    counts = relation_series.value_counts().reindex(categories, fill_value=0).reset_index()
-    counts.columns = ["relation", "count"]
+    category_counts = relation_values.value_counts().reindex(comparison_categories, fill_value=0).reset_index()
+    category_counts.columns = ["comparison_type", "count"]
 
     fig, ax = plt.subplots(figsize=(5, 4))
-    ax.bar(counts["relation"], counts["count"], color=colors)
-    ax.set_xlabel("Comparison")
+    ax.bar(category_counts["comparison_type"], category_counts["count"], color=bar_colors)
+    ax.set_xlabel("Comparison Result")
     ax.set_ylabel("Count")
-    ax.set_title(f"Comparison distribution — {metric}")
-    for i, v in enumerate(counts["count"]):
-        ax.text(i, v + max(1, counts["count"].max() * 0.02), str(int(v)), ha="center")
+    ax.set_title(f"Comparison distribution — {metric_name}")
+    for i, count_value in enumerate(category_counts["count"]):
+        ax.text(i, count_value + max(1, category_counts["count"].max() * 0.02), str(int(count_value)), ha="center")
     fig.tight_layout()
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / f"countplot_{metric}.png"
-    fig.savefig(out_path, dpi=150)
+    chart_path = output_dir / f"{metric_name}_distribution.png"
+    fig.savefig(chart_path, dpi=150)
     plt.close(fig)
-    return out_path
+    return chart_path
 
 
-def plot_accuracy_categories(metric_df: pd.DataFrame, metric: str, output_dir: Path) -> Path:
+def create_accuracy_breakdown_chart(comparison_data: pd.DataFrame, metric_name: str, output_dir: Path) -> Path:
     """Plot bar chart showing accuracy categories: both correct, only one correct, both wrong."""
-    slm_col = f"{metric}_SLM"
-    llm_col = f"{metric}_LLM"
+    slm_scores_col = f"{metric_name}_SLM"
+    llm_scores_col = f"{metric_name}_LLM"
     
-    if slm_col not in metric_df.columns or llm_col not in metric_df.columns:
-        raise KeyError(f"Missing expected columns: {slm_col}, {llm_col}")
+    if slm_scores_col not in comparison_data.columns or llm_scores_col not in comparison_data.columns:
+        raise KeyError(f"Missing expected columns: {slm_scores_col}, {llm_scores_col}")
     
-    slm_vals = metric_df[slm_col].astype(float)
-    llm_vals = metric_df[llm_col].astype(float)
+    slm_scores = comparison_data[slm_scores_col].astype(float)
+    llm_scores = comparison_data[llm_scores_col].astype(float)
     
-    both_correct = (slm_vals == 1.0) & (llm_vals == 1.0)
-    both_wrong = (slm_vals == 0.0) & (llm_vals == 0.0)
-    only_llm_correct = (slm_vals == 0.0) & (llm_vals == 1.0)
-    only_slm_correct = (slm_vals == 1.0) & (llm_vals == 0.0)
+    both_models_correct = (slm_scores == 1.0) & (llm_scores == 1.0)
+    both_models_wrong = (slm_scores == 0.0) & (llm_scores == 0.0)
+    only_llm_correct = (slm_scores == 0.0) & (llm_scores == 1.0)
+    only_slm_correct = (slm_scores == 1.0) & (llm_scores == 0.0)
     
-    categories = ["Both Correct", "Only LLM Correct", "Only SLM Correct", "Both Wrong"]
-    counts = [
-        both_correct.sum(),
+    accuracy_categories = ["Both Correct", "Only LLM Correct", "Only SLM Correct", "Both Wrong"]
+    category_counts = [
+        both_models_correct.sum(),
         only_llm_correct.sum(),
         only_slm_correct.sum(),
-        both_wrong.sum()
+        both_models_wrong.sum()
     ]
-    colors = ["#2ca02c", "#1f77b4", "#ff7f0e", "#d62728"]
+    category_colors = ["#2ca02c", "#1f77b4", "#ff7f0e", "#d62728"]
     
     fig, ax = plt.subplots(figsize=(6, 4))
-    bars = ax.bar(categories, counts, color=colors)
-    ax.set_xlabel("Prediction Result")
+    accuracy_bars = ax.bar(accuracy_categories, category_counts, color=category_colors)
+    ax.set_xlabel("Accuracy Outcome")
     ax.set_ylabel("Count")
-    ax.set_title(f"{metric} Distribution")
+    ax.set_title(f"{metric_name} Accuracy Breakdown")
     
     plt.xticks(rotation=30, ha='right')
     
-    for bar in bars:
-        height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height,
-                f'{int(height)}',
+    for bar in accuracy_bars:
+        bar_height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., bar_height,
+                f'{int(bar_height)}',
                 ha='center', va='bottom')
     
     fig.tight_layout()
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / f"accuracy_bar_{metric}.png"
-    fig.savefig(out_path, dpi=150, bbox_inches='tight')
+    breakdown_chart_path = output_dir / f"{metric_name}_accuracy_breakdown.png"
+    fig.savefig(breakdown_chart_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
-    return out_path
+    return breakdown_chart_path
 
 
-def run(
-    slm_csv: Path,
-    llm_csv: Path,
+def run_model_comparison(
+    slm_results_path: Path,
+    llm_results_path: Path,
 ) -> None:
-    # Per-run output directory under analysis
-    created_at = datetime.now(tz=timezone.utc)
-    run_dir = ANALYSIS_DIR / created_at.strftime("%Y%m%d_%H%M")
+    # Create timestamped output directory
+    timestamp = datetime.now(tz=timezone.utc)
+    output_dir = ANALYSIS_DIR / f"comparison_{timestamp.strftime('%Y%m%d_%H%M')}"
 
-    # Load and prepare (no meta/shas)
-    slm_df = load_and_prepare(slm_csv, role_suffix="SLM")
-    llm_df = load_and_prepare(llm_csv, role_suffix="LLM")
+    # Load model results
+    slm_data = load_and_prepare_data(slm_results_path, model_type="SLM")
+    llm_data = load_and_prepare_data(llm_results_path, model_type="LLM")
 
-    merged = pd.merge(slm_df, llm_df, on="row_id", how="inner")
+    # Combine results for comparison
+    combined_results = pd.merge(slm_data, llm_data, on="row_id", how="inner")
 
-    for metric in METRICS:
-        slm_col = f"{metric}_SLM"
-        llm_col = f"{metric}_LLM"
-        relation_col = f"relation_{metric}"
+    # Calculate performance comparisons for each metric
+    for metric_name in METRICS:
+        slm_metric_col = f"{metric_name}_SLM"
+        llm_metric_col = f"{metric_name}_LLM"
+        comparison_col = f"relation_{metric_name}"
         
         # Start with default assumption: SLM performs better
-        relation = pd.Series(np.full(len(merged), RELATION_VALUES[2], dtype=object))  # "SLM>LLM"
+        comparison_result = pd.Series(np.full(len(combined_results), RELATION_VALUES[2], dtype=object))  # "SLM>LLM"
         # Override where LLM actually performs better
-        relation.loc[merged[llm_col] > merged[slm_col]] = RELATION_VALUES[0]  # "LLM>SLM"
+        comparison_result.loc[combined_results[llm_metric_col] > combined_results[slm_metric_col]] = RELATION_VALUES[0]  # "LLM>SLM"
         # Override where both perform equally
-        relation.loc[merged[llm_col] == merged[slm_col]] = RELATION_VALUES[1]  # "Equal"
-        merged[relation_col] = relation
+        comparison_result.loc[combined_results[llm_metric_col] == combined_results[slm_metric_col]] = RELATION_VALUES[1]  # "Equal"
+        combined_results[comparison_col] = comparison_result
 
-    for metric in METRICS:
-        cols = [
+    # Generate outputs for each metric
+    for metric_name in METRICS:
+        metric_columns = [
             "row_id",
-            f"{metric}_SLM",
-            f"{metric}_LLM",
-            f"relation_{metric}",
+            f"{metric_name}_SLM",
+            f"{metric_name}_LLM",
+            f"relation_{metric_name}",
         ]
-        metric_df = merged[cols].copy()
-        save_metric_winners_csv(metric_df, metric, output_dir=run_dir)
-        plot_scatter(metric_df, metric, output_dir=run_dir)
-        plot_winner_counts(merged, metric, output_dir=run_dir)
-        if metric == "exact_match":
-            plot_accuracy_categories(metric_df, metric, output_dir=run_dir)
+        metric_comparison_data = combined_results[metric_columns].copy()
+        save_metric_comparison_csv(metric_comparison_data, metric_name, output_dir=output_dir)
+        create_scatter_plot(metric_comparison_data, metric_name, output_dir=output_dir)
+        create_comparison_bar_chart(combined_results, metric_name, output_dir=output_dir)
+        if metric_name == "exact_match":
+            create_accuracy_breakdown_chart(metric_comparison_data, metric_name, output_dir=output_dir)
 
-    save_overall_classification(merged, output_dir=run_dir)
+    save_overall_summary(combined_results, output_dir=output_dir)
 
 
 def main() -> None:
+    # Default model result files for comparison
+    default_slm_results = RESULTS_DIR / "Phi-4_202508101101" / "huggingface" / "Phi-4_12288_zs_msg1.csv"
+    default_llm_results = RESULTS_DIR / "gpt" / "gpt-4.1-2025-04-14_12288_os_msg1.csv"
 
-    # If not provided, try defaults used in the example
-    slm_csv = RESULTS_DIR / "Phi-4_202508101101" / "huggingface" / "Phi-4_12288_zs_msg1.csv"
-    llm_csv = RESULTS_DIR / "gpt" / "gpt-4.1-2025-04-14_12288_os_msg1.csv"
-
-    run(slm_csv=slm_csv, llm_csv=llm_csv)
+    run_model_comparison(slm_results_path=default_slm_results, llm_results_path=default_llm_results)
 
 
 if __name__ == "__main__":
