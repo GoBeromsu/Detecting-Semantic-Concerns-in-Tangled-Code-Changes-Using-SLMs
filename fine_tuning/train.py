@@ -83,10 +83,10 @@ logger = logging.getLogger(__name__)
 MODEL_ID: str = "microsoft/phi-4"
 MODEL_NAME: str = "microsoft/phi-4"
 DATASET_NAME: str = (
-    "Berom0227/Untangling-Multi-Concern-Commits-with-Small-Language-Models"
+    "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 )
 
-NEW_MODEL: str = "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
+NEW_MODEL: str = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 HF_MODEL_REPO: str = "Berom0227/" + NEW_MODEL
 
 # HPC storage configuration - Use fastdata area for large files
@@ -401,7 +401,7 @@ trainer.save_model()
 print("📝 Creating model card and uploading to Hub...")
 trainer.create_model_card(
     tags=["phi-4", "fine-tuned", "commit-analysis", "software-engineering"],
-    dataset_tags=["Berom0227/tangled-ccs-dataset"],
+    dataset_tags=["Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"],
     language="en",
     license="mit",
     base_model="microsoft/phi-4",

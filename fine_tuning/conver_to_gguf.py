@@ -25,9 +25,9 @@ MERGED_MODEL_DIR = f"{FASTDATA_BASE}/models/merged_model"
 GGUF_OUTPUT_DIR = f"{FASTDATA_BASE}/models/gguf"
 LLAMA_CPP_DIR = f"{FASTDATA_BASE}/llama.cpp"
 
-# Model naming
-MODEL_NAME = "phi4-commit"
-HF_REPO_NAME = "Berom0227/phi4-commit-gguf"
+# Model naming (align with train.py NEW_MODEL)
+MODEL_NAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
+HF_REPO_NAME = f"Berom0227/{MODEL_NAME}-gguf"
 
 # Quantization options
 QUANT_TYPES = ["q4_K_M", "q5_K_S", "q8_0"]
