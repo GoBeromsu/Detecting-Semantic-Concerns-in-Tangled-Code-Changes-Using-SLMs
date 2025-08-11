@@ -373,7 +373,6 @@ trainer = SFTTrainer(
     eval_dataset=processed_test_dataset,
     peft_config=peft_config,
     processing_class=tokenizer,
-    tokenizer=tokenizer,
     args=args,
 )
 
