@@ -29,7 +29,7 @@ MODEL_NAME = "Phi-4"
 # Paths and experiment constants (experiment script concerns)
 RESULTS_ROOT: Path = Path("results")
 RESULTS_SUBDIR: str = "huggingface"
-START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M")
+START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Inference constants
 CONTEXT_WINDOWS = [1024, 2048, 4096, 8192, 12288]
@@ -39,7 +39,7 @@ SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
 CHAT_FORMAT = "chatml"
-SHOT_TYPES = ["Zero-shot", "One-shot", "Two-shot"]
+SHOT_TYPES = ["Zero-shot", "One-shot"]
 # SHOT_TYPES = ["Zero-shot", "One-shot"]
 
 
