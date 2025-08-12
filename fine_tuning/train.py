@@ -336,11 +336,11 @@ args = SFTConfig(
     log_level="debug",
     save_strategy="epoch",
     logging_steps=100,
-    learning_rate=1e-4,
+    learning_rate=5e-5,
     fp16=not torch.cuda.is_bf16_supported(),
     bf16=torch.cuda.is_bf16_supported(),
     eval_steps=100,
-    num_train_epochs=3,
+    num_train_epochs=8,
     warmup_ratio=0.1,
     lr_scheduler_type="linear",
     report_to="wandb",
@@ -350,6 +350,24 @@ args = SFTConfig(
     hub_model_id=HF_MODEL_REPO + "-adapter",
     max_length=MAX_SEQ_LENGTH,
     packing=True,
+)
+
+# Make the most relevant hyperparameters visible in the W&B run config
+wandb.config.update(
+    {
+        "model_id": MODEL_ID,
+        "learning_rate": 1e-4,
+        "num_train_epochs": 3,
+        "logging_steps": 100,
+        "eval_steps": 100,
+        "per_device_train_batch_size": 1,
+        "gradient_accumulation_steps": 16,
+        "lora_r": LORA_RANK,
+        "lora_alpha": LORA_ALPHA,
+        "lora_dropout": LORA_DROPOUT,
+        "max_length": MAX_SEQ_LENGTH,
+    },
+    allow_val_change=True,
 )
 
 peft_config = LoraConfig(
@@ -393,6 +411,25 @@ else:
 # The model will be saved in the directory specified by 'output_dir' in the training arguments.
 trainer.save_model()
 
+# Log the trained adapter checkpoint directory as a W&B Artifact for traceability
+adapter_artifact = wandb.Artifact(
+    name=f"{NEW_MODEL.lower()}-adapter",
+    type="model",
+    metadata={
+        "base_model": MODEL_ID,
+        "peft": {"r": LORA_RANK, "alpha": LORA_ALPHA, "dropout": LORA_DROPOUT},
+        "training": {
+            "learning_rate": 1e-4,
+            "epochs": 3,
+            "per_device_train_batch_size": 1,
+            "gradient_accumulation_steps": 16,
+            "max_length": MAX_SEQ_LENGTH,
+        },
+    },
+)
+adapter_artifact.add_dir(args.output_dir)
+wandb.log_artifact(adapter_artifact)
+
 # Create model card before freeing trainer
 print("📝 Creating model card and uploading to Hub...")
 trainer.create_model_card(
@@ -401,6 +438,8 @@ trainer.create_model_card(
     dataset_name=["Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"],
 )
 
+# Close the W&B run cleanly
+wandb.finish()
 ###############
 # Merge Model and Adapter
 ###############
