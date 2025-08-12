@@ -9,6 +9,7 @@ from pathlib import Path
 from scipy import stats
 import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple
+from sklearn.linear_model import LinearRegression
 
 # Constants
 ANALYSIS_OUTPUT_DIR_BASE = Path("results/analysis")
@@ -264,6 +265,160 @@ def save_results(
     summary_statistics_df = combined_results_df[EXPLANATORY_FACTORS + PERFORMANCE_METRICS].describe()
     summary_statistics_df.to_csv(analysis_output_dir / "summary_statistics.csv")
 
+    # Save regression and partial-correlation summary
+    x1_log2_context = np.log2(combined_results_df["context_len"].astype(float).to_numpy())
+    x2_concern = combined_results_df["concern_count"].astype(float).to_numpy()
+
+    summary_rows: List[Dict[str, float]] = []
+    for metric_name in PERFORMANCE_METRICS:
+        y_metric = combined_results_df[metric_name].astype(float).to_numpy()
+
+        # Pearson r and p (from earlier computation)
+        pearson_r_ctx, pearson_p_ctx = pearson_correlation_by_factor_metric["context_len"][metric_name]
+        pearson_r_cnc, pearson_p_cnc = pearson_correlation_by_factor_metric["concern_count"][metric_name]
+
+        # Partial correlations via residuals
+        # context_len partial (control concern_count)
+        y_on_x2 = LinearRegression().fit(x2_concern.reshape(-1, 1), y_metric)
+        y_resid_ctx = y_metric - y_on_x2.predict(x2_concern.reshape(-1, 1))
+        x1_on_x2 = LinearRegression().fit(x2_concern.reshape(-1, 1), x1_log2_context)
+        x1_resid = x1_log2_context - x1_on_x2.predict(x2_concern.reshape(-1, 1))
+        partial_r_ctx, partial_p_ctx = stats.pearsonr(x1_resid, y_resid_ctx)
+
+        # concern_count partial (control log2(context_len))
+        y_on_x1 = LinearRegression().fit(x1_log2_context.reshape(-1, 1), y_metric)
+        y_resid_cnc = y_metric - y_on_x1.predict(x1_log2_context.reshape(-1, 1))
+        x2_on_x1 = LinearRegression().fit(x1_log2_context.reshape(-1, 1), x2_concern)
+        x2_resid = x2_concern - x2_on_x1.predict(x1_log2_context.reshape(-1, 1))
+        partial_r_cnc, partial_p_cnc = stats.pearsonr(x2_resid, y_resid_cnc)
+
+        # Full and reduced models for coefficients and delta R2
+        X_full = np.column_stack([x1_log2_context, x2_concern])
+        full_model = LinearRegression().fit(X_full, y_metric)
+        beta_context_len = float(full_model.coef_[0])
+        beta_concern_count = float(full_model.coef_[1])
+        r2_full = float(full_model.score(X_full, y_metric))
+
+        r2_only_ctx = float(LinearRegression().fit(x1_log2_context.reshape(-1, 1), y_metric).score(x1_log2_context.reshape(-1, 1), y_metric))
+        r2_only_cnc = float(LinearRegression().fit(x2_concern.reshape(-1, 1), y_metric).score(x2_concern.reshape(-1, 1), y_metric))
+        delta_r2_context_len = r2_full - r2_only_cnc
+        delta_r2_concern_count = r2_full - r2_only_ctx
+
+        # VIFs for predictors
+        r2_x1_on_x2 = float(LinearRegression().fit(x2_concern.reshape(-1, 1), x1_log2_context).score(x2_concern.reshape(-1, 1), x1_log2_context))
+        r2_x2_on_x1 = float(LinearRegression().fit(x1_log2_context.reshape(-1, 1), x2_concern).score(x1_log2_context.reshape(-1, 1), x2_concern))
+        vif_context_len = float("inf") if (1.0 - r2_x1_on_x2) == 0.0 else 1.0 / (1.0 - r2_x1_on_x2)
+        vif_concern_count = float("inf") if (1.0 - r2_x2_on_x1) == 0.0 else 1.0 / (1.0 - r2_x2_on_x1)
+
+        summary_rows.append(
+            {
+                "metric": metric_name,
+                "pearson_r_context_len_metric": pearson_r_ctx,
+                "pearson_p_context_len_metric": pearson_p_ctx,
+                "pearson_r_concern_count_metric": pearson_r_cnc,
+                "pearson_p_concern_count_metric": pearson_p_cnc,
+                "partial_r_context_len_metric": partial_r_ctx,
+                "partial_p_context_len_metric": partial_p_ctx,
+                "partial_r_concern_count_metric": partial_r_cnc,
+                "partial_p_concern_count_metric": partial_p_cnc,
+                "beta_context_len": beta_context_len,
+                "beta_concern_count": beta_concern_count,
+                "delta_r2_context_len": delta_r2_context_len,
+                "delta_r2_concern_count": delta_r2_concern_count,
+                "vif_context_len": vif_context_len,
+                "vif_concern_count": vif_concern_count,
+            }
+        )
+
+    regression_partial_results_df = pd.DataFrame(summary_rows)
+    regression_partial_results_df.to_csv(
+        analysis_output_dir / "regression_partial_results.csv", index=False
+    )
+
+
+def plot_partial_regressions(
+    combined_results_df: pd.DataFrame,
+    analysis_output_dir: Path,
+) -> None:
+    """Fit y ~ log2(context_len) + concern_count for each metric and plot partial regression.
+
+    For each y in PERFORMANCE_METRICS, generate two plots:
+    - Partial effect of context_len (controlling concern_count)
+    - Partial effect of concern_count (controlling log2(context_len))
+    """
+    x1_log2_context = np.log2(combined_results_df["context_len"].astype(float).to_numpy())
+    x2_concern = combined_results_df["concern_count"].astype(float).to_numpy()
+
+    for metric_name in PERFORMANCE_METRICS:
+        y_metric = combined_results_df[metric_name].astype(float).to_numpy()
+
+        # Fit full model to obtain coefficients
+        X_full = np.column_stack([x1_log2_context, x2_concern])
+        full_model = LinearRegression()
+        full_model.fit(X_full, y_metric)
+        beta1_context, beta2_concern = float(full_model.coef_[0]), float(full_model.coef_[1])
+        # Print raw and standardized coefficients for influence comparison
+        y_std = float(np.std(y_metric)) if float(np.std(y_metric)) != 0.0 else 1.0
+        std_beta_context = beta1_context * (float(np.std(x1_log2_context)) / y_std)
+        std_beta_concern = beta2_concern * (float(np.std(x2_concern)) / y_std)
+
+        # Partial for context_len (control concern_count)
+        y_on_x2 = LinearRegression().fit(x2_concern.reshape(-1, 1), y_metric)
+        y_resid_ctx = y_metric - y_on_x2.predict(x2_concern.reshape(-1, 1))
+        x1_on_x2 = LinearRegression().fit(x2_concern.reshape(-1, 1), x1_log2_context)
+        x1_resid = x1_log2_context - x1_on_x2.predict(x2_concern.reshape(-1, 1))
+        partial_r_ctx, partial_p_ctx = stats.pearsonr(x1_resid, y_resid_ctx)
+
+        fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+        ax.scatter(x1_resid, y_resid_ctx, alpha=0.6, s=30)
+        slope_ctx, intercept_ctx = np.polyfit(x1_resid, y_resid_ctx, 1)
+        x_line_ctx = np.linspace(x1_resid.min(), x1_resid.max(), 100)
+        ax.plot(x_line_ctx, slope_ctx * x_line_ctx + intercept_ctx, "r--", alpha=0.8)
+        ax.axhline(0.0, color="gray", alpha=0.3, linewidth=1)
+        ax.axvline(0.0, color="gray", alpha=0.3, linewidth=1)
+        ax.set_title(
+            f"Partial: contextlength vs {metric_name} (control concern_count)\nr={partial_r_ctx:.3f}, p={partial_p_ctx:.4f}"
+        )
+        ax.set_xlabel("contextlength residuals (control concern_count)")
+        ax.set_ylabel(f"{metric_name} residuals")
+        plt.tight_layout()
+        out_ctx = analysis_output_dir / f"partial_contextlength_vs_{metric_name}.png"
+        plt.savefig(out_ctx, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+
+        # Partial for concern_count (control log2(context_len))
+        y_on_x1 = LinearRegression().fit(x1_log2_context.reshape(-1, 1), y_metric)
+        y_resid_cnc = y_metric - y_on_x1.predict(x1_log2_context.reshape(-1, 1))
+        x2_on_x1 = LinearRegression().fit(x1_log2_context.reshape(-1, 1), x2_concern)
+        x2_resid = x2_concern - x2_on_x1.predict(x1_log2_context.reshape(-1, 1))
+        partial_r_cnc, partial_p_cnc = stats.pearsonr(x2_resid, y_resid_cnc)
+
+        fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+        ax.scatter(x2_resid, y_resid_cnc, alpha=0.6, s=30)
+        slope_cnc, intercept_cnc = np.polyfit(x2_resid, y_resid_cnc, 1)
+        x_line_cnc = np.linspace(x2_resid.min(), x2_resid.max(), 100)
+        ax.plot(x_line_cnc, slope_cnc * x_line_cnc + intercept_cnc, "r--", alpha=0.8)
+        ax.axhline(0.0, color="gray", alpha=0.3, linewidth=1)
+        ax.axvline(0.0, color="gray", alpha=0.3, linewidth=1)
+        ax.set_title(
+            f"Partial: concern_count vs {metric_name} (control log2(contextlength))\nr={partial_r_cnc:.3f}, p={partial_p_cnc:.4f}"
+        )
+        ax.set_xlabel("concern_count residuals (control log2(contextlength))")
+        ax.set_ylabel(f"{metric_name} residuals")
+        plt.tight_layout()
+        out_cnc = analysis_output_dir / f"partial_concern_count_vs_{metric_name}.png"
+        plt.savefig(out_cnc, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+
+        # Minimal, readable weight printout per metric
+        stronger = (
+            "log2_context_len" if abs(std_beta_context) > abs(std_beta_concern) else "concern_count"
+        )
+        print(
+            f"[{metric_name}] beta_log2_context_len={beta1_context:.6f}, "
+            f"beta_concern_count={beta2_concern:.6f} | std_beta_log2_context_len={std_beta_context:.6f}, "
+            f"std_beta_concern_count={std_beta_concern:.6f} -> stronger={stronger}"
+        )
 
 def main() -> None:
     """Main analysis function."""
@@ -291,6 +446,7 @@ def main() -> None:
 
     # Generate visualizations (scatter plots only)
     plot_correlation_visualizations(combined_results_df, pearson_correlation_by_factor_metric, analysis_output_dir)
+    plot_partial_regressions(combined_results_df, analysis_output_dir)
 
     # Generate and print report
     correlation_text_report = generate_report(
