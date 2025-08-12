@@ -38,7 +38,7 @@ SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
 CHAT_FORMAT = "chatml"
-SHOT_TYPES = ["Zero-shot", "One-shot"]
+SHOT_TYPES = ["One-shot"]
 # SHOT_TYPES = ["Zero-shot", "One-shot"]
 
 
