@@ -396,11 +396,9 @@ trainer.save_model()
 # Create model card before freeing trainer
 print("📝 Creating model card and uploading to Hub...")
 trainer.create_model_card(
+    model_name=HF_MODEL_REPO,
     tags=["phi-4", "fine-tuned", "commit-analysis", "software-engineering"],
-    dataset_tags=["Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"],
-    language="en",
-    license="mit",
-    base_model="microsoft/phi-4",
+    dataset_name=["Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"],
 )
 
 ###############
