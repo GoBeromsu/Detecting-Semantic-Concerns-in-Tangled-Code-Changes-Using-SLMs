@@ -54,7 +54,7 @@ def compute_macro(df: pd.DataFrame) -> pd.DataFrame:
 
     Requires: precision, recall, f1, exact_match
     """
-    required = ["precision", "recall", "f1", "exact_match"]
+    required = ["precision", "recall", "f1", "exact_match", "inference_time"]
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns for macro metrics: {missing}")
@@ -64,6 +64,7 @@ def compute_macro(df: pd.DataFrame) -> pd.DataFrame:
         "macro_recall": float(df["recall"].mean()),
         "macro_f1": float(df["f1"].mean()),
         "macro_accuracy": float(df["exact_match"].mean()),
+        "inference_time_avg": float(df["inference_time"].mean()),
         "num_samples": int(len(df)),
     }
     return pd.DataFrame([summary])
@@ -74,7 +75,7 @@ def compute_macro_by_concern(df: pd.DataFrame) -> pd.DataFrame:
 
     grouped = (
         df.groupby("concern_count")[
-            ["precision", "recall", "f1", "exact_match"]
+            ["precision", "recall", "f1", "exact_match", "inference_time"]
         ]
         .mean()
         .reset_index()
@@ -86,6 +87,7 @@ def compute_macro_by_concern(df: pd.DataFrame) -> pd.DataFrame:
             "recall": "macro_recall",
             "f1": "macro_f1",
             "exact_match": "macro_accuracy",
+            "inference_time": "inference_time_avg",
         }
     )
 
@@ -101,12 +103,6 @@ def build_summary_json(
     csv_path: Path,
 ) -> Dict[str, Any]:
     """Build experiment summary JSON structure from inputs."""
-    if "context_len" not in df.columns:
-        raise ValueError("Missing 'context_len' column for JSON summary")
-    if "with_message" not in df.columns:
-        raise ValueError("Missing 'with_message' column for JSON summary")
-    if "inference_time" not in df.columns:
-        raise ValueError("Missing 'inference_time' column for JSON summary")
 
     # Basic metadata
     stem_parts = csv_path.stem.split("_")
@@ -126,7 +122,7 @@ def build_summary_json(
         "precision": float(macro_row["macro_precision"]),
         "recall": float(macro_row["macro_recall"]),
         "f1": float(macro_row["macro_f1"]),
-        "inference_time_avg": float(df["inference_time"].mean()),
+        "inference_time_avg": float(macro_row["inference_time_avg"]),
     }
 
     # Grouped metrics by concern_count
@@ -139,6 +135,7 @@ def build_summary_json(
                 "precision": float(row["macro_precision"]),
                 "recall": float(row["macro_recall"]),
                 "f1": float(row["macro_f1"]),
+                "inference_time_avg": float(row["inference_time_avg"]),
                 "num_samples": int(row["num_samples"]),
             }
         )
