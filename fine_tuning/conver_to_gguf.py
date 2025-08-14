@@ -11,6 +11,9 @@ import sys
 from pathlib import Path
 from typing import Optional
 from huggingface_hub import create_repo, upload_folder
+import torch
+from peft import AutoPeftModelForCausalLM
+from transformers import AutoTokenizer
 
 # Configure logging
 logging.basicConfig(
@@ -21,16 +24,20 @@ logger = logging.getLogger(__name__)
 # Configuration - Match train.py settings
 USER = os.getenv("USER", "acq24bk")
 FASTDATA_BASE = f"/mnt/parscratch/users/{USER}"
+BASE_MODEL_ID = "microsoft/phi-4"
+LORA_ADAPTER_DIR = f"{FASTDATA_BASE}/models/{BASE_MODEL_ID}-LoRA"
 MERGED_MODEL_DIR = f"{FASTDATA_BASE}/models/merged_model"
 GGUF_OUTPUT_DIR = f"{FASTDATA_BASE}/models/gguf"
 LLAMA_CPP_DIR = f"{FASTDATA_BASE}/llama.cpp"
+HF_CACHE_DIR = f"{FASTDATA_BASE}/.cache/huggingface/transformers"
 
 # Model naming (align with train.py NEW_MODEL)
 MODEL_NAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 HF_REPO_NAME = f"Berom0227/{MODEL_NAME}-gguf"
 
 # Quantization options
-QUANT_TYPES = ["q4_K_M", "q5_K_S", "q8_0"]
+# QUANT_TYPES = ["q4_K_M","q8_0"]
+QUANT_TYPES = [""]
 
 
 def check_dependencies() -> bool:
@@ -63,41 +70,95 @@ def check_dependencies() -> bool:
     return True
 
 
-def check_merged_model() -> bool:
-    """Check if merged model exists and has required files"""
-    logger.info(f"Checking merged model at {MERGED_MODEL_DIR}")
+def check_lora_adapter() -> bool:
+    """Check if LoRA adapter exists and has required files"""
+    logger.info(f"Checking LoRA adapter at {LORA_ADAPTER_DIR}")
 
     required_files = [
-        "config.json",
-        # "pytorch_model.bin", # This is not needed in safetensor format
-        "tokenizer.json",
-        "tokenizer_config.json",
+        "adapter_config.json",
+        "adapter_model.safetensors",
     ]
 
-    model_path = Path(MERGED_MODEL_DIR)
-    if not model_path.exists():
-        logger.error(f"Merged model directory not found: {MERGED_MODEL_DIR}")
-        logger.info("Run train.py first to create merged model")
+    adapter_path = Path(LORA_ADAPTER_DIR)
+    if not adapter_path.exists():
+        logger.error(f"LoRA adapter directory not found: {LORA_ADAPTER_DIR}")
+        logger.info("Run train.py first to create LoRA adapter")
         return False
 
     missing_files = []
     for file_name in required_files:
-        file_path = model_path / file_name
+        file_path = adapter_path / file_name
         if not file_path.exists():
             missing_files.append(file_name)
 
     if missing_files:
-        logger.error(f"Missing required files: {missing_files}")
+        logger.error(f"Missing required LoRA adapter files: {missing_files}")
         return False
 
-    logger.info("✅ Merged model files found")
+    logger.info("✅ LoRA adapter files found")
     return True
 
 
 def create_output_dir() -> None:
     """Create GGUF output directory"""
     os.makedirs(GGUF_OUTPUT_DIR, exist_ok=True)
+    os.makedirs(MERGED_MODEL_DIR, exist_ok=True)
     logger.info(f"Output directory: {GGUF_OUTPUT_DIR}")
+
+
+def merge_lora_adapter() -> bool:
+    """Load LoRA adapter and merge with base model"""
+    logger.info("Loading LoRA adapter and merging with base model...")
+
+    # Check if merged model already exists
+    merged_model_path = Path(MERGED_MODEL_DIR)
+    if (merged_model_path / "config.json").exists():
+        logger.info("✅ Merged model already exists, skipping merge")
+        return True
+
+    try:
+        # Determine compute dtype and device map
+        if torch.cuda.is_bf16_supported():
+            compute_dtype = torch.bfloat16
+        else:
+            compute_dtype = torch.float16
+
+        # Load the LoRA adapter model
+        model = AutoPeftModelForCausalLM.from_pretrained(
+            LORA_ADAPTER_DIR,
+            low_cpu_mem_usage=True,
+            return_dict=True,
+            torch_dtype=compute_dtype,
+            trust_remote_code=True,
+            device_map="auto",
+            cache_dir=HF_CACHE_DIR,
+        )
+
+        # Merge the adapter with base model
+        merged_model = model.merge_and_unload()
+
+        # Load tokenizer
+        tokenizer = AutoTokenizer.from_pretrained(
+            BASE_MODEL_ID, trust_remote_code=True, cache_dir=HF_CACHE_DIR
+        )
+
+        # Save merged model and tokenizer
+        merged_model.save_pretrained(
+            MERGED_MODEL_DIR, trust_remote_code=True, safe_serialization=True
+        )
+        tokenizer.save_pretrained(MERGED_MODEL_DIR)
+
+        # Clean up GPU memory
+        del model
+        del merged_model
+        torch.cuda.empty_cache()
+
+        logger.info("✅ LoRA adapter merged successfully")
+        return True
+
+    except Exception as e:
+        logger.error(f"LoRA merge failed: {e}")
+        return False
 
 
 def convert_to_gguf_fp16() -> Optional[str]:
@@ -204,12 +265,17 @@ def main():
         logger.error("Dependencies check failed")
         sys.exit(1)
 
-    if not check_merged_model():
-        logger.error("Merged model check failed")
+    if not check_lora_adapter():
+        logger.error("LoRA adapter check failed")
         sys.exit(1)
 
     # Create output directory
     create_output_dir()
+
+    # Merge LoRA adapter with base model
+    if not merge_lora_adapter():
+        logger.error("LoRA adapter merge failed")
+        sys.exit(1)
 
     # Convert to FP16
     fp16_file = convert_to_gguf_fp16()
@@ -218,16 +284,16 @@ def main():
         sys.exit(1)
 
     # Quantize models
-    success_count = 1  # Count FP16 as success
+    # success_count = 1  # Count FP16 as success
 
-    for quant_type in QUANT_TYPES:
-        quantized_file = quantize_model(fp16_file, quant_type)
-        if quantized_file:
-            success_count += 1
-        else:
-            logger.warning(f"Skipping {quant_type} quantization")
+    # for quant_type in QUANT_TYPES:
+    #     quantized_file = quantize_model(fp16_file, quant_type)
+    #     if quantized_file:
+    #         success_count += 1
+    #     else:
+    #         logger.warning(f"Skipping {quant_type} quantization")
 
-    logger.info(f"✅ {success_count} model(s) created successfully")
+    # logger.info(f"✅ {success_count} model(s) created successfully")
 
     # Upload to Hugging Face Hub
     if upload_to_huggingface():
