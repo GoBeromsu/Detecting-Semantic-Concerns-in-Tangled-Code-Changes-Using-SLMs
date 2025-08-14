@@ -42,6 +42,33 @@ SHOT_TYPES = ["One-shot"]
 # SHOT_TYPES = ["Zero-shot", "One-shot"]
 
 
+def perform_api_call(
+    repo_id: str,
+    filename: str,
+    commit: str,
+    system_prompt: str,
+) -> tuple[List[str], float]:
+    """Perform single API call with error handling."""
+    try:
+        start_time = time.time()
+        predicted_types = llms.hugging_face_api_call(
+            repo_id=repo_id,
+            filename=filename,
+            commit=commit,
+            system_prompt=system_prompt,
+            temperature=TEMPERATURE,
+            seed=SEED,
+            use_schema=True,
+            chat_format=CHAT_FORMAT,
+        )
+        end_time = time.time()
+        return predicted_types, end_time - start_time
+    except Exception as e:
+        end_time = time.time()
+        print(f"API call error: {e}")
+        return [], end_time - start_time
+
+
 def measure_performance(
     repo_id: str,
     filename: str,
@@ -54,24 +81,15 @@ def measure_performance(
     for row in truncated_dataset.itertuples():
         actual_types: List[str] = json.loads(row.types)
         shas: List[str] = json.loads(row.shas)
-        try:
-            start_time = time.time()
-            predicted_types = llms.hugging_face_api_call(
-                repo_id=repo_id,
-                filename=filename,
-                commit=row.truncated_commit,
-                system_prompt=system_prompt,
-                temperature=TEMPERATURE,
-                seed=SEED,
-                use_schema=True,
-                chat_format=CHAT_FORMAT,
+        
+        for attempt in range(3):
+            predicted_types, inference_time = perform_api_call(
+                repo_id, filename, row.truncated_commit, system_prompt
             )
-            end_time = time.time()
-            inference_time = end_time - start_time
-        except Exception as e:
-            print(f"[{row.Index}] Error: {e}")
-            predicted_types = []
-            inference_time = 0.0
+            
+            if predicted_types:
+                break
+            print(f"[{row.Index}] Attempt {attempt + 1} failed - retrying...")
         metrics = eval_utils.calculate_metrics(predicted_types, actual_types)
 
         result_df = pd.DataFrame([
