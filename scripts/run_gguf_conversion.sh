@@ -99,8 +99,30 @@ else
     echo "✅ llama.cpp already exists"
 fi
 
-# Return to fine_tuning directory
+# Return to submit directory
 cd "$SLURM_SUBMIT_DIR"
+
+# Resolve path to conver_to_gguf.py robustly (handles moved script location)
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+CONVERTER=""
+
+for CAND in \
+    "$SCRIPT_DIR/../fine_tuning/conver_to_gguf.py" \
+    "$SLURM_SUBMIT_DIR/fine_tuning/conver_to_gguf.py" \
+    "$SLURM_SUBMIT_DIR/conver_to_gguf.py"; do
+    if [ -f "$CAND" ]; then
+        CONVERTER="$CAND"
+        break
+    fi
+done
+
+if [ -z "$CONVERTER" ]; then
+    echo "❌ Could not locate conver_to_gguf.py. Checked:"
+    echo " - $SCRIPT_DIR/../fine_tuning/conver_to_gguf.py"
+    echo " - $SLURM_SUBMIT_DIR/fine_tuning/conver_to_gguf.py"
+    echo " - $SLURM_SUBMIT_DIR/conver_to_gguf.py"
+    exit 1
+fi
 
 # Load environment variables if .env exists
 if [ -f ".env" ]; then
@@ -110,7 +132,7 @@ fi
 
 # Run GGUF conversion
 echo "🚀 Starting GGUF conversion..."
-python conver_to_gguf.py
+python "$CONVERTER"
 
 conversion_exit_code=$?
 
