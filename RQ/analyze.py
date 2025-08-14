@@ -21,13 +21,15 @@ ANALYSIS_DIR: Path = RESULTS_DIR / "analysis"
 OUTPUT_SUFFIX_MACRO = "_macro.csv"
 OUTPUT_SUFFIX_BY_CONCERN = "_macro_by_concern.csv"
 
+FILTER_OUTLIERS = True
 
-def identify_outliers(df: pd.DataFrame, threshold: float = 10.0) -> List[int]:
-    """Identify outlier rows based on inference_time threshold.
+def identify_outliers(df: pd.DataFrame) -> List[int]:
+    """Identify outlier rows where model failed to predict any types.
     
-    Returns list of row indices where inference_time > threshold.
+    Returns list of row indices where predicted_types is empty ("[]").
     """
-    outlier_mask = df["inference_time"] > threshold
+    # CSV stores empty lists as string "[]"
+    outlier_mask = df["predicted_types"] == "[]"
     return df[outlier_mask].index.tolist()
 
 
@@ -203,13 +205,12 @@ def save_concern_plot(by_concern_df: pd.DataFrame, csv_path: Path) -> None:
     plt.close(fig)
 
 
-def process_csv(csv_path: Path, filter_outliers: bool = True, outlier_threshold: float = 10.0) -> None:
+def process_csv(csv_path: Path, filter_outliers: bool = True) -> None:
     original_df = pd.read_csv(csv_path)
 
     # Identify outliers for reporting
-    outlier_indices = identify_outliers(original_df, outlier_threshold)
+    outlier_indices = identify_outliers(original_df)
     outlier_info = {
-        "threshold": outlier_threshold,
         "indices": outlier_indices,
         "count": len(outlier_indices)
     } if outlier_indices else None
@@ -234,14 +235,14 @@ def process_csv(csv_path: Path, filter_outliers: bool = True, outlier_threshold:
     base_root = RESULTS_DIR.parent
     print(f"Saved: {out_json.relative_to(base_root)}")
     if outlier_info:
-        print(f"Found {outlier_info['count']} outliers (>={outlier_threshold}s): {outlier_info['indices']}")
+        print(f"Found {outlier_info['count']} outliers: {outlier_info['indices']}")
     print(f"Saved: {(csv_path.parent / 'plot' / f'{csv_path.stem}_by_concern.png').relative_to(base_root)}")
 
 
 def main() -> None:
     csv_files = list_csv_files(RESULTS_DIR)
     for csv_path in csv_files:
-        process_csv(csv_path)
+        process_csv(csv_path, filter_outliers=FILTER_OUTLIERS)
 
 
 if __name__ == "__main__":
