@@ -22,6 +22,15 @@ OUTPUT_SUFFIX_MACRO = "_macro.csv"
 OUTPUT_SUFFIX_BY_CONCERN = "_macro_by_concern.csv"
 
 
+def identify_outliers(df: pd.DataFrame, threshold: float = 10.0) -> List[int]:
+    """Identify outlier rows based on inference_time threshold.
+    
+    Returns list of row indices where inference_time > threshold.
+    """
+    outlier_mask = df["inference_time"] > threshold
+    return df[outlier_mask].index.tolist()
+
+
 def list_csv_files(base_dir: Path) -> List[Path]:
     """Recursively list raw results CSV files under base_dir, excluding analysis outputs."""
     if not base_dir.exists():
@@ -52,7 +61,7 @@ def list_csv_files(base_dir: Path) -> List[Path]:
 def compute_macro(df: pd.DataFrame) -> pd.DataFrame:
     """Compute macro metrics (mean across rows) from present columns.
 
-    Requires: precision, recall, f1, exact_match
+    Requires: precision, recall, f1, exact_match, inference_time
     """
     required = ["precision", "recall", "f1", "exact_match", "inference_time"]
     missing = [c for c in required if c not in df.columns]
@@ -101,6 +110,7 @@ def build_summary_json(
     macro_df: pd.DataFrame,
     by_concern_df: pd.DataFrame,
     csv_path: Path,
+    outlier_info: Dict[str, Any] = None,
 ) -> Dict[str, Any]:
     """Build experiment summary JSON structure from inputs."""
 
@@ -150,6 +160,10 @@ def build_summary_json(
         "metrics_by_concern": metrics_by_concern,
         "created_at": created_at.isoformat(),
     }
+    
+    if outlier_info:
+        summary["outliers"] = outlier_info
+    
     return summary
 
 
@@ -189,21 +203,38 @@ def save_concern_plot(by_concern_df: pd.DataFrame, csv_path: Path) -> None:
     plt.close(fig)
 
 
-def process_csv(csv_path: Path) -> None:
-    df = pd.read_csv(csv_path)
+def process_csv(csv_path: Path, filter_outliers: bool = True, outlier_threshold: float = 10.0) -> None:
+    original_df = pd.read_csv(csv_path)
+
+    # Identify outliers for reporting
+    outlier_indices = identify_outliers(original_df, outlier_threshold)
+    outlier_info = {
+        "threshold": outlier_threshold,
+        "indices": outlier_indices,
+        "count": len(outlier_indices)
+    } if outlier_indices else None
+
+    # Filter dataframe if requested
+    if filter_outliers and outlier_indices:
+        df = original_df.drop(outlier_indices).reset_index(drop=True)
+    else:
+        df = original_df
 
     macro_df = compute_macro(df)
     by_concern_df = compute_macro_by_concern(df)
 
-    # JSON goes under the CSV's directory in a 'json' subfolder
-    out_json = csv_path.parent / "json" / f"{csv_path.stem}.json"
+    # JSON file name includes filtering info
+    json_suffix = "_filtered" if filter_outliers and outlier_indices else ""
+    out_json = csv_path.parent / "json" / f"{csv_path.stem}{json_suffix}.json"
 
-    summary = build_summary_json(df, macro_df, by_concern_df, csv_path)
+    summary = build_summary_json(original_df, macro_df, by_concern_df, csv_path, outlier_info)
     save_json(summary, out_json)
     save_concern_plot(by_concern_df, csv_path)
 
     base_root = RESULTS_DIR.parent
     print(f"Saved: {out_json.relative_to(base_root)}")
+    if outlier_info:
+        print(f"Found {outlier_info['count']} outliers (>={outlier_threshold}s): {outlier_info['indices']}")
     print(f"Saved: {(csv_path.parent / 'plot' / f'{csv_path.stem}_by_concern.png').relative_to(base_root)}")
 
 
