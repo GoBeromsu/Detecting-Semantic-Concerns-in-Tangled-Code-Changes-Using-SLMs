@@ -120,7 +120,7 @@ def main() -> None:
             df = pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS)
             df.to_csv(csv_path, index=False)
 
-        truncated_dataset: pd.DataFrame = rq_main.truncate_dataset(
+        truncated_dataset: pd.DataFrame = rq_main.add_truncated_commits(
             tangled_df=tangled_df,
             context_window=cw,
             include_message=include_message,

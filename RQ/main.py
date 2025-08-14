@@ -108,13 +108,14 @@ def measure_performance(
         )
 
 
-def truncate_dataset(
+def add_truncated_commits(
     tangled_df: pd.DataFrame,
     context_window: int,
     include_message: bool,
 ) -> pd.DataFrame:
     encoding = tiktoken.get_encoding(ENCODING_NAME)
     truncated_texts: List[str] = []
+    token_lengths: List[int] = []
 
     for _, row in tangled_df.iterrows():
         message: str = str(row.get("commit_message", ""))
@@ -124,12 +125,15 @@ def truncate_dataset(
             message_tokens: List[int] = encoding.encode(message)
             remaining_tokens: int = max(context_window - len(message_tokens), 0)
             truncated_diffs: str = _truncate_diffs_equally(diffs, remaining_tokens, encoding)
-            truncated_texts.append(f"- given commit message:\n {message}\n Diff: {truncated_diffs}")
+            truncated_text: str = f"- given commit message:\n {message}\n Diff: {truncated_diffs}"
         else:
             truncated_diffs: str = _truncate_diffs_equally(diffs, context_window, encoding)
-            truncated_texts.append(f"- given commit diff: \n {truncated_diffs}")
+            truncated_text: str = f"- given commit diff: \n {truncated_diffs}"
+        
+        truncated_texts.append(truncated_text)
+        token_lengths.append(len(encoding.encode(truncated_text)))
 
-    return tangled_df.assign(truncated_commit=truncated_texts)
+    return tangled_df.assign(truncated_commit=truncated_texts, token_length=token_lengths)
 
 
 def run_model_experiments(
@@ -150,7 +154,7 @@ def run_model_experiments(
             system_prompt: str = prompt.get_prompt_by_type(prompt_type, include_message)
             for context_window in CONTEXT_WINDOW:
                 print(f"Processing {model_name} {prompt_type} {context_window}")
-                truncated_dataset: pd.DataFrame = truncate_dataset(tangled_df, context_window, include_message)
+                truncated_dataset: pd.DataFrame = add_truncated_commits(tangled_df, context_window, include_message)
                 file_name: str = (
                     f"{model_name.replace('/', '_')}_{prompt_type.replace('-', '_')}_{context_window}.csv"
                 )
