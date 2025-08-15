@@ -23,7 +23,7 @@ from datasets import load_dataset
 # Load environment variables from .env file
 load_dotenv()
 
-REPO_ID = "microsoft/phi-4-gguf"
+REPO_ID = "Berom0227/phi4-commit-gguf"
 MODEL_NAME = "Phi-4"
 
 # Paths and experiment constants (experiment script concerns)
@@ -139,8 +139,8 @@ def main() -> None:
     print(f"Hugging Face device: {device_info}")
     
     is_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    filename = "phi-4-Q6_K.gguf" if is_mps else "phi-4-bf16.gguf"
-
+    # filename = "phi-4-Q6_K.gguf" if is_mps else "phi-4-bf16.gguf"
+    filename = "phi4-commit-f16.gguf"
 
     # Preload/caches model with chatml format for reproducibility
     llms.load_model(repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT)
