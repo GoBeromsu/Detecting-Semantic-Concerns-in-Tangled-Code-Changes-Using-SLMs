@@ -44,6 +44,7 @@ hpc = [
     "trl>=0.8.0",
     "wandb>=0.16.0",
     "hf_transfer>=0.1.6",
+    "sentencepiece>=0.1.99",
 ]
 
 [build-system]

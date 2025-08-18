@@ -118,28 +118,14 @@ def merge_lora_adapter() -> bool:
         else:
             compute_dtype = torch.float16
         
-        # Smart CPU offloading: move memory-heavy, compute-light components
-        device_map = {
-            # Always CPU: memory-heavy but simple operations
-            "model.embed_tokens": "cpu",  # Lookup table, pure memory
-            "model.norm": "cpu",          # Small layer norm
-            "lm_head": "cpu",            # Output projection, memory-heavy
-        }
-        
-        # For transformer layers: keep computation on GPU, offload memory-heavy parts
-        # GPU gets fewer layers but keeps compute-intensive operations
-        for i in range(0, 12):  # Core layers with heavy computation stay on GPU
-            device_map[f"model.layers.{i}"] = 0
-        for i in range(12, 40):  # Upper layers to CPU (less critical for computation)
-            device_map[f"model.layers.{i}"] = "cpu"
-        
-        logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} with CPU offloading...")
+        # Use automatic device mapping instead of manual mapping
+        logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} with automatic device mapping...")
         model = AutoPeftModelForCausalLM.from_pretrained(
             HF_ADAPTER_REPO,
             low_cpu_mem_usage=True,
             torch_dtype=compute_dtype,
             trust_remote_code=True,
-            device_map=device_map,
+            device_map="auto",  # Let accelerate handle device mapping automatically
             cache_dir=HF_CACHE_DIR,
         )
         
