@@ -49,7 +49,7 @@ RECENT_RESULTS_DISPLAY_LIMIT: int = 15
 COMMIT_TYPES: List[str] = [
     "docs",
     "test",
-    "cicd",
+    "ci",
     "build",
     "refactor",
     "feat",

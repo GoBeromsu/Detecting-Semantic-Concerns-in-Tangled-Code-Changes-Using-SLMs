@@ -18,7 +18,7 @@ SEED = 42
 MAX_DIFF_TOKENS = 12288
 
 # Known concern types from CCS dataset
-CONCERN_TYPES = ["feat", "fix", "refactor", "test", "docs", "build", "cicd"]
+CONCERN_TYPES = ["feat", "fix", "refactor", "test", "docs", "build", "ci"]
 
 # CSV schema columns
 OUTPUT_COLUMNS = ["commit_message", "diff", "concern_count", "shas", "types"]

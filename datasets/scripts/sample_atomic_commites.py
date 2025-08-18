@@ -249,8 +249,8 @@ def main() -> None:
     ccs_df = remove_existing_commits(ccs_df, existing_shas)
 
     # Step 4: Apply CI->CICD normalization
-    print("\nStep 4: Applying CI->CICD normalization")
-    ccs_df = normalize_dataset(ccs_df)
+    # print("\nStep 4: Applying CI->CICD normalization")
+    # ccs_df = normalize_dataset(ccs_df)
 
 
     # Step 5: Apply token-based filtering

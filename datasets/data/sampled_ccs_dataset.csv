@@ -11191,7 +11191,7 @@ index 204854f..b3cf067 100644
  const packages = [
    'jsx-runtime',
 ",c323d59c607cabc91f17a78528d998f376f30b10
-cicd,do not check mkdocs for older versions used in deployments,"diff --git a/.github/workflows/ibis-docs-lint.yml b/.github/workflows/ibis-docs-lint.yml
+ci,do not check mkdocs for older versions used in deployments,"diff --git a/.github/workflows/ibis-docs-lint.yml b/.github/workflows/ibis-docs-lint.yml
 index 57d94a4..04de03b 100644
 --- a/.github/workflows/ibis-docs-lint.yml
 +++ b/.github/workflows/ibis-docs-lint.yml
@@ -11205,7 +11205,7 @@ index 57d94a4..04de03b 100644
    simulate_release:
      runs-on: ubuntu-latest
 ",21228c55b7045d9b2225f65e6231184ff332b071
-cicd,add riscv64gc-unknown-linux-gnu,"diff --git a/.github/workflows/linux-riscv64.yaml b/.github/workflows/linux-riscv64.yaml
+ci,add riscv64gc-unknown-linux-gnu,"diff --git a/.github/workflows/linux-riscv64.yaml b/.github/workflows/linux-riscv64.yaml
 new file mode 100644
 index 0000000..8da3d41
 --- /dev/null
@@ -11302,7 +11302,7 @@ index 3084bb3..d77148d 100644
 +  },
  }
 ",173553c0372e66e03bdab19e0e6c2dd44daa14a0
-cicd,skip ruff format in pre-commit ci runner,"diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+ci,skip ruff format in pre-commit ci runner,"diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
 index 6193d96..4ba39d6 100644
 --- a/.pre-commit-config.yaml
 +++ b/.pre-commit-config.yaml
@@ -11315,7 +11315,7 @@ index 6193d96..4ba39d6 100644
      - shfmt
      - statix
 ",9117fdedb9b5ce0345c31b3e1fa22ae8554944d4
-cicd,do not use scripts and binaries from the libcc repo,"diff --git a/.circleci/config.yml b/.circleci/config.yml
+ci,do not use scripts and binaries from the libcc repo,"diff --git a/.circleci/config.yml b/.circleci/config.yml
 index 1822508..c7c402d 100644
 --- a/.circleci/config.yml
 +++ b/.circleci/config.yml
@@ -11364,7 +11364,7 @@ index 3c9985b..24ed1f5 100644
  
    - bash: |
 ",45837af24a33308a70a3454f0f650f9fe728e272
-cicd,"switch QA to new testbench-1.x-prod
+ci,"switch QA to new testbench-1.x-prod
 
 In order to use the new Testbench that is compatible with Zeebe 1.x
 versions, this switches the client id and secrets used by the QA stage.","diff --git a/Jenkinsfile b/Jenkinsfile
@@ -11390,7 +11390,7 @@ index 176ab58..bead402 100644
                                        [
                                            [envVar: 'ZEEBE_CLIENT_SECRET', vaultKey: 'clientSecret'],
 ",c81a0c2999454c859b4bf4da5779712960d239be
-cicd,add automation for rebasing `*.x.x` branches,"diff --git a/.github/workflows/ibis-rebase-nightly.yml b/.github/workflows/ibis-rebase-nightly.yml
+ci,add automation for rebasing `*.x.x` branches,"diff --git a/.github/workflows/ibis-rebase-nightly.yml b/.github/workflows/ibis-rebase-nightly.yml
 new file mode 100644
 index 0000000..3d2f064
 --- /dev/null
@@ -11479,7 +11479,7 @@ index 0000000..3d2f064
 +          pull-request-number: ${{ steps.create_pr.outputs.pull-request-number }}
 +          merge-method: rebase
 ",e82254c4ca73fe55834f005f08bc2a060496f815
-cicd,exclude github.io from link checking to avoid rate limiting,"diff --git a/.github/workflows/ibis-docs-lint.yml b/.github/workflows/ibis-docs-lint.yml
+ci,exclude github.io from link checking to avoid rate limiting,"diff --git a/.github/workflows/ibis-docs-lint.yml b/.github/workflows/ibis-docs-lint.yml
 index 90c5a27..db6457b 100644
 --- a/.github/workflows/ibis-docs-lint.yml
 +++ b/.github/workflows/ibis-docs-lint.yml
@@ -11492,7 +11492,7 @@ index 90c5a27..db6457b 100644
              --github-token ${{ steps.generate_token.outputs.token }}
  
 ",ce0539a32b927a3559feebf8f5307e3863e992a1
-cicd,avoid cancelling jobs,"diff --git a/.github/workflows/ibis-backends-cloud.yml b/.github/workflows/ibis-backends-cloud.yml
+ci,avoid cancelling jobs,"diff --git a/.github/workflows/ibis-backends-cloud.yml b/.github/workflows/ibis-backends-cloud.yml
 index 321708e..b990984 100644
 --- a/.github/workflows/ibis-backends-cloud.yml
 +++ b/.github/workflows/ibis-backends-cloud.yml
@@ -11508,7 +11508,7 @@ index 321708e..b990984 100644
      strategy:
        fail-fast: false
 ",19514bc68624a964c63fc217f163f7b11f3dfe82
-cicd,add gitignore.nix to dep update matrix,"diff --git a/.github/workflows/update-deps.yml b/.github/workflows/update-deps.yml
+ci,add gitignore.nix to dep update matrix,"diff --git a/.github/workflows/update-deps.yml b/.github/workflows/update-deps.yml
 index e0ccd62..1236f58 100644
 --- a/.github/workflows/update-deps.yml
 +++ b/.github/workflows/update-deps.yml
@@ -11521,7 +11521,7 @@ index e0ccd62..1236f58 100644
        - name: Checkout
          uses: actions/checkout@v2
 ",c444fdb9e85ce44c5c0c99addc777dd7b6085153
-cicd,"only run JMH on develop and master
+ci,"only run JMH on develop and master
 
 - reduces test duration of feature branches
 - reduces bors merge duration
@@ -11553,7 +11553,7 @@ index 9fbd3a1..3e4f052 100644
  
                      steps {
 ",83934807f4061980e7f5bf46d36eca70e238835d
-cicd,"Deploy utilities from correct folder
+ci,"Deploy utilities from correct folder
 
 Signed-off-by: rjshrjndrn <rjshrjndrn@gmail.com>","diff --git a/.github/workflows/utilities.yaml b/.github/workflows/utilities.yaml
 index 92e130c..afbc850 100644
@@ -11569,7 +11569,7 @@ index 92e130c..afbc850 100644
          sed -i ""s#minio_access_key.*#minio_access_key: \""${{ secrets.OSS_MINIO_ACCESS_KEY }}\"" #g"" vars.yaml
          sed -i ""s#minio_secret_key.*#minio_secret_key: \""${{ secrets.OSS_MINIO_SECRET_KEY }}\"" #g"" vars.yaml
 ",2ebf04099353ef70395b8c8f5e130f70e1ed0814
-cicd,Use arm64v8 postfix for Cube Store :dev build,"diff --git a/.github/workflows/rust-cubestore-master.yml b/.github/workflows/rust-cubestore-master.yml
+ci,Use arm64v8 postfix for Cube Store :dev build,"diff --git a/.github/workflows/rust-cubestore-master.yml b/.github/workflows/rust-cubestore-master.yml
 index 4a84984..bb07cd7 100644
 --- a/.github/workflows/rust-cubestore-master.yml
 +++ b/.github/workflows/rust-cubestore-master.yml
@@ -11586,7 +11586,7 @@ index 4a84984..bb07cd7 100644
  
            echo ::set-output name=version::${VERSION}
 ",10bdcb452ff9d2b884d45a9c43a4b8a20fc4a883
-cicd,"cue linter: include all CUE files
+ci,"cue linter: include all CUE files
 
 Signed-off-by: Andrea Luzzardi <aluzzardi@gmail.com>","diff --git a/ci/cue/lint.cue b/ci/cue/lint.cue
 index cdda698..6aac265 100644
@@ -11602,7 +11602,7 @@ index cdda698..6aac265 100644
  			},
  
 ",4c44543a3d9eea37e90a2316717feb01c0e0d83a
-cicd,split release docs build into separate workflow,"diff --git a/.github/workflows/ibis-docs-lint.yml b/.github/workflows/ibis-docs-lint.yml
+ci,split release docs build into separate workflow,"diff --git a/.github/workflows/ibis-docs-lint.yml b/.github/workflows/ibis-docs-lint.yml
 index 753d57d..3e0aa15 100644
 --- a/.github/workflows/ibis-docs-lint.yml
 +++ b/.github/workflows/ibis-docs-lint.yml
@@ -11777,7 +11777,7 @@ index 0000000..da7ee49
 +              --message ""docs(release): ibis@${GITHUB_REF_NAME}"" \
 +              ""${GITHUB_REF_NAME}"" latest
 ",32845e1bbd1efb5dbc16f671049509a409ba25ce
-cicd,add travis file,"diff --git a/.travis.yml b/.travis.yml
+ci,add travis file,"diff --git a/.travis.yml b/.travis.yml
 new file mode 100644
 index 0000000..c08cc34
 --- /dev/null
@@ -11795,7 +11795,7 @@ index 0000000..c08cc34
 +notifications:
 +    email: false
 ",d0814a928601706635287fd3d9d3451d156b821a
-cicd,run pyspark tests in parallel,"diff --git a/.github/workflows/ibis-backends.yml b/.github/workflows/ibis-backends.yml
+ci,run pyspark tests in parallel,"diff --git a/.github/workflows/ibis-backends.yml b/.github/workflows/ibis-backends.yml
 index e23088e..9708157 100644
 --- a/.github/workflows/ibis-backends.yml
 +++ b/.github/workflows/ibis-backends.yml
@@ -11814,7 +11814,7 @@ index e23088e..9708157 100644
          env:
            IBIS_TEST_NN_HOST: localhost
 ",4cbbd2552ba0de273e1dfe7d453c5b3efed751a3
-cicd,lint source on ci,"diff --git a/.travis.yml b/.travis.yml
+ci,lint source on ci,"diff --git a/.travis.yml b/.travis.yml
 index d56185e..96510cb 100644
 --- a/.travis.yml
 +++ b/.travis.yml
@@ -11826,7 +11826,7 @@ index d56185e..96510cb 100644
    - yarn build
    - yarn test
 ",2ac99c0a66a1adc18ee4ef660608f814823dd198
-cicd,"Template using kube api version
+ci,"Template using kube api version
 
 Signed-off-by: rjshrjndrn <rjshrjndrn@gmail.com>","diff --git a/.github/workflows/api-ee.yaml b/.github/workflows/api-ee.yaml
 index c014f34..2a12e0d 100644
@@ -11852,7 +11852,7 @@ index c014f34..2a12e0d 100644
          DOCKER_REPO: ${{ secrets.EE_REGISTRY_URL }}
          # We're not passing -ee flag, because helm will add that.
 ",c3531347fe5a4cc82d426db195026a5bdad15e7a
-cicd,add workflow to release branches,"diff --git a/.github/workflows/release-pr.yml b/.github/workflows/release-pr.yml
+ci,add workflow to release branches,"diff --git a/.github/workflows/release-pr.yml b/.github/workflows/release-pr.yml
 new file mode 100644
 index 0000000..697ca8e
 --- /dev/null
@@ -11920,7 +11920,7 @@ index 1074dcd..48bb566 100644
      ""cleanup"": ""rimraf 'packages/**/node_modules' 'examples/**/node_modules' 'docs/node_modules' 'playground/node_modules' 'node_modules'"",
      ""dev"": ""pnpm play"",
 ",bc28d536c0dd1061ac96cea0241857c1d4e4e0f2
-cicd,make jq use compact json for rebase branch query,"diff --git a/.github/workflows/ibis-rebase-nightly.yml b/.github/workflows/ibis-rebase-nightly.yml
+ci,make jq use compact json for rebase branch query,"diff --git a/.github/workflows/ibis-rebase-nightly.yml b/.github/workflows/ibis-rebase-nightly.yml
 index 0e284b0..4a3ec7a 100644
 --- a/.github/workflows/ibis-rebase-nightly.yml
 +++ b/.github/workflows/ibis-rebase-nightly.yml
@@ -11934,7 +11934,7 @@ index 0e284b0..4a3ec7a 100644
            echo ""::set-output name=matrix::$branches""
  
 ",4638dcdf7011e8e42d11fde04f068f22ee20fa1d
-cicd,add remote [skip ci],"diff --git a/.github/workflows/ibis-rebase-nightly.yml b/.github/workflows/ibis-rebase-nightly.yml
+ci,add remote [skip ci],"diff --git a/.github/workflows/ibis-rebase-nightly.yml b/.github/workflows/ibis-rebase-nightly.yml
 index 06c9003..e19c703 100644
 --- a/.github/workflows/ibis-rebase-nightly.yml
 +++ b/.github/workflows/ibis-rebase-nightly.yml
@@ -11951,7 +11951,7 @@ index 06c9003..e19c703 100644
        - uses: tibdex/github-app-token@v1
          id: generate_pr_token
 ",e96487ad7ce90b141219d9032fa2bed68d5dae6a
-cicd,"use new, public `quay.io/influxdb/iox` image","diff --git a/.circleci/config.yml b/.circleci/config.yml
+ci,"use new, public `quay.io/influxdb/iox` image","diff --git a/.circleci/config.yml b/.circleci/config.yml
 index 3ae6728..a5f2d2f 100644
 --- a/.circleci/config.yml
 +++ b/.circleci/config.yml
@@ -11999,7 +11999,7 @@ index 3ae6728..a5f2d2f 100644
        - run:
            name: Deploy tags
 ",f751bb5426b87f82096d620f1cd6203badf45d58
-cicd,"unset DOCKER_HOST set to swarm by jenkins
+ci,"unset DOCKER_HOST set to swarm by jenkins
 
 - fixes issue where old images are pushed to registry","diff --git a/.ci/docker.dsl b/.ci/docker.dsl
 index 4768cb8..9f6a4c9 100644
@@ -12026,7 +12026,7 @@ index 4768cb8..9f6a4c9 100644
      docker push camunda/zeebe:latest
  fi
 ",8b18a58969ed2adf2df2a8bfe91aedacad3868f5
-cicd,update renovate config,"diff --git a/.github/workflows/renovate.yml b/.github/workflows/renovate.yml
+ci,update renovate config,"diff --git a/.github/workflows/renovate.yml b/.github/workflows/renovate.yml
 index 710d1f6..c83d681 100644
 --- a/.github/workflows/renovate.yml
 +++ b/.github/workflows/renovate.yml
@@ -12040,7 +12040,7 @@ index 710d1f6..c83d681 100644
    renovate:
      runs-on: ubuntu-latest
 ",6132632f7517195c7333308e9c667cdb756bf0af
-cicd,use an action for issue assignment,"diff --git a/.github/workflows/assign.yml b/.github/workflows/assign.yml
+ci,use an action for issue assignment,"diff --git a/.github/workflows/assign.yml b/.github/workflows/assign.yml
 index 29d92a8..758874e 100644
 --- a/.github/workflows/assign.yml
 +++ b/.github/workflows/assign.yml
@@ -12057,7 +12057,7 @@ index 29d92a8..758874e 100644
 +        with:
 +          assignees: ${{ github.event.comment.user.login }}
 ",fb3a231b29bc8bff9270b99dd4aff9dad599f21f
-cicd,cancel in-progress dep update jobs when a new one arrives [skip ci],"diff --git a/.github/workflows/update-deps.yml b/.github/workflows/update-deps.yml
+ci,cancel in-progress dep update jobs when a new one arrives [skip ci],"diff --git a/.github/workflows/update-deps.yml b/.github/workflows/update-deps.yml
 index 3a71e29..25f6f27 100644
 --- a/.github/workflows/update-deps.yml
 +++ b/.github/workflows/update-deps.yml
@@ -12074,7 +12074,7 @@ index 3a71e29..25f6f27 100644
    generate_updates:
      runs-on: ubuntu-latest
 ",c2300c94c6b7d1599387272b616e1d79e93723c7
-cicd,update pr condition,"diff --git a/.github/workflows/release-pr.yml b/.github/workflows/release-pr.yml
+ci,update pr condition,"diff --git a/.github/workflows/release-pr.yml b/.github/workflows/release-pr.yml
 index 697ca8e..23f4475 100644
 --- a/.github/workflows/release-pr.yml
 +++ b/.github/workflows/release-pr.yml
@@ -20500,7 +20500,7 @@ index ed96be1..974fb7f 100644
  
      println!(""Hello from Dagger and {}"", version.trim());
 ",04e70ce964b343e28b3dbd0c46d10ccda958ab8c
-cicd,remove unused branches and ignore envrc file,"diff --git a/.github/workflows/ibis-backends-cloud.yml b/.github/workflows/ibis-backends-cloud.yml
+ci,remove unused branches and ignore envrc file,"diff --git a/.github/workflows/ibis-backends-cloud.yml b/.github/workflows/ibis-backends-cloud.yml
 index 2003e8e..7c7fd26 100644
 --- a/.github/workflows/ibis-backends-cloud.yml
 +++ b/.github/workflows/ibis-backends-cloud.yml
@@ -20887,7 +20887,7 @@ index be28bf9..32d0952 100644
    ""bugs"": {
      ""url"": ""https://github.com/matteobruni/tsparticles/issues""
 ",32b92cfa0b74a6c25990e32ac6aab12b8496794c
-cicd,abort parallel stages if one failed,"diff --git a/Jenkinsfile b/Jenkinsfile
+ci,abort parallel stages if one failed,"diff --git a/Jenkinsfile b/Jenkinsfile
 index 168f446..a4da961 100644
 --- a/Jenkinsfile
 +++ b/Jenkinsfile
@@ -20900,7 +20900,7 @@ index 168f446..a4da961 100644
                  stage('Tests') {
                      steps {
 ",28e623b294816c4e070971782a75c8697a11966f
-cicd,fetch git history,"diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+ci,fetch git history,"diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
 index 6726e35..9114eeb 100644
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
@@ -20945,7 +20945,7 @@ index 5c02f57..163b7d2 100644
        max-worker-connections: 0
        # SSL redirection
 ",e12d9e77a6fd531a22325337838a841b1c67f00d
-cicd,fix deploy,"diff --git a/.github/workflows/deploy.yaml b/.github/workflows/deploy.yaml
+ci,fix deploy,"diff --git a/.github/workflows/deploy.yaml b/.github/workflows/deploy.yaml
 index 3830f4c..3b14ee5 100644
 --- a/.github/workflows/deploy.yaml
 +++ b/.github/workflows/deploy.yaml
@@ -21280,7 +21280,7 @@ index 7c56a7d..c19ea12 100644
    </ion-card>
  
 ",19feaea1885eb015759b5c7a5d785521f2b8a212
-cicd,fix `get-deploy-tags.sh`,"diff --git a/.circleci/get-deploy-tags.sh b/.circleci/get-deploy-tags.sh
+ci,fix `get-deploy-tags.sh`,"diff --git a/.circleci/get-deploy-tags.sh b/.circleci/get-deploy-tags.sh
 index f80c8cb..7ddfa62 100755
 --- a/.circleci/get-deploy-tags.sh
 +++ b/.circleci/get-deploy-tags.sh
@@ -22263,7 +22263,7 @@ index 4bab09b..55f459b 100644
        }
      }
 ",f14ef3809f456aadd73523e47cb16c5d15e9a9df
-cicd,increment failing test retries,"diff --git a/.ci/scripts/distribution/it-java.sh b/.ci/scripts/distribution/it-java.sh
+ci,increment failing test retries,"diff --git a/.ci/scripts/distribution/it-java.sh b/.ci/scripts/distribution/it-java.sh
 index 679674b..ee150c2 100755
 --- a/.ci/scripts/distribution/it-java.sh
 +++ b/.ci/scripts/distribution/it-java.sh
@@ -22521,7 +22521,7 @@ index 63680a0..775208a 100644
  swc_ecma_visit = {version = ""0.51.1"", path = ""../swc_ecma_visit"", optional = true}
  
 ",af53b9487f74ff28438928903fb1f2db93fe4fa8
-cicd,"update CI images from docker buster to bullseye
+ci,"update CI images from docker buster to bullseye
 
 This will break `perf_image` until the new CI image is built due to the
 newly required `--all-tags` parameter to `docker push` that isn't
@@ -22932,7 +22932,7 @@ index 25d9580..9ba4e38 100644
                  delta_tx_fees.push(*tx_fees.get(txid).unwrap_or(&0));
              }
 ",37a1b5bbb5270befcee5d9b9621af196c787a61f
-cicd,publish sdks after docs/build,"diff --git a/.circleci/config.yml b/.circleci/config.yml
+ci,publish sdks after docs/build,"diff --git a/.circleci/config.yml b/.circleci/config.yml
 index 4ac01cf..cfea1ae 100644
 --- a/.circleci/config.yml
 +++ b/.circleci/config.yml
@@ -23258,7 +23258,7 @@ index 65afbbc..326ab48 100644
    }
  }
 ",ecc481f9f501aa34b41e06e7bbdde6e79f8ca1bb
-cicd,add a branch name to Slack notifications (#14793),"diff --git a/.circleci/config.yml b/.circleci/config.yml
+ci,add a branch name to Slack notifications (#14793),"diff --git a/.circleci/config.yml b/.circleci/config.yml
 index d0c7bd1..cd5d2cc 100644
 --- a/.circleci/config.yml
 +++ b/.circleci/config.yml
@@ -23303,7 +23303,7 @@ index c02d13a..2e72426 100644
        -d ""{\""text\"": \""$MESSAGE\"", \""attachments\"": [{\""color\"": \""good\"",\""title\"": \""$BUILD_DEFINITIONNAME nightly build results\"",\""title_link\"": \""$BUILD_URL\""}]}"" $(slack_webhook)
      displayName: 'Post Slack Notification on Success'
 ",c5fa7b80438fbd74f4c341f0d3c9bd9e0f4910da
-cicd,"temporary do no run ""verify-ffmpeg.py"" on Mac CI (#14986)","diff --git a/vsts.yml b/vsts.yml
+ci,"temporary do no run ""verify-ffmpeg.py"" on Mac CI (#14986)","diff --git a/vsts.yml b/vsts.yml
 index 6cb0eb3..a058238 100644
 --- a/vsts.yml
 +++ b/vsts.yml
@@ -23736,7 +23736,7 @@ index d895677..cf10e3f 100644
 \ No newline at end of file
 +}
 ",9b059dd8245e72f0bf8c40fc633f9ef6fccae405
-cicd,"trigger build every hour for develop
+ci,"trigger build every hour for develop
 
 To better track stability of the develop branch the build should be
 triggered on commit and every hour. Other branches should not be
@@ -23826,7 +23826,7 @@ index 2c58f61..9daa38f 100644
                          }
                      }
 ",3bc1541d6c95ef8cb5ce5da741733f09c98e4b29
-cicd,pin version of actionlint used,"diff --git a/.github/workflows/introspect.yml b/.github/workflows/introspect.yml
+ci,pin version of actionlint used,"diff --git a/.github/workflows/introspect.yml b/.github/workflows/introspect.yml
 index b6d9125..82d22a5 100644
 --- a/.github/workflows/introspect.yml
 +++ b/.github/workflows/introspect.yml
@@ -24355,7 +24355,7 @@ index 47ada0c..cb4e3f4 100644
  
  }
 ",1269431c8a3e7549f10fcbbb4b88ff625c8898b3
-cicd,"fixing deploying to kubernetes
+ci,"fixing deploying to kubernetes
 
 Signed-off-by: Rajesh Rajendran <rjshrjndrn@gmail.com>","diff --git a/.github/workflows/frontend.yaml b/.github/workflows/frontend.yaml
 index 7e42967..77e4abf 100644
@@ -24622,7 +24622,7 @@ index bdd6fad..63238cb 100644
      response?: null | { src: string; timestamp: number }
    }
 ",97cabf49e7aca7754edde247003fbcb4ea42dd59
-cicd,remove ubuntu-latest from job title where that is the only os,"diff --git a/.github/workflows/ibis-backends.yml b/.github/workflows/ibis-backends.yml
+ci,remove ubuntu-latest from job title where that is the only os,"diff --git a/.github/workflows/ibis-backends.yml b/.github/workflows/ibis-backends.yml
 index 4dea4c9..006290a 100644
 --- a/.github/workflows/ibis-backends.yml
 +++ b/.github/workflows/ibis-backends.yml
@@ -25317,7 +25317,7 @@ index b8ef065..aa04525 100644
  
    it('should properly init', () => {
 ",8246d024f21d93cc092e19bede5f7b3a5325c8dc
-cicd,rename step,"diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+ci,rename step,"diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
 index e81d897..5c3ee6b 100644
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
@@ -25357,7 +25357,7 @@ index 0854323..bfc7b7e 100644
  
      @BeforeEach
 ",672cd2b9775fb6dac2d522cb3f4469db47c0556b
-cicd,"enable performance test trigger
+ci,"enable performance test trigger
 
 This reverts commit 146c7b58154a5b3de957f87e3b193447e0576547.","diff --git a/Jenkinsfile b/Jenkinsfile
 index 399f8b8..c3f8fde 100644
@@ -25514,7 +25514,7 @@ index 0000000..40f7f2c
 +  document.getElementById('got-version-info').innerHTML = message
 +})
 ",16d4ace80096557fb3fd48396aa09107241c3131
-cicd,run nix macos jobs on macos-13 to try and avoid SIP,"diff --git a/.github/actionlint.yaml b/.github/actionlint.yaml
+ci,run nix macos jobs on macos-13 to try and avoid SIP,"diff --git a/.github/actionlint.yaml b/.github/actionlint.yaml
 new file mode 100644
 index 0000000..5be7d17
 --- /dev/null
@@ -26758,7 +26758,7 @@ index fbd133c..729b2de 100644
              />
            </div>
 ",11ffd5174bd61a2939ae58d2b2d43284302ae490
-cicd,"only run Snyk once a day on master
+ci,"only run Snyk once a day on master
 
 Signed-off-by: Alex Collins <alex_collins@intuit.com>","diff --git a/.github/workflows/snyk.yml b/.github/workflows/snyk.yml
 index 675a22b..a4586d0 100644
@@ -28013,7 +28013,7 @@ index a72309b..4793315 100644
          new CommandDistributionFinishedApplier(distributionState));
    }
 ",6f4c06076abff94f8bb5c634beaba55483a78b72
-cicd,ignore all markdown files for backend and main test suites,"diff --git a/.github/workflows/ibis-backends-skip-helper.yml b/.github/workflows/ibis-backends-skip-helper.yml
+ci,ignore all markdown files for backend and main test suites,"diff --git a/.github/workflows/ibis-backends-skip-helper.yml b/.github/workflows/ibis-backends-skip-helper.yml
 index efd0953..058f8b6 100644
 --- a/.github/workflows/ibis-backends-skip-helper.yml
 +++ b/.github/workflows/ibis-backends-skip-helper.yml
@@ -28200,7 +28200,7 @@ index 8b23fba..58a4c17 100644
      // The public URL is available as %PUBLIC_URL% in index.html, e.g.:
      // <link rel=""shortcut icon"" href=""%PUBLIC_URL%/favicon.ico"">
 ",411be831591b2ea15ca9138eaf8db81f51b5101e
-cicd,retry uploading pdb files on appveyor (#21561),"diff --git a/appveyor.yml b/appveyor.yml
+ci,retry uploading pdb files on appveyor (#21561),"diff --git a/appveyor.yml b/appveyor.yml
 index 9aca21e..8b54543 100644
 --- a/appveyor.yml
 +++ b/appveyor.yml
@@ -28357,7 +28357,7 @@ index 78305bb..9c7e6d7 100644
 +def test_large_expr_equals(benchmark, tpc_h02):
 +    benchmark(ir.Expr.equals, tpc_h02, copy.deepcopy(tpc_h02))
 ",b700285c1f27588922d9c56527cee721bb884682
-cicd,Fix Cube Store build on Windows,"diff --git a/.github/workflows/publish.yml b/.github/workflows/publish.yml
+ci,Fix Cube Store build on Windows,"diff --git a/.github/workflows/publish.yml b/.github/workflows/publish.yml
 index a986501..db33097 100644
 --- a/.github/workflows/publish.yml
 +++ b/.github/workflows/publish.yml
@@ -32012,7 +32012,7 @@ index 7e9d06c..cbc5775 100644
  }
  
 ",fd8e563cc19ca4684885d4692acee6bebcca4ada
-cicd,e2e,"diff --git a/.github/workflows/kibbeh-e2e_tests.yaml b/.github/workflows/kibbeh-e2e_tests.yaml
+ci,e2e,"diff --git a/.github/workflows/kibbeh-e2e_tests.yaml b/.github/workflows/kibbeh-e2e_tests.yaml
 index 52bf3ed..74fe785 100644
 --- a/.github/workflows/kibbeh-e2e_tests.yaml
 +++ b/.github/workflows/kibbeh-e2e_tests.yaml
@@ -32026,7 +32026,7 @@ index 52bf3ed..74fe785 100644
        - 'kibbeh/src/**'
    pull_request:
 ",02f9e79a755a1dd95e661c674d6966837f378442
-cicd,"increase timeout of multiregion failover test
+ci,"increase timeout of multiregion failover test
 
 Due to the nature of the test, restarts and failovers can take long. If the recovery takes longer than 15m, then the test will fail unnecessarily. Since we are not really testing for how was it can recover, it is ok to increase the maxInstanceDuration.","diff --git a/.github/workflows/e2e-testbench.yaml b/.github/workflows/e2e-testbench.yaml
 index 708f97f..fd0b918 100644
