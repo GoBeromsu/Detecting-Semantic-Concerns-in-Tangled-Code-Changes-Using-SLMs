@@ -8,6 +8,7 @@ import os
 import subprocess
 import logging
 import sys
+import gc
 from pathlib import Path
 from typing import Optional
 from huggingface_hub import create_repo, upload_folder
@@ -35,9 +36,25 @@ MODEL_NAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 HF_REPO_NAME = f"Berom0227/{MODEL_NAME}-gguf"
 HF_ADAPTER_REPO = f"Berom0227/{MODEL_NAME}-adapter"  # LoRA adapter repository from train.py
 
+# Memory optimization - CPU offloading enabled by default
+USE_CPU_OFFLOAD = True
+
 # Quantization options
-# QUANT_TYPES = ["q4_K_M","q8_0"]
-QUANT_TYPES = [""]
+QUANT_TYPES = ["q4_K_M","q8_0"]
+
+def log_memory_usage(stage: str) -> None:
+    """Simple memory logging"""
+    if torch.cuda.is_available():
+        allocated = torch.cuda.memory_allocated(0) / (1024**3)
+        cached = torch.cuda.memory_reserved(0) / (1024**3)
+        logger.info(f"[{stage}] GPU Memory - Allocated: {allocated:.1f}GB, Cached: {cached:.1f}GB")
+
+
+def clear_memory() -> None:
+    """Memory cleanup"""
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    gc.collect()
 
 
 def check_dependencies() -> bool:
@@ -66,10 +83,8 @@ def check_dependencies() -> bool:
             "Build llama.cpp first: cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release"
         )
 
-    logger.info("✅ Dependencies check completed")
+    logger.info("Dependencies check completed")
     return True
-
-
 
 
 
@@ -81,8 +96,11 @@ def create_output_dir() -> None:
 
 
 def merge_lora_adapter() -> bool:
-    """Load LoRA adapter from HF Hub and merge with base model"""
+    """Load LoRA adapter from HF Hub and merge with base model with memory optimization"""
     logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} and merging with base model...")
+    
+    # Log initial memory state
+    log_memory_usage("Initial")
 
     # Check if merged model already exists
     merged_model_path = Path(MERGED_MODEL_DIR)
@@ -91,43 +109,77 @@ def merge_lora_adapter() -> bool:
         return True
 
     try:
-        # Determine compute dtype and device map
+        # Clear memory before starting
+        clear_memory()
+        
+        # Determine compute dtype
         if torch.cuda.is_bf16_supported():
             compute_dtype = torch.bfloat16
         else:
             compute_dtype = torch.float16
-
-        # Load the LoRA adapter model from Hugging Face Hub
-        logger.info(f"Downloading LoRA adapter from {HF_ADAPTER_REPO}...")
+        
+        # Smart CPU offloading: move memory-heavy, compute-light components
+        device_map = {
+            # Always CPU: memory-heavy but simple operations
+            "model.embed_tokens": "cpu",  # Lookup table, pure memory
+            "model.norm": "cpu",          # Small layer norm
+            "lm_head": "cpu",            # Output projection, memory-heavy
+        }
+        
+        # For transformer layers: keep computation on GPU, offload memory-heavy parts
+        # GPU gets fewer layers but keeps compute-intensive operations
+        for i in range(0, 12):  # Core layers with heavy computation stay on GPU
+            device_map[f"model.layers.{i}"] = 0
+        for i in range(12, 40):  # Upper layers to CPU (less critical for computation)
+            device_map[f"model.layers.{i}"] = "cpu"
+        
+        logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} with CPU offloading...")
         model = AutoPeftModelForCausalLM.from_pretrained(
             HF_ADAPTER_REPO,
             low_cpu_mem_usage=True,
-            return_dict=True,
             torch_dtype=compute_dtype,
             trust_remote_code=True,
-            device_map="auto",
+            device_map=device_map,
             cache_dir=HF_CACHE_DIR,
         )
+        
+        log_memory_usage("After model loading")
 
         # Merge the adapter with base model
+        logger.info("Starting LoRA merge process...")
+        
+        # Move model to CPU for merge
+        logger.info("Moving model to CPU for merge...")
+        model = model.cpu()
+        clear_memory()
+        
         merged_model = model.merge_and_unload()
-
+        log_memory_usage("After merge")
+        
+        # Clean up original model immediately
+        del model
+        clear_memory()
+        
         # Load tokenizer
         tokenizer = AutoTokenizer.from_pretrained(
             BASE_MODEL_ID, trust_remote_code=True, cache_dir=HF_CACHE_DIR
         )
-
+        
         # Save merged model and tokenizer
+        logger.info("Saving merged model...")
         merged_model.save_pretrained(
-            MERGED_MODEL_DIR, trust_remote_code=True, safe_serialization=True
+            MERGED_MODEL_DIR, 
+            trust_remote_code=True, 
+            safe_serialization=True,
+            max_shard_size="5GB"  # Limit shard size for memory efficiency
         )
         tokenizer.save_pretrained(MERGED_MODEL_DIR)
-
-        # Clean up GPU memory
-        del model
+        
+        # Clean up GPU memory aggressively
         del merged_model
-        torch.cuda.empty_cache()
-
+        clear_memory()
+        log_memory_usage("After cleanup")
+        
         logger.info("✅ LoRA adapter merged successfully")
         return True
 
@@ -233,7 +285,7 @@ def upload_to_huggingface() -> bool:
 
 def main():
     """Main conversion workflow"""
-    logger.info("Starting GGUF conversion process...")
+    logger.info("Starting GGUF conversion process with CPU offloading...")
 
     # Check prerequisites
     if not check_dependencies():
