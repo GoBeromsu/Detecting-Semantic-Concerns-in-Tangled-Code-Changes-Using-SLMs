@@ -17,6 +17,37 @@
 
 echo "Starting GGUF conversion process..."
 
+# Function to find project root directory
+find_project_root() {
+    local current_dir="$(pwd)"
+    local search_dir="$current_dir"
+    
+    while [ "$search_dir" != "/" ]; do
+        # Check for project indicator files
+        if [ -f "$search_dir/pyproject.toml" ] && [ -d "$search_dir/fine_tuning" ]; then
+            echo "$search_dir"
+            return 0
+        fi
+        search_dir="$(dirname "$search_dir")"
+    done
+    
+    echo ""
+    return 1
+}
+
+# Find and set project root
+PROJECT_ROOT=$(find_project_root)
+if [ -z "$PROJECT_ROOT" ]; then
+    echo "❌ Could not find project root directory!"
+    echo "Please ensure you're running this script from within the project directory."
+    echo "Expected to find: pyproject.toml and fine_tuning/ directory"
+    echo "Current directory: $(pwd)"
+    exit 1
+fi
+
+echo "📁 Project root: $PROJECT_ROOT"
+cd "$PROJECT_ROOT"
+
 # Create logs directory
 mkdir -p logs
 
@@ -99,35 +130,22 @@ else
     echo "✅ llama.cpp already exists"
 fi
 
-# Return to submit directory
-cd "$SLURM_SUBMIT_DIR"
+# Set converter path based on project root
+CONVERTER="$PROJECT_ROOT/fine_tuning/conver_to_gguf.py"
 
-# Resolve path to conver_to_gguf.py robustly (handles moved script location)
-SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-CONVERTER=""
-
-for CAND in \
-    "$SCRIPT_DIR/../fine_tuning/conver_to_gguf.py" \
-    "$SLURM_SUBMIT_DIR/fine_tuning/conver_to_gguf.py" \
-    "$SLURM_SUBMIT_DIR/conver_to_gguf.py"; do
-    if [ -f "$CAND" ]; then
-        CONVERTER="$CAND"
-        break
-    fi
-done
-
-if [ -z "$CONVERTER" ]; then
-    echo "❌ Could not locate conver_to_gguf.py. Checked:"
-    echo " - $SCRIPT_DIR/../fine_tuning/conver_to_gguf.py"
-    echo " - $SLURM_SUBMIT_DIR/fine_tuning/conver_to_gguf.py"
-    echo " - $SLURM_SUBMIT_DIR/conver_to_gguf.py"
+if [ ! -f "$CONVERTER" ]; then
+    echo "❌ Could not locate conver_to_gguf.py at: $CONVERTER"
+    echo "Expected location: fine_tuning/conver_to_gguf.py (relative to project root)"
+    echo "Project root: $PROJECT_ROOT"
     exit 1
 fi
 
-# Load environment variables if .env exists
-if [ -f ".env" ]; then
-    echo "📄 Loading environment variables from .env"
-    source .env
+echo "🐍 Converter script: $CONVERTER"
+
+# Load environment variables if .env exists in project root
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    echo "📄 Loading environment variables from $PROJECT_ROOT/.env"
+    source "$PROJECT_ROOT/.env"
 fi
 
 # Run GGUF conversion
