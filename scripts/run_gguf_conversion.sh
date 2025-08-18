@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=phi4-gguf-convert
 #SBATCH --time=4:00:00
-#SBATCH --partition=cpu
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=256GB
 #SBATCH --nodes=1
@@ -11,7 +10,7 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
-# Sheffield HPC Stanage - GGUF Conversion for Phi-4 Fine-tuned Model
+# Sheffield HPC Stanage - CPU-only GGUF Conversion for Phi-4 Fine-tuned Model
 # Convert merged LoRA model to GGUF format and upload to Hugging Face
 
 echo "Starting GGUF conversion process..."
@@ -19,7 +18,7 @@ echo "Starting GGUF conversion process..."
 # Create logs directory
 mkdir -p logs
 
-# Setup environment - Match setup_env.sh configuration
+# Setup environment - CPU-only configuration
 module purge
 module load GCCcore/12.3.0
 module load CUDA/12.1.1
