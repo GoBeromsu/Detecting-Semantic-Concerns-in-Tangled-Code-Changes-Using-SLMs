@@ -27,12 +27,12 @@ REPO_ID = "Berom0227/phi4-commit-gguf"
 MODEL_NAME = "Phi-4"
 
 # Paths and experiment constants (experiment script concerns)
-RESULTS_ROOT: Path = Path("results")
+RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "RQ" / "results"
 RESULTS_SUBDIR: str = "huggingface"
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Inference constants
-CONTEXT_WINDOWS = [12288,8192,4096,2048,1024]
+CONTEXT_WINDOWS = [1024]
 MAX_TOKENS = 16384
 SEED = 42
 TEMPERATURE = 0.3
@@ -69,6 +69,27 @@ def perform_api_call(
         return [], end_time - start_time
 
 
+def process_row(row: pd.Series, repo_id: str, filename: str, system_prompt: str, context_len: int, with_message: bool) -> dict:
+    """Process single row and return result."""
+    actual_types = json.loads(row.types)
+    predicted_types, inference_time = perform_api_call(repo_id, filename, row.truncated_commit, system_prompt)
+    metrics = eval_utils.calculate_metrics(predicted_types, actual_types)
+    
+    return {
+        "predicted_types": json.dumps(predicted_types),
+        "actual_types": row.types,
+        "inference_time": inference_time,
+        "shas": json.loads(row.shas),
+        "precision": metrics["precision"],
+        "recall": metrics["recall"],
+        "f1": metrics["f1"],
+        "exact_match": metrics["exact_match"],
+        "context_len": context_len,
+        "with_message": with_message,
+        "concern_count": len(actual_types),
+    }
+
+
 def measure_performance(
     repo_id: str,
     filename: str,
@@ -78,40 +99,24 @@ def measure_performance(
     context_len: int,
     with_message: bool,
 ) -> None:
-    for row in truncated_dataset.itertuples():
-        actual_types: List[str] = json.loads(row.types)
-        shas: List[str] = json.loads(row.shas)
+    """Process each row immediately and save, then retry failed ones."""
+    # Process and save each row immediately
+    for idx, (_, row) in enumerate(truncated_dataset.iterrows()):
+        result = process_row(row, repo_id, filename, system_prompt, context_len, with_message)
+        pd.DataFrame([result])[constant.DEFAULT_DF_COLUMNS].to_csv(csv_path, mode="a", header=False, index=False)
         
-        for attempt in range(3):
-            predicted_types, inference_time = perform_api_call(
-                repo_id, filename, row.truncated_commit, system_prompt
-            )
-            
-            if predicted_types:
-                break
-            print(f"[{row.Index}] Attempt {attempt + 1} failed - retrying...")
-        metrics = eval_utils.calculate_metrics(predicted_types, actual_types)
-
-        result_df = pd.DataFrame([
-            {
-                "predicted_types": json.dumps(predicted_types),
-                "actual_types": row.types,
-                "inference_time": inference_time,
-                "shas": shas,
-                "precision": metrics["precision"],
-                "recall": metrics["recall"],
-                "f1": metrics["f1"],
-                "exact_match": metrics["exact_match"],
-                "context_len": context_len,
-                "with_message": with_message,
-                "concern_count": len(actual_types),
-           } ],
-            columns=constant.DEFAULT_DF_COLUMNS,
-        )
-
-        result_df.to_csv(csv_path, mode="a", header=False, index=False)
-        if row.Index % 10 == 0:
-            print(f"[{row.Index}] appended to {csv_path}")
+        if idx % 10 == 0:
+            print(f"[{idx}] processed and saved")
+    
+    # Check failures and retry for logging only
+    saved_results = pd.read_csv(csv_path)
+    failed_indices = saved_results[saved_results['predicted_types'] == '[]'].index
+    
+    for idx in failed_indices:
+        row = truncated_dataset.iloc[idx]
+        retry_result = process_row(row, repo_id, filename, system_prompt, context_len, with_message)
+        status = "success" if retry_result['predicted_types'] != '[]' else "failed"
+        print(f"Retry [{idx}]: {status}")
 
 
 def get_compute_device() -> str:
@@ -128,6 +133,7 @@ def get_compute_device() -> str:
 
 def main() -> None:
     model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}" / RESULTS_SUBDIR
+    print(f"Creating results directory: {model_dir}")
     model_dir.mkdir(parents=True, exist_ok=True)
 
     tangled_df: pd.DataFrame = load_dataset(
@@ -139,8 +145,7 @@ def main() -> None:
     print(f"Hugging Face device: {device_info}")
     
     is_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    # filename = "phi-4-Q6_K.gguf" if is_mps else "phi-4-bf16.gguf"
-    filename = "phi4-commit-f16.gguf"
+    filename = "phi-4-Q6_K.gguf" if is_mps else "phi-4-bf16.gguf"
 
     # Preload/caches model with chatml format for reproducibility
     llms.load_model(repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT)
