@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 USER = os.getenv("USER", "acq24bk")
 FASTDATA_BASE = f"/mnt/parscratch/users/{USER}"
 BASE_MODEL_ID = "microsoft/phi-4"
-LORA_ADAPTER_DIR = f"{FASTDATA_BASE}/models/{BASE_MODEL_ID}-LoRA"
 MERGED_MODEL_DIR = f"{FASTDATA_BASE}/models/merged_model"
 GGUF_OUTPUT_DIR = f"{FASTDATA_BASE}/models/gguf"
 LLAMA_CPP_DIR = f"{FASTDATA_BASE}/llama.cpp"
@@ -34,6 +33,7 @@ HF_CACHE_DIR = f"{FASTDATA_BASE}/.cache/huggingface/transformers"
 # Model naming (align with train.py NEW_MODEL)
 MODEL_NAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 HF_REPO_NAME = f"Berom0227/{MODEL_NAME}-gguf"
+HF_ADAPTER_REPO = f"Berom0227/{MODEL_NAME}-adapter"  # LoRA adapter repository from train.py
 
 # Quantization options
 # QUANT_TYPES = ["q4_K_M","q8_0"]
@@ -70,33 +70,7 @@ def check_dependencies() -> bool:
     return True
 
 
-def check_lora_adapter() -> bool:
-    """Check if LoRA adapter exists and has required files"""
-    logger.info(f"Checking LoRA adapter at {LORA_ADAPTER_DIR}")
 
-    required_files = [
-        "adapter_config.json",
-        "adapter_model.safetensors",
-    ]
-
-    adapter_path = Path(LORA_ADAPTER_DIR)
-    if not adapter_path.exists():
-        logger.error(f"LoRA adapter directory not found: {LORA_ADAPTER_DIR}")
-        logger.info("Run train.py first to create LoRA adapter")
-        return False
-
-    missing_files = []
-    for file_name in required_files:
-        file_path = adapter_path / file_name
-        if not file_path.exists():
-            missing_files.append(file_name)
-
-    if missing_files:
-        logger.error(f"Missing required LoRA adapter files: {missing_files}")
-        return False
-
-    logger.info("✅ LoRA adapter files found")
-    return True
 
 
 def create_output_dir() -> None:
@@ -107,8 +81,8 @@ def create_output_dir() -> None:
 
 
 def merge_lora_adapter() -> bool:
-    """Load LoRA adapter and merge with base model"""
-    logger.info("Loading LoRA adapter and merging with base model...")
+    """Load LoRA adapter from HF Hub and merge with base model"""
+    logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} and merging with base model...")
 
     # Check if merged model already exists
     merged_model_path = Path(MERGED_MODEL_DIR)
@@ -123,9 +97,10 @@ def merge_lora_adapter() -> bool:
         else:
             compute_dtype = torch.float16
 
-        # Load the LoRA adapter model
+        # Load the LoRA adapter model from Hugging Face Hub
+        logger.info(f"Downloading LoRA adapter from {HF_ADAPTER_REPO}...")
         model = AutoPeftModelForCausalLM.from_pretrained(
-            LORA_ADAPTER_DIR,
+            HF_ADAPTER_REPO,
             low_cpu_mem_usage=True,
             return_dict=True,
             torch_dtype=compute_dtype,
@@ -263,10 +238,6 @@ def main():
     # Check prerequisites
     if not check_dependencies():
         logger.error("Dependencies check failed")
-        sys.exit(1)
-
-    if not check_lora_adapter():
-        logger.error("LoRA adapter check failed")
         sys.exit(1)
 
     # Create output directory
