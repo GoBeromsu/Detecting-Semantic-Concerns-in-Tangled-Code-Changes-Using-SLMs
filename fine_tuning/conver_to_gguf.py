@@ -36,25 +36,25 @@ MODEL_NAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 HF_REPO_NAME = f"Berom0227/{MODEL_NAME}-gguf"
 HF_ADAPTER_REPO = f"Berom0227/{MODEL_NAME}-adapter"  # LoRA adapter repository from train.py
 
-# Memory optimization - CPU offloading enabled by default
-USE_CPU_OFFLOAD = True
+# CPU-only workflow for stable LoRA merging
+CPU_ONLY_MODE = True
 
 # Quantization options
 QUANT_TYPES = ["q4_K_M","q8_0"]
 
 def log_memory_usage(stage: str) -> None:
-    """Simple memory logging"""
-    if torch.cuda.is_available():
-        allocated = torch.cuda.memory_allocated(0) / (1024**3)
-        cached = torch.cuda.memory_reserved(0) / (1024**3)
-        logger.info(f"[{stage}] GPU Memory - Allocated: {allocated:.1f}GB, Cached: {cached:.1f}GB")
+    """Simple stage logging"""
+    logger.info(f"[{stage}] Memory checkpoint")
 
 
 def clear_memory() -> None:
-    """Memory cleanup"""
+    """CPU memory cleanup for CPU-only workflow"""
+    # Force garbage collection for CPU memory
+    gc.collect()
+    
+    # Optional: clear CUDA cache if available (but not required for CPU-only)
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    gc.collect()
 
 
 def check_dependencies() -> bool:
@@ -112,9 +112,9 @@ def merge_lora_adapter() -> bool:
         # Clear memory before starting
         clear_memory()
         
-        # Use float32 for CPU merge to maintain precision and avoid issues
+        # Use float32 for CPU merge - optimal for CPU processing and precision
         compute_dtype = torch.float32
-        logger.info("Using float32 for CPU-based merge (precision preservation)")
+        logger.info("Using float32 for CPU-only merge (optimal CPU precision)")
         
         # Load directly to CPU for merge - best practice for LoRA merge
         logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} directly to CPU...")
@@ -264,7 +264,7 @@ def upload_to_huggingface() -> bool:
 
 def main():
     """Main conversion workflow"""
-    logger.info("Starting GGUF conversion process with CPU offloading...")
+    logger.info("Starting GGUF conversion process with CPU-only workflow...")
 
     # Check prerequisites
     if not check_dependencies():
