@@ -96,8 +96,8 @@ def create_output_dir() -> None:
 
 
 def merge_lora_adapter() -> bool:
-    """Load LoRA adapter from HF Hub and merge with base model with memory optimization"""
-    logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} and merging with base model...")
+    """Load LoRA adapter from HF Hub and merge with base model on CPU (best practice)"""
+    logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} and merging with base model on CPU...")
     
     # Log initial memory state
     log_memory_usage("Initial")
@@ -112,61 +112,54 @@ def merge_lora_adapter() -> bool:
         # Clear memory before starting
         clear_memory()
         
-        # Determine compute dtype
-        if torch.cuda.is_bf16_supported():
-            compute_dtype = torch.bfloat16
-        else:
-            compute_dtype = torch.float16
+        # Use float32 for CPU merge to maintain precision and avoid issues
+        compute_dtype = torch.float32
+        logger.info("Using float32 for CPU-based merge (precision preservation)")
         
-        # Use automatic device mapping instead of manual mapping
-        logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} with automatic device mapping...")
+        # Load directly to CPU for merge - best practice for LoRA merge
+        logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} directly to CPU...")
         model = AutoPeftModelForCausalLM.from_pretrained(
             HF_ADAPTER_REPO,
             low_cpu_mem_usage=True,
             torch_dtype=compute_dtype,
             trust_remote_code=True,
-            device_map="auto",  # Let accelerate handle device mapping automatically
+            device_map={"": "cpu"},  # Force all components to CPU for stable merge
             cache_dir=HF_CACHE_DIR,
         )
         
-        log_memory_usage("After model loading")
+        log_memory_usage("After CPU loading")
 
-        # Merge the adapter with base model
-        logger.info("Starting LoRA merge process...")
-        
-        # Move model to CPU for merge
-        logger.info("Moving model to CPU for merge...")
-        model = model.cpu()
-        clear_memory()
-        
+        # Merge the adapter with base model on CPU
+        logger.info("Starting LoRA merge process on CPU (following best practice)...")
         merged_model = model.merge_and_unload()
-        log_memory_usage("After merge")
+        log_memory_usage("After CPU merge")
         
         # Clean up original model immediately
         del model
         clear_memory()
         
         # Load tokenizer
+        logger.info("Loading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(
             BASE_MODEL_ID, trust_remote_code=True, cache_dir=HF_CACHE_DIR
         )
         
-        # Save merged model and tokenizer
-        logger.info("Saving merged model...")
+        # Save merged model and tokenizer with memory-efficient sharding
+        logger.info("Saving merged model with memory-efficient sharding...")
         merged_model.save_pretrained(
             MERGED_MODEL_DIR, 
             trust_remote_code=True, 
             safe_serialization=True,
-            max_shard_size="5GB"  # Limit shard size for memory efficiency
+            max_shard_size="2GB"  # Smaller shards for better memory efficiency
         )
         tokenizer.save_pretrained(MERGED_MODEL_DIR)
         
-        # Clean up GPU memory aggressively
-        del merged_model
+        # Clean up all variables aggressively
+        del merged_model, tokenizer
         clear_memory()
         log_memory_usage("After cleanup")
         
-        logger.info("✅ LoRA adapter merged successfully")
+        logger.info("✅ LoRA adapter merged successfully on CPU")
         return True
 
     except Exception as e:
