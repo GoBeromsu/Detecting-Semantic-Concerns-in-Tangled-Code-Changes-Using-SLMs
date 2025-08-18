@@ -17,37 +17,6 @@
 
 echo "Starting GGUF conversion process..."
 
-# Function to find project root directory
-find_project_root() {
-    local current_dir="$(pwd)"
-    local search_dir="$current_dir"
-    
-    while [ "$search_dir" != "/" ]; do
-        # Check for project indicator files
-        if [ -f "$search_dir/pyproject.toml" ] && [ -d "$search_dir/fine_tuning" ]; then
-            echo "$search_dir"
-            return 0
-        fi
-        search_dir="$(dirname "$search_dir")"
-    done
-    
-    echo ""
-    return 1
-}
-
-# Find and set project root
-PROJECT_ROOT=$(find_project_root)
-if [ -z "$PROJECT_ROOT" ]; then
-    echo "❌ Could not find project root directory!"
-    echo "Please ensure you're running this script from within the project directory."
-    echo "Expected to find: pyproject.toml and fine_tuning/ directory"
-    echo "Current directory: $(pwd)"
-    exit 1
-fi
-
-echo "📁 Project root: $PROJECT_ROOT"
-cd "$PROJECT_ROOT"
-
 # Create logs directory
 mkdir -p logs
 
@@ -130,22 +99,38 @@ else
     echo "✅ llama.cpp already exists"
 fi
 
-# Set converter path based on project root
+# Find project root using git
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+
+if [ -z "$PROJECT_ROOT" ]; then
+    echo "❌ Could not find git repository root!"
+    echo "Make sure you're running this script from within the git repository."
+    echo ""
+    echo "💡 Try:"
+    echo "  cd /path/to/Concern-is-All-You-Need"
+    echo "  sbatch scripts/run_gguf_conversion.sh"
+    exit 1
+fi
+
+echo "✅ Found project root: $PROJECT_ROOT"
+
+# Change to project root directory
+cd "$PROJECT_ROOT"
+
+# Set converter script path
 CONVERTER="$PROJECT_ROOT/fine_tuning/conver_to_gguf.py"
 
 if [ ! -f "$CONVERTER" ]; then
     echo "❌ Could not locate conver_to_gguf.py at: $CONVERTER"
-    echo "Expected location: fine_tuning/conver_to_gguf.py (relative to project root)"
-    echo "Project root: $PROJECT_ROOT"
     exit 1
 fi
 
-echo "🐍 Converter script: $CONVERTER"
+echo "✅ Found converter script: $CONVERTER"
 
-# Load environment variables if .env exists in project root
-if [ -f "$PROJECT_ROOT/.env" ]; then
-    echo "📄 Loading environment variables from $PROJECT_ROOT/.env"
-    source "$PROJECT_ROOT/.env"
+# Load environment variables if .env exists
+if [ -f ".env" ]; then
+    echo "📄 Loading environment variables from .env"
+    source .env
 fi
 
 # Run GGUF conversion
