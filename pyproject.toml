@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     # Core ML/Data Libraries
-    "transformers>=4.51.0",
+    "transformers>=4.55.0",
     "datasets>=2.15.0",
     "pandas>=2.1.0",
     "numpy",
