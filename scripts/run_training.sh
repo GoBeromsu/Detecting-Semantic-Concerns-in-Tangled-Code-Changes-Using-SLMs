@@ -3,8 +3,8 @@
 #SBATCH --time=12:00:00
 #SBATCH --partition=gpu-h100
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=128GB
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=256GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --output=logs/phi4_training_%j.out
@@ -12,7 +12,7 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
-# Sheffield HPC Stanage - A100 GPU Training
+# Sheffield HPC Stanage - A100 GPU Training + GGUF Conversion
 # Multi-Concern Commit Classification with Phi-4
 
 echo "Starting Phi-4 LoRA fine-tuning job: $SLURM_JOB_ID"
@@ -24,6 +24,7 @@ module load GCCcore/12.3.0
 module load CUDA/12.1.1
 module load Anaconda3/2022.05
 module load cuDNN/8.9.2.26-CUDA-12.1.1
+module load CMake/3.26.3-GCCcore-12.3.0
 
 # Configure cache directories on fastdata to avoid filling home quota
 export FASTDATA_BASE="/mnt/parscratch/users/$USER"
@@ -35,9 +36,41 @@ export WANDB_DIR="$FASTDATA_BASE/wandb"
 export HF_HUB_ENABLE_HF_TRANSFER=1
 mkdir -p "$HUGGINGFACE_HUB_CACHE" "$TRANSFORMERS_CACHE" "$HF_DATASETS_CACHE" "$WANDB_DIR"
 
+# Clone and build llama.cpp if not exists (required for GGUF conversion)
+LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
+if [ ! -d "$LLAMA_CPP_DIR" ]; then
+    echo "📦 Cloning and building llama.cpp for GGUF conversion..."
+    cd "$FASTDATA_BASE"
+    git clone https://github.com/ggerganov/llama.cpp
+    cd llama.cpp
+    
+    # Build llama.cpp using CMake
+    echo "🔨 Building llama.cpp with CMake..."
+    cmake -B build -DGGML_CUDA=ON
+    cmake --build build --config Release -j4
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ llama.cpp built successfully"
+    else
+        echo "❌ llama.cpp build failed"
+        exit 1
+    fi
+else
+    echo "✅ llama.cpp already exists"
+fi
+
+# Return to original directory
+cd "$SLURM_SUBMIT_DIR"
+
 # Activate environment using 'source activate' instead of 'conda activate'
 echo "🔧 Activating phi4_env..."
 source activate phi4_env
+
+# Install llama.cpp Python requirements if needed
+if [ -f "$LLAMA_CPP_DIR/requirements.txt" ]; then
+    echo "📦 Installing llama.cpp Python requirements..."
+    pip install -r "$LLAMA_CPP_DIR/requirements.txt"
+fi
 
 # Set environment variables
 export CUDA_VISIBLE_DEVICES=0
