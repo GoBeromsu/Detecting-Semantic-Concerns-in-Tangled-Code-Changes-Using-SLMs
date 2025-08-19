@@ -23,8 +23,8 @@ from datasets import load_dataset
 # Load environment variables from .env file
 load_dotenv()
 
-REPO_ID = "Berom0227/phi4-commit-gguf"
-MODEL_NAME = "Phi-4"
+REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-gguf"
+MODEL_NAME = "Phi4-SLM"  # Shortened for cleaner file/directory names
 
 # Paths and experiment constants (experiment script concerns)
 RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "RQ" / "results"
