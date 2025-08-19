@@ -47,7 +47,7 @@ export NCCL_DEBUG=INFO  # Multi-GPU communication debugging
 
 # Run training
 echo "🔥 Starting training at $(date)"
-python train.py
+python -u RQ/Phi/train.py
 
 echo "✅ Training completed at $(date)"
 

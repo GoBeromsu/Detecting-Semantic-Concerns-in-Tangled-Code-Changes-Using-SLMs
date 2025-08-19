@@ -116,7 +116,7 @@ echo "✅ Found project root: $PROJECT_ROOT"
 cd "$PROJECT_ROOT"
 
 # Set converter script path
-CONVERTER="$PROJECT_ROOT/fine_tuning/conver_to_gguf.py"
+CONVERTER="$PROJECT_ROOT/RQ/Phi/conver_to_gguf.py"
 
 if [ ! -f "$CONVERTER" ]; then
     echo "❌ Could not locate conver_to_gguf.py at: $CONVERTER"
