@@ -15,8 +15,6 @@
 # Sheffield HPC Stanage - Environment Cleanup for Phi-4 Fine-tuning
 # Remove existing phi4_env conda environment
 
-echo "Cleaning up Phi-4 LoRA fine-tuning environment..."
-
 # Create logs directory
 mkdir -p logs
 
