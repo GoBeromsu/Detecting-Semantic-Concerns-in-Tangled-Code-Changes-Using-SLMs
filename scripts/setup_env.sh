@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=ciayn-env-setup
 #SBATCH --time=0:30:00
-#SBATCH --partition=gpu
+#SBATCH --partition=gpu-h100
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32GB

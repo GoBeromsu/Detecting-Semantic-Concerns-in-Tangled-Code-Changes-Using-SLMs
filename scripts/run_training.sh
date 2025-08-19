@@ -36,27 +36,15 @@ export WANDB_DIR="$FASTDATA_BASE/wandb"
 export HF_HUB_ENABLE_HF_TRANSFER=1
 mkdir -p "$HUGGINGFACE_HUB_CACHE" "$TRANSFORMERS_CACHE" "$HF_DATASETS_CACHE" "$WANDB_DIR"
 
-# Clone and build llama.cpp if not exists (required for GGUF conversion)
+# Check if llama.cpp exists (should be built by setup_env.sh)
 LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
 if [ ! -d "$LLAMA_CPP_DIR" ]; then
-    echo "📦 Cloning and building llama.cpp for GGUF conversion..."
-    cd "$FASTDATA_BASE"
-    git clone https://github.com/ggerganov/llama.cpp
-    cd llama.cpp
-    
-    # Build llama.cpp using CMake
-    echo "🔨 Building llama.cpp with CMake..."
-    cmake -B build -DGGML_CUDA=ON
-    cmake --build build --config Release -j4
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ llama.cpp built successfully"
-    else
-        echo "❌ llama.cpp build failed"
-        exit 1
-    fi
+    echo "❌ llama.cpp not found at $LLAMA_CPP_DIR"
+    echo "Please run setup_env.sh first to build llama.cpp:"
+    echo "sbatch scripts/setup_env.sh"
+    exit 1
 else
-    echo "✅ llama.cpp already exists"
+    echo "✅ llama.cpp found at $LLAMA_CPP_DIR"
 fi
 
 # Return to original directory
@@ -65,12 +53,6 @@ cd "$SLURM_SUBMIT_DIR"
 # Activate environment using 'source activate' instead of 'conda activate'
 echo "🔧 Activating phi4_env..."
 source activate phi4_env
-
-# Install llama.cpp Python requirements if needed
-if [ -f "$LLAMA_CPP_DIR/requirements.txt" ]; then
-    echo "📦 Installing llama.cpp Python requirements..."
-    pip install -r "$LLAMA_CPP_DIR/requirements.txt"
-fi
 
 # Set environment variables
 export CUDA_VISIBLE_DEVICES=0

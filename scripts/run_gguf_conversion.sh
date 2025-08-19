@@ -45,56 +45,15 @@ export FASTDATA_BASE="/mnt/parscratch/users/$USER"
 # Ensure FASTDATA_BASE directory exists
 mkdir -p "$FASTDATA_BASE"
 
-# Clone llama.cpp if not exists
+# Check if llama.cpp exists (should be built by setup_env.sh)
 LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
 if [ ! -d "$LLAMA_CPP_DIR" ]; then
-    echo "📦 Cloning llama.cpp..."
-    cd "$FASTDATA_BASE"
-    git clone https://github.com/ggerganov/llama.cpp
-    cd llama.cpp
-    
-    # Install Python requirements
-    pip install -r requirements.txt
-    
-    # Build llama.cpp using CMake (new method)
-    echo "🔨 Building llama.cpp with CMake..."
-    
-    # CMake build configuration with CUDA support
-    cmake -B build -DGGML_CUDA=ON
-    cmake --build build --config Release -j4
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ llama.cpp built successfully"
-        
-        # Verify build outputs exist
-        echo "🔍 Verifying build outputs..."
-        ls -la build/bin/
-        
-        # Check for essential binaries
-        REQUIRED_BINARIES=("llama-quantize" "llama-cli")
-        MISSING_BINARIES=()
-        
-        for binary in "${REQUIRED_BINARIES[@]}"; do
-            if [ ! -f "build/bin/$binary" ]; then
-                MISSING_BINARIES+=("$binary")
-            else
-                echo "✅ Found: build/bin/$binary"
-            fi
-        done
-        
-        if [ ${#MISSING_BINARIES[@]} -gt 0 ]; then
-            echo "❌ Missing required binaries: ${MISSING_BINARIES[*]}"
-            echo "Build may have failed or incomplete"
-            exit 1
-        fi
-        
-        echo "✅ All required binaries found"
-    else
-        echo "❌ llama.cpp build failed"
-        exit 1
-    fi
+    echo "❌ llama.cpp not found at $LLAMA_CPP_DIR"
+    echo "Please run setup_env.sh first to build llama.cpp:"
+    echo "sbatch scripts/setup_env.sh"
+    exit 1
 else
-    echo "✅ llama.cpp already exists"
+    echo "✅ llama.cpp found at $LLAMA_CPP_DIR"
 fi
 
 # Find project root using git
