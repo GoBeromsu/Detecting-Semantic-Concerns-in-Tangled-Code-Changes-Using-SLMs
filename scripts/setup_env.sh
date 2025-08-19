@@ -24,8 +24,9 @@ echo "Setting up HPC environment using uv and pyproject extras..."
 
 mkdir -p logs
 
-# Resolve repository root (this script lives in scripts/)
-REPO_DIR="$(cd "$(dirname "$0")"/.. && pwd)"
+# Resolve repository root using Git
+REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || { echo "ERROR: Not in a Git repository"; exit 1; })"
+echo "Using Git repository root: $REPO_DIR"
 
 module purge
 # Compiler toolchain and CUDA stack
