@@ -25,6 +25,7 @@ load_dotenv()
 
 REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-gguf"
 MODEL_NAME = "Phi4-SLM"  # Shortened for cleaner file/directory names
+GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-f16.gguf"
 
 # Paths and experiment constants (experiment script concerns)
 RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "RQ" / "results"
@@ -144,8 +145,8 @@ def main() -> None:
     device_info: str = get_compute_device()
     print(f"Hugging Face device: {device_info}")
     
-    is_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    filename = "phi-4-Q6_K.gguf" if is_mps else "phi-4-bf16.gguf"
+    # is_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    filename = GGUF_FILENAME
 
     # Preload/caches model with chatml format for reproducibility
     llms.load_model(repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT)
