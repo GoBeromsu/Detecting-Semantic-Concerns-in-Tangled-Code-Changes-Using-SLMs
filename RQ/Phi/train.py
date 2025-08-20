@@ -179,7 +179,8 @@ logging.basicConfig(
 def create_message_column(row) -> Dict[str, Any]:
     """Create messages column for multi-concern commit classification."""
     # Create structured prompt for commit analysis
-    user_content = f"# Commit Message\n{row['commit_message']}\n\n# Diff\n```diff\n{row['diff']}\n```\n"
+    # user_content = f"# Commit Message\n{row['commit_message']}\n\n# Diff\n```diff\n{row['diff']}\n```\n"
+    user_content = f"- given commit message:\n {row['commit_message']}\n Diff: {row['diff']}"
     parsed_types = json.loads(row["types"])
     assistant_content = json.dumps({"types": parsed_types}, ensure_ascii=False)
 
