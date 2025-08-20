@@ -33,13 +33,14 @@ RESULTS_SUBDIR: str = "huggingface"
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Inference constants
-CONTEXT_WINDOWS = [16384,8192,4096,2048,1024]
+# CONTEXT_WINDOWS = [16384,8192,4096,2048,1024]
+CONTEXT_WINDOWS = [1024,2048,4096,8192,16384]
 MAX_TOKENS = 16384
 SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
 CHAT_FORMAT = "chatml"
-SHOT_TYPES = ["One-shot"]
+SHOT_TYPES = ["Zero-shot"]
 # SHOT_TYPES = ["Zero-shot", "One-shot"]
 
 
@@ -145,8 +146,8 @@ def main() -> None:
     device_info: str = get_compute_device()
     print(f"Hugging Face device: {device_info}")
     
-    # is_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    filename = GGUF_FILENAME
+    is_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    filename = GGUF_FILENAME if not is_mps else "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-q4_K_M.gguf"
 
     # Preload/caches model with chatml format for reproducibility
     llms.load_model(repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT)
