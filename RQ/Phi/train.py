@@ -18,6 +18,7 @@ import gc
 from pathlib import Path
 from typing import Dict, Any, Optional
 import torch
+from utils.prompt import get_system_prompt
 import wandb
 
 # 'load_dataset' is a function from the 'datasets' library by Hugging Face which allows you to load a dataset.
@@ -49,32 +50,6 @@ from transformers.trainer_utils import get_last_checkpoint
 
 # 'SFTTrainer' is a class from the 'trl' library that provides a trainer for soft fine-tuning.
 from trl import SFTTrainer, SFTConfig
-
-
-def get_system_prompt():
-    return """
-You are a software engineer classifying each minimal logical code unit — a semantically cohesive change — extracted from a tangled commit using the Conventional Commits specification (CCS).
-# CCS Labels
-- Purpose labels : the motivation behind making a code change
-    - feat: Introduces new features to the codebase.
-    - fix: Fixes bugs or faults in the codebase.
-    - refactor: Restructures existing code without changing external behavior (e.g., improves readability, simplifies complexity, removes unused code).
-- Object labels : the essence of the code changes that have been made
-    - docs: Modifies documentation or text (e.g., fixes typos, updates comments or docs).
-    - test: Modifies test files (e.g., adds or updates tests).
-    - ci: Updates CI (Continuous Integration) configuration files or scripts (e.g., `.travis.yml`, `.github/workflows`).
-    - build: Affects the build system (e.g., updates dependencies, changes build configs or scripts).
-
-# Instructions
-1. For each code unit, review the change and determine the most appropriate CCS label.
-2. If multiple CCS labels are possible, resolve the overlap by applying the following rule:
-    - Purpose + Purpose: Choose the label that best reflects *why* the change was made — `fix` if resolving a bug, `feat` if adding new capability, `refactor` if improving structure without changing behavior.
-    - Object + Object: Choose the label that reflects the *functional role* of the artifact being modified — e.g., even if changing build logic, editing a CI script should be labeled as `ci`.
-    - Purpose + Object: Use purpose labels **only** when the change affects application behavior or structure. Otherwise, assign the object label based on what was changed — not why or where.
-3. Repeat step 1–2 for each code unit.
-4. After all code units are labeled, return a unique set of assigned CCS labels for the entire commit
-"""
-
 
 logger = logging.getLogger(__name__)
 
