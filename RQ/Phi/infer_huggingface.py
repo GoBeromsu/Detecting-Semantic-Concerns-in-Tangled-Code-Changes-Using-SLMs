@@ -23,13 +23,13 @@ from datasets import load_dataset
 # Load environment variables from .env file
 load_dotenv()
 
-REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-gguf"
+# REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-gguf"
+REPO_ID = "microsoft/phi-4-gguf"
 MODEL_NAME = "Phi4-SLM"  # Shortened for cleaner file/directory names
-GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-f16.gguf"
+GGUF_FILENAME = "phi-4-bf16.gguf"
 
 # Paths and experiment constants (experiment script concerns)
 RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "RQ" / "results"
-RESULTS_SUBDIR: str = "huggingface"
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Inference constants
@@ -134,7 +134,7 @@ def get_compute_device() -> str:
 
 
 def main() -> None:
-    model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}" / RESULTS_SUBDIR
+    model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}"
     print(f"Creating results directory: {model_dir}")
     model_dir.mkdir(parents=True, exist_ok=True)
 
@@ -145,10 +145,9 @@ def main() -> None:
 
     device_info: str = get_compute_device()
     print(f"Hugging Face device: {device_info}")
-    
-    is_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    filename = GGUF_FILENAME if not is_mps else "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-q4_K_M.gguf"
 
+    filename = GGUF_FILENAME
+    print(f"Loading model from {filename}")
     # Preload/caches model with chatml format for reproducibility
     llms.load_model(repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT)
 
