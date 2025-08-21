@@ -43,55 +43,6 @@ CHAT_FORMAT = "chatml"
 SHOT_TYPES = ["Zero-shot"]
 # SHOT_TYPES = ["Zero-shot", "One-shot"]
 
-
-def perform_api_call(
-    repo_id: str,
-    filename: str,
-    commit: str,
-    system_prompt: str,
-) -> tuple[List[str], float]:
-    """Perform single API call with error handling."""
-    try:
-        start_time = time.time()
-        predicted_types = llms.hugging_face_api_call(
-            repo_id=repo_id,
-            filename=filename,
-            commit=commit,
-            system_prompt=system_prompt,
-            temperature=TEMPERATURE,
-            seed=SEED,
-            use_schema=True,
-            chat_format=CHAT_FORMAT,
-        )
-        end_time = time.time()
-        return predicted_types, end_time - start_time
-    except Exception as e:
-        end_time = time.time()
-        print(f"API call error: {e}")
-        return [], end_time - start_time
-
-
-def process_row(row: pd.Series, repo_id: str, filename: str, system_prompt: str, context_len: int, with_message: bool) -> dict:
-    """Process single row and return result."""
-    actual_types = json.loads(row.types)
-    predicted_types, inference_time = perform_api_call(repo_id, filename, row.truncated_commit, system_prompt)
-    metrics = eval_utils.calculate_metrics(predicted_types, actual_types)
-    
-    return {
-        "predicted_types": json.dumps(predicted_types),
-        "actual_types": row.types,
-        "inference_time": inference_time,
-        "shas": json.loads(row.shas),
-        "precision": metrics["precision"],
-        "recall": metrics["recall"],
-        "f1": metrics["f1"],
-        "exact_match": metrics["exact_match"],
-        "context_len": context_len,
-        "with_message": with_message,
-        "concern_count": len(actual_types),
-    }
-
-
 def measure_performance(
     repo_id: str,
     filename: str,
@@ -101,25 +52,49 @@ def measure_performance(
     context_len: int,
     with_message: bool,
 ) -> None:
-    """Process each row immediately and save, then retry failed ones."""
-    # Process and save each row immediately
-    for idx, (_, row) in enumerate(truncated_dataset.iterrows()):
-        result = process_row(row, repo_id, filename, system_prompt, context_len, with_message)
-        pd.DataFrame([result])[constant.DEFAULT_DF_COLUMNS].to_csv(csv_path, mode="a", header=False, index=False)
-        
-        if idx % 10 == 0:
-            print(f"[{idx}] processed and saved")
-    
-    # Check failures and retry for logging only
-    saved_results = pd.read_csv(csv_path)
-    failed_indices = saved_results[saved_results['predicted_types'] == '[]'].index
-    
-    for idx in failed_indices:
-        row = truncated_dataset.iloc[idx]
-        retry_result = process_row(row, repo_id, filename, system_prompt, context_len, with_message)
-        status = "success" if retry_result['predicted_types'] != '[]' else "failed"
-        print(f"Retry [{idx}]: {status}")
+    for row in truncated_dataset.itertuples():
+        actual_types: List[str] = json.loads(row.types)
+        shas: List[str] = json.loads(row.shas)
+        try:
+            start_time = time.time()
+            predicted_types = llms.hugging_face_api_call(
+                repo_id=repo_id,
+                filename=filename,
+                commit=row.truncated_commit,
+                system_prompt=system_prompt,
+                temperature=TEMPERATURE,
+                seed=SEED,
+                use_schema=True,
+                chat_format=CHAT_FORMAT,
+            )
+            end_time = time.time()
+            inference_time = end_time - start_time
+        except Exception as e:
+            print(f"[{row.Index}] Error: {e}")
+            predicted_types = []
+            inference_time = 0.0
+        metrics = eval_utils.calculate_metrics(predicted_types, actual_types)
 
+        result_df = pd.DataFrame([
+            {
+                "predicted_types": json.dumps(predicted_types),
+                "actual_types": row.types,
+                "inference_time": inference_time,
+                "shas": shas,
+                "precision": metrics["precision"],
+                "recall": metrics["recall"],
+                "f1": metrics["f1"],
+                "exact_match": metrics["exact_match"],
+                "context_len": context_len,
+                "with_message": with_message,
+                "concern_count": len(actual_types),
+           } ],
+            columns=constant.DEFAULT_DF_COLUMNS,
+        )
+
+        result_df.to_csv(csv_path, mode="a", header=False, index=False)
+        if row.Index % 10 == 0:
+            print(f"[{row.Index}] appended to {csv_path}")
 
 def get_compute_device() -> str:
     """Return a short description of the compute device (cuda/mps/cpu)."""
