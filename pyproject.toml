@@ -28,15 +28,15 @@ dependencies = [
     "seaborn",
     # Streamlit
     "streamlit>=1.28.0",
-    "lmstudio",
     "accelerate>=0.25.0",
-    # GGUF runtime
-    "llama-cpp-python>=0.2.79",
+    "lmstudio",
 ]
 
 [project.optional-dependencies]
 dev = [
     "torch",
+    # GGUF runtime
+    "llama-cpp-python>=0.2.79",
     "pytest>=7.4.0",
 ]
 hpc = [
