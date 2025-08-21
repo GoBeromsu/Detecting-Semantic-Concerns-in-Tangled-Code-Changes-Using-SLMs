@@ -5,6 +5,8 @@
 #SBATCH --gres=gpu:0 # Don't use GPUs, just for load CUDA modules
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64GB
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --output=logs/setup_env_%j.out
 #SBATCH --error=logs/setup_env_%j.err
 
