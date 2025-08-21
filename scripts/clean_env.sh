@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=phi4-env-clean
+#SBATCH --job-name=clean-env
 #SBATCH --time=0:10:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
@@ -7,13 +7,10 @@
 #SBATCH --mem=8GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --output=logs/phi4_env_clean_%j.out
-#SBATCH --error=logs/phi4_env_clean_%j.err
+#SBATCH --output=logs/clean_env_%j.out
+#SBATCH --error=logs/clean_env_%j.err
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
-
-# Sheffield HPC Stanage - Environment Cleanup for Phi-4 Fine-tuning
-# Remove existing phi4_env conda environment
 
 # Create logs directory
 mkdir -p logs
