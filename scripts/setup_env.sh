@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=ciayn-env-setup
+#SBATCH --job-name=setup-env
 #SBATCH --time=0:30:00
 #SBATCH --partition=gpu-h100
 #SBATCH --gres=gpu:1
@@ -7,8 +7,8 @@
 #SBATCH --mem=32GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --output=logs/hpc_env_setup_%j.out
-#SBATCH --error=logs/hpc_env_setup_%j.err
+#SBATCH --output=logs/setup_env_%j.out
+#SBATCH --error=logs/setup_env_%j.err
 
 # Sheffield HPC Stanage - Centralized Environment Setup
 # - Uses scripts/environment.yml for base Conda env
@@ -29,12 +29,10 @@ REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || { echo "ERROR: Not in a
 echo "Using Git repository root: $REPO_DIR"
 
 module purge
-# Compiler toolchain and CUDA stack
 module load GCCcore/12.3.0
 module load CUDA/12.1.1
 module load Anaconda3/2022.05
 module load cuDNN/8.9.2.26-CUDA-12.1.1
-# For building flash-attn and other native deps
 module load CMake/3.26.3-GCCcore-12.3.0
 
 # Create or reuse conda environment from YAML
@@ -62,8 +60,6 @@ echo "Installing flash-attn (no build isolation)..."
 python -m pip install flash-attn==2.7.4.post1 --no-build-isolation
 
 # Install application dependencies from pyproject extras (.[hpc])
-# Editable install to develop within the repo
-echo "Installing project with HPC extras via uv (editable)..."
 cd "$REPO_DIR"
 uv pip install -e ".[hpc]"
 
