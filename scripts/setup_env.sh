@@ -2,11 +2,9 @@
 #SBATCH --job-name=setup-env
 #SBATCH --time=0:30:00
 #SBATCH --partition=gpu-h100
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:0 # Don't use GPUs, just for load CUDA modules
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=32GB
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
+#SBATCH --mem=64GB
 #SBATCH --output=logs/setup_env_%j.out
 #SBATCH --error=logs/setup_env_%j.err
 
@@ -71,5 +69,3 @@ uv pip install llama-cpp-python --no-binary llama-cpp-python -v
 echo "Environment setup completed. To activate later: source activate phi4_env"
 
 source deactivate
-
-
