@@ -70,6 +70,7 @@ def process_row(row: pd.Series, model_name: str, system_prompt: str, context_len
         "recall": metrics["recall"],
         "f1": metrics["f1"],
         "exact_match": metrics["exact_match"],
+        "hamming_loss": metrics["hamming_loss"],
         "context_len": context_len,
         "with_message": with_message,
         "concern_count": len(actual_types),

@@ -37,14 +37,14 @@ def calculate_metrics(
     predicted_types: List[str], actual_types: List[str]
 ) -> Dict[str, float]:
     """
-    Calculate precision, recall, F1 using set operations.
+    Calculate precision, recall, F1, and Hamming loss using set operations.
 
     Args:
         predicted_types: List of predicted concern types
         actual_types: List of actual concern types
 
     Returns:
-        Dict with precision, recall, f1, and exact_match
+        Dict with precision, recall, f1, exact_match, and hamming_loss
     """
     tp, fp, fn = get_tp_fp_fn(predicted_types, actual_types)
 
@@ -60,11 +60,15 @@ def calculate_metrics(
         else 0.0
     )
 
+    valid_labels = set(COMMIT_TYPES)
+    hamming_loss = (fp + fn) / len(valid_labels) if len(valid_labels) > 0 else 0.0
+
     return {
         "precision": precision,
         "recall": recall,
         "f1": f1,
         "exact_match": exact_match,
+        "hamming_loss": hamming_loss,
     }
 
 

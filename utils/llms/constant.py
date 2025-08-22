@@ -22,6 +22,7 @@ DEFAULT_DF_COLUMNS: List[str] = [
     "recall",
     "f1",
     "exact_match",
+    "hamming_loss",
     # Additional metadata columns appended for analysis/reporting
     "context_len",
     "with_message",

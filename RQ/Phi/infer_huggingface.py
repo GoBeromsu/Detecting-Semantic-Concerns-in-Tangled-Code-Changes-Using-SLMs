@@ -85,6 +85,7 @@ def measure_performance(
                 "recall": metrics["recall"],
                 "f1": metrics["f1"],
                 "exact_match": metrics["exact_match"],
+                "hamming_loss": metrics["hamming_loss"],
                 "context_len": context_len,
                 "with_message": with_message,
                 "concern_count": len(actual_types),

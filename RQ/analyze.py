@@ -63,9 +63,9 @@ def list_csv_files(base_dir: Path) -> List[Path]:
 def compute_macro(df: pd.DataFrame) -> pd.DataFrame:
     """Compute macro metrics (mean across rows) from present columns.
 
-    Requires: precision, recall, f1, exact_match, inference_time
+    Requires: precision, recall, f1, exact_match, hamming_loss, inference_time
     """
-    required = ["precision", "recall", "f1", "exact_match", "inference_time"]
+    required = ["precision", "recall", "f1", "exact_match", "hamming_loss", "inference_time"]
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns for macro metrics: {missing}")
@@ -75,6 +75,7 @@ def compute_macro(df: pd.DataFrame) -> pd.DataFrame:
         "macro_recall": float(df["recall"].mean()),
         "macro_f1": float(df["f1"].mean()),
         "macro_accuracy": float(df["exact_match"].mean()),
+        "macro_hamming_loss": float(df["hamming_loss"].mean()),
         "inference_time_avg": float(df["inference_time"].mean()),
         "num_samples": int(len(df)),
     }
@@ -86,7 +87,7 @@ def compute_macro_by_concern(df: pd.DataFrame) -> pd.DataFrame:
 
     grouped = (
         df.groupby("concern_count")[
-            ["precision", "recall", "f1", "exact_match", "inference_time"]
+            ["precision", "recall", "f1", "exact_match", "hamming_loss", "inference_time"]
         ]
         .mean()
         .reset_index()
@@ -98,6 +99,7 @@ def compute_macro_by_concern(df: pd.DataFrame) -> pd.DataFrame:
             "recall": "macro_recall",
             "f1": "macro_f1",
             "exact_match": "macro_accuracy",
+            "hamming_loss": "macro_hamming_loss",
             "inference_time": "inference_time_avg",
         }
     )
@@ -134,6 +136,7 @@ def build_summary_json(
         "precision": float(macro_row["macro_precision"]),
         "recall": float(macro_row["macro_recall"]),
         "f1": float(macro_row["macro_f1"]),
+        "hamming_loss": float(macro_row["macro_hamming_loss"]),
         "inference_time_avg": float(macro_row["inference_time_avg"]),
     }
 
@@ -147,6 +150,7 @@ def build_summary_json(
                 "precision": float(row["macro_precision"]),
                 "recall": float(row["macro_recall"]),
                 "f1": float(row["macro_f1"]),
+                "hamming_loss": float(row["macro_hamming_loss"]),
                 "inference_time_avg": float(row["inference_time_avg"]),
                 "num_samples": int(row["num_samples"]),
             }
@@ -178,7 +182,7 @@ def save_json(data: Dict[str, Any], output_path: Path) -> None:
 def save_concern_plot(by_concern_df: pd.DataFrame, csv_path: Path) -> None:
     """Save a simple plot of performance by concern_count next to the source CSV.
 
-    Plots Macro F1, Accuracy, Precision, and Recall over concern_count.
+    Plots Macro F1, Accuracy, Precision, Recall, and Hamming Loss over concern_count.
     """
     out_plot = csv_path.parent / "plot" / f"{csv_path.stem}_by_concern.png"
     out_plot.parent.mkdir(parents=True, exist_ok=True)
@@ -188,12 +192,14 @@ def save_concern_plot(by_concern_df: pd.DataFrame, csv_path: Path) -> None:
     acc_values = by_concern_df["macro_accuracy"].astype(float).tolist()
     prec_values = by_concern_df["macro_precision"].astype(float).tolist()
     rec_values = by_concern_df["macro_recall"].astype(float).tolist()
+    hamming_values = by_concern_df["macro_hamming_loss"].astype(float).tolist()
 
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.plot(x, f1_values, marker="o", label="Macro F1")
     ax.plot(x, acc_values, marker="s", label="Accuracy")
     ax.plot(x, prec_values, marker="^", label="Precision")
     ax.plot(x, rec_values, marker="d", label="Recall")
+    ax.plot(x, hamming_values, marker="v", label="Hamming Loss")
     ax.set_xlabel("Concern Count")
     ax.set_ylabel("Score")
     ax.set_ylim(0.0, 1.0)
