@@ -5,8 +5,10 @@ Analyze token length distribution by concern count from tangled dataset.
 
 import pandas as pd
 import tiktoken
+import json
 from pathlib import Path
 from typing import Final
+from collections import Counter
 
 # Constants
 ENCODING_MODEL: Final[str] = "cl100k_base"  # GPT-4 encoding
@@ -21,6 +23,36 @@ def calculate_token_length(text: str) -> int:
     return len(encoding.encode(text))
 
 
+def analyze_label_distribution(df: pd.DataFrame) -> None:
+    """
+    Analyze and print label combination (types) distribution.
+    """
+    print("\n=== Label Combination Distribution (Actual Types) ===")
+    
+    # Parse types column and treat each combination as a single unit
+    type_combinations = []
+    for types_str in df["types"]:
+        try:
+            types_list = json.loads(types_str)
+            # Sort to normalize combinations like ["fix", "test"] and ["test", "fix"]
+            sorted_types = tuple(sorted(types_list))
+            type_combinations.append(sorted_types)
+        except (json.JSONDecodeError, TypeError):
+            continue
+    
+    combination_counts = Counter(type_combinations)
+    total_samples = len(type_combinations)
+    
+    print(f"Total samples: {total_samples}")
+    print(f"Unique type combinations: {len(combination_counts)}")
+    print("\nType combination distribution:")
+    
+    for combination, count in combination_counts.most_common():
+        percentage = (count / total_samples) * 100
+        combination_str = ", ".join(combination)
+        print(f"  [{combination_str}]: {count} ({percentage:.1f}%)")
+
+
 def analyze_token_distribution_by_concern_count() -> None:
     """
     Analyze and print token length distribution by concern count ranges.
@@ -32,6 +64,9 @@ def analyze_token_distribution_by_concern_count() -> None:
     print("Calculating token lengths...")
     # Calculate token lengths for each diff
     df["token_length"] = df["diff"].apply(calculate_token_length)
+    
+    # Analyze label distribution
+    analyze_label_distribution(df)
 
     # Define token ranges
     ranges = [
