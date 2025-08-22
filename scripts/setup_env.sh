@@ -2,7 +2,7 @@
 #SBATCH --job-name=setup-env
 #SBATCH --time=0:30:00
 #SBATCH --partition=gpu-h100
-#SBATCH --gres=gpu:0 # Don't use GPUs, just for load CUDA modules
+#SBATCH --gres=gpu:1 # https://docs.hpc.shef.ac.uk/en/latest/stanage/GPUComputingStanage.html#gsc.tab=0
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64GB
 #SBATCH --nodes=1
