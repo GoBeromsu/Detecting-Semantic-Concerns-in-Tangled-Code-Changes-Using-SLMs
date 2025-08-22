@@ -2896,7 +2896,6 @@ dependencies = [
     { name = "datasets" },
     { name = "huggingface-hub" },
     { name = "lmstudio" },
-    { name = "matplotlib" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "openai" },
@@ -2904,8 +2903,6 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "requests" },
-    { name = "seaborn" },
-    { name = "streamlit" },
     { name = "tiktoken" },
     { name = "tqdm" },
     { name = "transformers" },
@@ -2914,7 +2911,10 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "llama-cpp-python" },
+    { name = "matplotlib" },
     { name = "pytest" },
+    { name = "seaborn" },
+    { name = "streamlit" },
     { name = "torch" },
 ]
 hpc = [
@@ -2934,7 +2934,7 @@ requires-dist = [
     { name = "huggingface-hub", specifier = ">=0.25.0" },
     { name = "llama-cpp-python", marker = "extra == 'dev'", specifier = ">=0.2.79" },
     { name = "lmstudio" },
-    { name = "matplotlib" },
+    { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "numpy" },
     { name = "openai", specifier = ">=1.0.0" },
     { name = "pandas", specifier = ">=2.1.0" },
@@ -2943,9 +2943,9 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "pyyaml" },
     { name = "requests", specifier = ">=2.31.0" },
-    { name = "seaborn" },
+    { name = "seaborn", marker = "extra == 'dev'" },
     { name = "sentencepiece", marker = "extra == 'hpc'", specifier = ">=0.1.99" },
-    { name = "streamlit", specifier = ">=1.28.0" },
+    { name = "streamlit", marker = "extra == 'dev'", specifier = ">=1.28.0" },
     { name = "tiktoken", specifier = ">=0.4.0" },
     { name = "torch", marker = "extra == 'dev'" },
     { name = "tqdm", specifier = ">=4.66.0" },
