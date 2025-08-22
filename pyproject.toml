@@ -24,13 +24,13 @@ dependencies = [
     "requests>=2.31.0",
     "tiktoken>=0.4.0",
     "accelerate>=0.25.0",
+    "lmstudio",
 ]
 
 [project.optional-dependencies]
 dev = [
     "torch",
     "streamlit>=1.28.0",
-    "lmstudio",
     "matplotlib",
     "seaborn",
     "llama-cpp-python>=0.2.79",
