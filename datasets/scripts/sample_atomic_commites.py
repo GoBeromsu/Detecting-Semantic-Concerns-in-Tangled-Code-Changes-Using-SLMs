@@ -13,7 +13,7 @@ from typing import Dict, List, Set, Tuple
 RANDOM_SEED: int = 42
 
 # Processing configuration
-CONVENTIONAL_COMMIT_TYPES: List[str] = ["feat", "fix", "refactor", "test", "docs", "build", "cicd"]
+CONVENTIONAL_COMMIT_TYPES: List[str] = ["feat", "fix", "refactor", "test", "docs", "build", "ci"]
 SAMPLES_PER_TYPE: int = 50
 TARGET_TOKEN_LIMIT: int = 12288  # 16384 - 4096
 ENCODING_MODEL: str = "cl100k_base"  # GPT-4 encoding
@@ -30,9 +30,6 @@ OUTPUT_COLUMNS: List[str] = [
     COLUMN_SHA,
 ]
 
-# Data transformation constants
-CI_TO_CICD_REPLACEMENT: str = "cicd"
-
 # File paths
 CCS_SOURCE_PATH: str = "data/CCS Dataset.csv"
 SAMPLED_CSV_PATH: str = "data/sampled_ccs_dataset.csv"
@@ -41,14 +38,13 @@ DIFF_OUTPUT_DIR: str = "data/types"
 
 
 def normalize_dataset(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize CI commit type labels to CICD for consistent categorization."""
+    """Normalize commit type labels for consistent categorization."""
     df[COLUMN_ANNOTATED_TYPE] = (
         df[COLUMN_ANNOTATED_TYPE]
         .str.lower()
         .str.strip()
-        .replace("ci", CI_TO_CICD_REPLACEMENT)
     )
-    print("Applied CI -> CICD normalization")
+    print("Applied normalization")
     return df
 
 
@@ -226,7 +222,7 @@ def main() -> None:
     1. Load dataset, existing SHAs and type counts for deduplication and sampling
     2. Remove excluded commits by SHA
     3. Remove existing commits to prevent duplicates
-    4. Normalize CI commit types to CICD
+    4. Normalize commit types
     5. Filter commits exceeding token limits
     6. Sample needed amounts per type to reach target
     7. Save results and extract individual diff files (new samples only)
@@ -248,9 +244,9 @@ def main() -> None:
     print("\nStep 3: Removing existing commits")
     ccs_df = remove_existing_commits(ccs_df, existing_shas)
 
-    # Step 4: Apply CI->CICD normalization
-    # print("\nStep 4: Applying CI->CICD normalization")
-    # ccs_df = normalize_dataset(ccs_df)
+    # Step 4: Apply normalized types
+    print("\nStep 4: Applying normalization")
+    ccs_df = normalize_dataset(ccs_df)
 
 
     # Step 5: Apply token-based filtering
