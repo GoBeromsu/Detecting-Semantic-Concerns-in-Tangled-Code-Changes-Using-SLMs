@@ -9,6 +9,7 @@ import time
 import torch
 from itertools import product
 from datetime import datetime
+from time import sleep
 
 # Ensure project root on path
 sys.path.append(str(Path(__file__).resolve().parents[2]))
@@ -59,6 +60,7 @@ def measure_performance(
         actual_types: List[str] = json.loads(row.types)
         shas: List[str] = json.loads(row.shas)
         try:
+            sleep(1)
             start_time = time.time()
             predicted_types = llms.hugging_face_api_call(
                 repo_id=repo_id,
