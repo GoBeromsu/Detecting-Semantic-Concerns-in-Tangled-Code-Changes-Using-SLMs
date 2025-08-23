@@ -3,7 +3,7 @@ Fine-tuning Phi-4 for Untangling Multi-Concern Commits
 
 Dataset: Untangling Multi-Concern Commits with Small Language Models
 Task: Predict reasoning and concern types from commit messages and diffs
-Input: commit_message, diff → Output: reason, types
+Input: commit_message, diff → Output: types
 
 Usage: python train.py
 """
@@ -93,14 +93,10 @@ EXPERIMENT_NAME: str = f"phi4-{NEW_MODEL.lower()}-lora"
 
 DEVICE_MAP: str = "auto"
 
-# 'lora_r' is the dimension of the LoRA attention.
-LORA_RANK: int = 16
-
-# 'lora_alpha' is the alpha parameter for LoRA scaling.
-LORA_ALPHA: int = 16
-
-# 'lora_dropout' is the dropout probability for LoRA layers.
-LORA_DROPOUT: float = 0.05
+# LoRA hyperparameters optimized for Phi-4 (hidden_dim=5120)
+LORA_RANK: int = 64
+LORA_ALPHA: int = 128
+LORA_DROPOUT: float = 0.1
 
 # 'target_modules' is a list of the modules in the model that will be replaced with LoRA layers.
 TARGET_MODULES: list[str] = [

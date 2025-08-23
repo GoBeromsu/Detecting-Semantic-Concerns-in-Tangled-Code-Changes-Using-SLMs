@@ -50,6 +50,9 @@ fi
 # Return to original directory
 cd "$SLURM_SUBMIT_DIR"
 
+# Ensure logs directory exists
+mkdir -p logs
+
 # Activate environment using 'source activate' instead of 'conda activate'
 echo "🔧 Activating phi4_env..."
 source activate phi4_env
@@ -59,6 +62,23 @@ export CUDA_VISIBLE_DEVICES=0
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
 export TOKENIZERS_PARALLELISM=false
 export NCCL_DEBUG=INFO  # Multi-GPU communication debugging
+
+# Start periodic GPU utilization logging (every 60 s)
+GPU_LOG="logs/gpu_usage_${SLURM_JOB_ID}.csv"
+echo "timestamp,power.draw[W],gpu.util[%],mem.util[%],mem.used[MiB]" > "$GPU_LOG"
+(
+  while true; do
+    nvidia-smi --query-gpu=timestamp,power.draw,utilization.gpu,utilization.memory,memory.used --format=csv,noheader >> "$GPU_LOG"
+    sleep 60
+  done
+) &
+GPU_MON_PID=$!
+
+# Ensure GPU logger is terminated on script exit
+cleanup() {
+  kill "$GPU_MON_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
 
 # Run training
 echo "🔥 Starting training at $(date)"
