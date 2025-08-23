@@ -1,10 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=clean-env
-#SBATCH --time=0:10:00
-#SBATCH --partition=gpu
-#SBATCH --gres=gpu:1
+#SBATCH --time=0:05:00
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=8GB
+#SBATCH --mem=4GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --output=logs/clean_env_%j.out
