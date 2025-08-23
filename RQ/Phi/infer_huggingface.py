@@ -28,7 +28,8 @@ REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-S
 MODEL_NAME = "Phi4" 
 # GGUF_FILENAME = "phi-4-bf16.gguf"
 # GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-q4_K_M.gguf"
-GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-q8_0.gguf"
+# GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-q8_0.gguf"
+GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-f16.gguf"
 
 # Paths and experiment constants (experiment script concerns)
 RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "RQ" / "results"
