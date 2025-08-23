@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Efficiency Analysis: Correlation between Concern Count and Inference Time
-Analyzes the relationship between concern count and inference time using Pearson correlation.
-Processes raw CSV data for detailed box plot analysis.
+Efficiency Analysis: Correlation between Input Tokens and Inference Time
+Analyzes the relationship between context length (input tokens) and inference time using Pearson correlation.
+Processes raw CSV data for detailed scatter plot analysis with linear regression.
 """
 
 import pandas as pd
@@ -87,13 +87,13 @@ def load_csv_data(csv_paths: List[Path], remove_outliers: bool = True) -> Tuple[
         df = pd.read_csv(csv_path)
         
         # Check required columns
-        required_cols = ['concern_count', 'inference_time']
+        required_cols = ['context_len', 'inference_time']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
             raise ValueError(f"Missing columns in {csv_path}: {missing_cols}")
         
         df['source_file'] = csv_path.name
-        all_data.append(df[['concern_count', 'inference_time', 'source_file']])
+        all_data.append(df[['context_len', 'inference_time', 'source_file']])
     
     combined_df = pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
     
@@ -118,17 +118,17 @@ def load_csv_data(csv_paths: List[Path], remove_outliers: bool = True) -> Tuple[
 
 
 def calculate_correlation(df: pd.DataFrame) -> Tuple[float, float]:
-    """Calculate Pearson correlation coefficient between concern count and inference time."""
+    """Calculate Pearson correlation coefficient between input tokens and inference time."""
     if len(df) < 2:
         return 0.0, 1.0
         
-    correlation, p_value = stats.pearsonr(df['concern_count'], df['inference_time'])
+    correlation, p_value = stats.pearsonr(df['context_len'], df['inference_time'])
     return correlation, p_value
 
 
 def perform_linear_regression(df: pd.DataFrame) -> Dict[str, Any]:
-    """Perform linear regression analysis between concern count and inference time."""
-    X = df['concern_count'].values.reshape(-1, 1)
+    """Perform linear regression analysis between input tokens and inference time."""
+    X = df['context_len'].values.reshape(-1, 1)
     y = df['inference_time'].values
     
     # Fit linear regression model
@@ -171,17 +171,17 @@ def perform_linear_regression(df: pd.DataFrame) -> Dict[str, Any]:
 
 
 def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
-    """Create box plot showing inference time distribution by concern count."""
+    """Create box plot showing inference time distribution by input tokens."""
     setup_plot_style()
     
     fig, ax = plt.subplots(figsize=PLOT_STYLE['figure_size'])
     
-    concern_counts = sorted(df['concern_count'].unique())
-    box_data = [df[df['concern_count'] == cc]['inference_time'].values 
-                for cc in concern_counts]
+    context_lengths = sorted(df['context_len'].unique())
+    box_data = [df[df['context_len'] == cl]['inference_time'].values 
+                for cl in context_lengths]
     
     # Create box plot with unified colors
-    box_plot = ax.boxplot(box_data, labels=concern_counts, patch_artist=True,
+    box_plot = ax.boxplot(box_data, labels=context_lengths, patch_artist=True,
                          boxprops=dict(facecolor=COLORS['primary'], alpha=PLOT_STYLE['alpha']),
                          medianprops=dict(color=COLORS['success'], linewidth=PLOT_STYLE['line_width']),
                          whiskerprops=dict(color=COLORS['text'], linewidth=PLOT_STYLE['line_width']),
@@ -189,9 +189,9 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
                          flierprops=dict(marker='o', markerfacecolor=COLORS['accent'], 
                                        markeredgecolor=COLORS['accent'], markersize=4))
     
-    ax.set_xlabel('Concern Count', fontweight='bold', color=COLORS['text'])
+    ax.set_xlabel('Input Tokens (Context Length)', fontweight='bold', color=COLORS['text'])
     ax.set_ylabel('Inference Time (seconds)', fontweight='bold', color=COLORS['text'])
-    ax.set_title('Inference Time Distribution by Concern Count', 
+    ax.set_title('Inference Time Distribution by Input Tokens', 
                 fontweight='bold', color=COLORS['text'], pad=20)
     
     # Add correlation statistics with sample size
@@ -218,7 +218,7 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
     
     plt.tight_layout()
     
-    output_path = output_dir / "boxplot_concern_count_inference_time.png"
+    output_path = output_dir / "boxplot_input_tokens_inference_time.png"
     plt.savefig(output_path, dpi=PLOT_STYLE['dpi'], bbox_inches='tight', facecolor='white')
     plt.close()
     
@@ -235,7 +235,7 @@ def create_regression_plot(df: pd.DataFrame, output_dir: Path) -> Path:
     regression_results = perform_linear_regression(df)
     
     # Create scatter plot with slight jitter to show overlapping points
-    x_jitter = df['concern_count'] + np.random.normal(0, 0.03, len(df))
+    x_jitter = df['context_len'] + np.random.normal(0, 0.03 * df['context_len'].std(), len(df))
     
     ax.scatter(x_jitter, df['inference_time'], 
               color=COLORS['primary'], alpha=PLOT_STYLE['alpha'], 
@@ -243,7 +243,7 @@ def create_regression_plot(df: pd.DataFrame, output_dir: Path) -> Path:
               linewidth=0.5, label='Data points')
     
     # Create regression line
-    x_range = np.linspace(df['concern_count'].min(), df['concern_count'].max(), 100)
+    x_range = np.linspace(df['context_len'].min(), df['context_len'].max(), 100)
     y_pred_line = regression_results['slope'] * x_range + regression_results['intercept']
     
     ax.plot(x_range, y_pred_line, color=COLORS['secondary'], 
@@ -274,7 +274,7 @@ def create_regression_plot(df: pd.DataFrame, output_dir: Path) -> Path:
     # Create regression equation text
     slope = regression_results['slope']
     intercept = regression_results['intercept']
-    equation = f'y = {slope:.3f}x + {intercept:.3f}'
+    equation = f'y = {slope:.6f}x + {intercept:.3f}'
     
     stats_text = (f'Pearson r = {correlation:.3f} {significance}\n'
                  f'R² = {regression_results["r_squared"]:.3f}\n'
@@ -286,25 +286,23 @@ def create_regression_plot(df: pd.DataFrame, output_dir: Path) -> Path:
             bbox=dict(boxstyle='round,pad=0.5', facecolor=COLORS['background'], 
                      alpha=0.9, edgecolor=COLORS['primary'], linewidth=1))
     
-    ax.set_xlabel('Concern Count', fontweight='bold', color=COLORS['text'])
+    ax.set_xlabel('Input Tokens (Context Length)', fontweight='bold', color=COLORS['text'])
     ax.set_ylabel('Inference Time (seconds)', fontweight='bold', color=COLORS['text'])
-    ax.set_title('Linear Regression: Concern Count vs Inference Time', 
+    ax.set_title('Linear Regression: Input Tokens vs Inference Time', 
                 fontweight='bold', color=COLORS['text'], pad=20)
     
-    # Set integer ticks for x-axis
-    ax.set_xticks(sorted(df['concern_count'].unique()))
+    # Set reasonable ticks for x-axis
+    context_lengths = sorted(df['context_len'].unique())
+    ax.set_xticks(context_lengths)
     ax.legend(loc='lower right', framealpha=0.9)
     
     plt.tight_layout()
     
-    output_path = output_dir / "regression_concern_count_inference_time.png"
+    output_path = output_dir / "regression_input_tokens_inference_time.png"
     plt.savefig(output_path, dpi=PLOT_STYLE['dpi'], bbox_inches='tight', facecolor='white')
     plt.close()
     
     return output_path
-
-
-
 
 
 def generate_summary_stats(df: pd.DataFrame, outlier_info: dict) -> dict:
@@ -317,8 +315,8 @@ def generate_summary_stats(df: pd.DataFrame, outlier_info: dict) -> dict:
         'correlation': correlation,
         'p_value': p_value,
         'significant': p_value < P_VALUE_THRESHOLD,
-        'concern_count_mean': df['concern_count'].mean(),
-        'concern_count_std': df['concern_count'].std(),
+        'context_len_mean': df['context_len'].mean(),
+        'context_len_std': df['context_len'].std(),
         'inference_time_mean': df['inference_time'].mean(),
         'inference_time_std': df['inference_time'].std(),
         'inference_time_min': df['inference_time'].min(),
@@ -340,7 +338,7 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
     summary = {
         "analysis_info": {
             "timestamp": datetime.now(tz=timezone.utc).isoformat(),
-            "analysis_type": "efficiency_concern_count_correlation",
+            "analysis_type": "efficiency_input_tokens_correlation",
             "input_files": csv_files,
             "outlier_detection_method": "IQR",
             "outlier_threshold": f"{OUTLIER_THRESHOLD_IQR}x IQR"
@@ -349,9 +347,9 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
             "total_samples": stats_dict['sample_size'],
             "outliers_detected": stats_dict['outliers_detected'],
             "outliers_removed": stats_dict['outliers_removed'],
-            "concern_count_range": {
-                "min": 1,  # We know this from data structure
-                "max": 5   # We know this from data structure  
+            "context_len_range": {
+                "min": int(stats_dict['context_len_mean'] - stats_dict['context_len_std']),
+                "max": int(stats_dict['context_len_mean'] + stats_dict['context_len_std'])
             }
         },
         "correlation_analysis": {
@@ -378,9 +376,9 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
         },
         "linear_regression": {
             "equation": {
-                "slope": round(float(stats_dict['regression']['slope']), 4),
+                "slope": round(float(stats_dict['regression']['slope']), 6),
                 "intercept": round(float(stats_dict['regression']['intercept']), 4),
-                "formula": f"y = {stats_dict['regression']['slope']:.4f}x + {stats_dict['regression']['intercept']:.4f}"
+                "formula": f"y = {stats_dict['regression']['slope']:.6f}x + {stats_dict['regression']['intercept']:.4f}"
             },
             "model_fit": {
                 "r_squared": round(float(stats_dict['regression']['r_squared']), 4),
@@ -399,9 +397,10 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
             }
         },
         "descriptive_statistics": {
-            "concern_count": {
-                "mean": round(float(stats_dict['concern_count_mean']), 2),
-                "std": round(float(stats_dict['concern_count_std']), 2)
+            "input_tokens": {
+                "mean": round(float(stats_dict['context_len_mean']), 2),
+                "std": round(float(stats_dict['context_len_std']), 2),
+                "unit": "tokens"
             },
             "inference_time": {
                 "mean": round(float(stats_dict['inference_time_mean']), 4),
@@ -423,7 +422,7 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
         }
     }
     
-    output_path = output_dir / "efficiency_analysis_summary.json"
+    output_path = output_dir / "efficiency_input_tokens_summary.json"
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
     
@@ -431,7 +430,7 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Analyze concern count vs inference time correlation from CSV files')
+    parser = argparse.ArgumentParser(description='Analyze input tokens vs inference time correlation from CSV files')
     parser.add_argument('csv_files', nargs='+', help='CSV files to analyze')
     parser.add_argument('--output-dir', type=str, help='Output directory')
     parser.add_argument('--keep-outliers', action='store_true', 
@@ -447,7 +446,7 @@ def main():
         timestamp = datetime.now().strftime('%Y%m%d_%H%M')
         
         # Validate CSV structure consistency across files
-        expected_columns = {'concern_count', 'inference_time'}
+        expected_columns = {'context_len', 'inference_time'}
         csv_paths = [Path(f) for f in args.csv_files]
         
         for csv_path in csv_paths:
@@ -465,11 +464,11 @@ def main():
         file_stems = [Path(f).stem for f in args.csv_files]
         files_summary = "_".join(file_stems)[:50]
         outlier_suffix = "_with_outliers" if args.keep_outliers else "_clean"
-        output_dir = ANALYSIS_OUTPUT_DIR / f"ef_{files_summary}{outlier_suffix}_{timestamp}"
+        output_dir = ANALYSIS_OUTPUT_DIR / f"it_{files_summary}{outlier_suffix}_{timestamp}"
     
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    print("Starting efficiency analysis: Concern Count vs Inference Time")
+    print("Starting efficiency analysis: Input Tokens vs Inference Time")
     print("=" * 60)
     
     # Process CSV files
@@ -517,7 +516,7 @@ def main():
         print(f"- Box plot: {boxplot_path.name}")
         print(f"- Regression plot: {regression_path.name}")
         print(f"- Summary JSON: {json_path.name}")
-        print(f"\nRegression equation: y = {stats['regression']['slope']:.4f}x + {stats['regression']['intercept']:.4f}")
+        print(f"\nRegression equation: y = {stats['regression']['slope']:.6f}x + {stats['regression']['intercept']:.4f}")
         print(f"R² = {stats['regression']['r_squared']:.4f}")
         
     except Exception as e:

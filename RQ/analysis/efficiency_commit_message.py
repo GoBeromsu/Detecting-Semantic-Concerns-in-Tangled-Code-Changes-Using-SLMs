@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Efficiency Analysis: Correlation between Concern Count and Inference Time
-Analyzes the relationship between concern count and inference time using Pearson correlation.
-Processes raw CSV data for detailed box plot analysis.
+Efficiency Analysis: Correlation between Commit Message and Inference Time
+Analyzes the relationship between commit message presence and inference time using statistical tests.
+Processes raw CSV data for detailed box plot analysis and group comparison.
 """
 
 import pandas as pd
@@ -28,7 +28,9 @@ COLORS = {
     'accent': '#F18F01',
     'success': '#C73E1D',
     'background': '#F5F5F5',
-    'text': '#2C3E50'
+    'text': '#2C3E50',
+    'with_message': '#2E86AB',
+    'without_message': '#A23B72'
 }
 
 PLOT_STYLE = {
@@ -87,13 +89,13 @@ def load_csv_data(csv_paths: List[Path], remove_outliers: bool = True) -> Tuple[
         df = pd.read_csv(csv_path)
         
         # Check required columns
-        required_cols = ['concern_count', 'inference_time']
+        required_cols = ['with_message', 'inference_time']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
             raise ValueError(f"Missing columns in {csv_path}: {missing_cols}")
         
         df['source_file'] = csv_path.name
-        all_data.append(df[['concern_count', 'inference_time', 'source_file']])
+        all_data.append(df[['with_message', 'inference_time', 'source_file']])
     
     combined_df = pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
     
@@ -117,18 +119,83 @@ def load_csv_data(csv_paths: List[Path], remove_outliers: bool = True) -> Tuple[
     return cleaned_df, outlier_info
 
 
-def calculate_correlation(df: pd.DataFrame) -> Tuple[float, float]:
-    """Calculate Pearson correlation coefficient between concern count and inference time."""
-    if len(df) < 2:
-        return 0.0, 1.0
+def calculate_group_comparison(df: pd.DataFrame) -> Dict[str, Any]:
+    """Calculate statistical comparison between with/without message groups."""
+    with_msg = df[df['with_message'] == True]['inference_time']
+    without_msg = df[df['with_message'] == False]['inference_time']
+    
+    # Basic statistics
+    stats_dict = {
+        'with_message': {
+            'count': len(with_msg),
+            'mean': float(with_msg.mean()),
+            'std': float(with_msg.std()),
+            'median': float(with_msg.median()),
+            'min': float(with_msg.min()),
+            'max': float(with_msg.max())
+        },
+        'without_message': {
+            'count': len(without_msg),
+            'mean': float(without_msg.mean()),
+            'std': float(without_msg.std()),
+            'median': float(without_msg.median()),
+            'min': float(without_msg.min()),
+            'max': float(without_msg.max())
+        }
+    }
+    
+    # Statistical tests
+    if len(with_msg) > 1 and len(without_msg) > 1:
+        # Independent t-test
+        t_stat, t_pvalue = stats.ttest_ind(with_msg, without_msg)
         
-    correlation, p_value = stats.pearsonr(df['concern_count'], df['inference_time'])
+        # Mann-Whitney U test (non-parametric)
+        u_stat, u_pvalue = stats.mannwhitneyu(with_msg, without_msg, alternative='two-sided')
+        
+        # Cohen's d effect size
+        pooled_std = np.sqrt(((len(with_msg) - 1) * with_msg.var() + 
+                             (len(without_msg) - 1) * without_msg.var()) / 
+                            (len(with_msg) + len(without_msg) - 2))
+        cohens_d = (with_msg.mean() - without_msg.mean()) / pooled_std
+        
+        stats_dict['statistical_tests'] = {
+            't_test': {
+                'statistic': float(t_stat),
+                'p_value': float(t_pvalue),
+                'significant': bool(t_pvalue < P_VALUE_THRESHOLD)
+            },
+            'mann_whitney_u': {
+                'statistic': float(u_stat),
+                'p_value': float(u_pvalue),
+                'significant': bool(u_pvalue < P_VALUE_THRESHOLD)
+            },
+            'effect_size': {
+                'cohens_d': float(cohens_d),
+                'interpretation': (
+                    'Large' if abs(cohens_d) >= 0.8 else
+                    'Medium' if abs(cohens_d) >= 0.5 else
+                    'Small' if abs(cohens_d) >= 0.2 else
+                    'Negligible'
+                )
+            }
+        }
+    else:
+        stats_dict['statistical_tests'] = None
+    
+    return stats_dict
+
+
+def calculate_point_biserial_correlation(df: pd.DataFrame) -> Tuple[float, float]:
+    """Calculate point-biserial correlation between binary variable and continuous variable."""
+    # Convert boolean to numeric (True=1, False=0)
+    with_message_numeric = df['with_message'].astype(int)
+    correlation, p_value = stats.pearsonr(with_message_numeric, df['inference_time'])
     return correlation, p_value
 
 
 def perform_linear_regression(df: pd.DataFrame) -> Dict[str, Any]:
-    """Perform linear regression analysis between concern count and inference time."""
-    X = df['concern_count'].values.reshape(-1, 1)
+    """Perform linear regression analysis between message presence and inference time."""
+    X = df['with_message'].astype(int).values.reshape(-1, 1)  # Convert boolean to int
     y = df['inference_time'].values
     
     # Fit linear regression model
@@ -143,7 +210,6 @@ def perform_linear_regression(df: pd.DataFrame) -> Dict[str, Any]:
     n = len(df)
     y_mean = np.mean(y)
     ss_res = np.sum((y - y_pred) ** 2)
-    ss_tot = np.sum((y - y_mean) ** 2)
     
     # Standard error of regression
     mse = ss_res / (n - 2)  # degrees of freedom = n - 2 for simple linear regression
@@ -152,10 +218,6 @@ def perform_linear_regression(df: pd.DataFrame) -> Dict[str, Any]:
     # t-value for 95% confidence interval
     t_value = stats.t.ppf(0.975, n - 2)  # 97.5th percentile for 95% CI
     
-    # Standard error for prediction
-    x_mean = np.mean(X)
-    ss_x = np.sum((X - x_mean) ** 2)
-    
     return {
         'slope': float(model.coef_[0]),
         'intercept': float(model.intercept_),
@@ -163,52 +225,78 @@ def perform_linear_regression(df: pd.DataFrame) -> Dict[str, Any]:
         'standard_error': float(se),
         't_value': float(t_value),
         'model': model,
-        'predictions': y_pred,
-        'x_mean': float(x_mean),
-        'ss_x': float(ss_x),
-        'mse': float(mse)
+        'predictions': y_pred
     }
 
 
 def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
-    """Create box plot showing inference time distribution by concern count."""
+    """Create box plot showing inference time distribution by commit message presence."""
     setup_plot_style()
     
+    # Use consistent figure size
     fig, ax = plt.subplots(figsize=PLOT_STYLE['figure_size'])
     
-    concern_counts = sorted(df['concern_count'].unique())
-    box_data = [df[df['concern_count'] == cc]['inference_time'].values 
-                for cc in concern_counts]
+    # Prepare data for box plot
+    with_msg_data = df[df['with_message'] == True]['inference_time']
+    without_msg_data = df[df['with_message'] == False]['inference_time']
     
-    # Create box plot with unified colors
-    box_plot = ax.boxplot(box_data, labels=concern_counts, patch_artist=True,
-                         boxprops=dict(facecolor=COLORS['primary'], alpha=PLOT_STYLE['alpha']),
+    box_data = [without_msg_data, with_msg_data]
+    labels = ['Without Message', 'With Message']
+    colors = [COLORS['without_message'], COLORS['with_message']]
+    
+    # Create box plot with adjusted width and positions
+    positions = [1, 2]  # Closer positions
+    box_plot = ax.boxplot(box_data, positions=positions, patch_artist=True,
+                         widths=0.6,  # Make boxes slightly wider
+                         boxprops=dict(alpha=PLOT_STYLE['alpha']),
                          medianprops=dict(color=COLORS['success'], linewidth=PLOT_STYLE['line_width']),
                          whiskerprops=dict(color=COLORS['text'], linewidth=PLOT_STYLE['line_width']),
                          capprops=dict(color=COLORS['text'], linewidth=PLOT_STYLE['line_width']),
                          flierprops=dict(marker='o', markerfacecolor=COLORS['accent'], 
                                        markeredgecolor=COLORS['accent'], markersize=4))
     
-    ax.set_xlabel('Concern Count', fontweight='bold', color=COLORS['text'])
+    # Color the boxes
+    for patch, color in zip(box_plot['boxes'], colors):
+        patch.set_facecolor(color)
+    
+    # Set custom x-axis labels and ticks
+    ax.set_xticks(positions)
+    ax.set_xticklabels(labels)
+    ax.set_xlim(0.5, 2.5)  # Tighter x-axis limits
+    
+    ax.set_xlabel('Commit Message Presence', fontweight='bold', color=COLORS['text'])
     ax.set_ylabel('Inference Time (seconds)', fontweight='bold', color=COLORS['text'])
-    ax.set_title('Inference Time Distribution by Concern Count', 
+    ax.set_title('Inference Time Distribution by Commit Message Presence', 
                 fontweight='bold', color=COLORS['text'], pad=20)
     
-    # Add correlation statistics with sample size
-    correlation, p_value = calculate_correlation(df)
-    significance = "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < P_VALUE_THRESHOLD else ""
+    # Add statistical information
+    group_stats = calculate_group_comparison(df)
+    correlation, p_value = calculate_point_biserial_correlation(df)
     
-    stats_text = f'Pearson r = {correlation:.3f} {significance}\np = {p_value:.4f}\nn = {len(df)}'
-    ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=11, 
-            verticalalignment='top', fontweight='bold',
-            bbox=dict(boxstyle='round,pad=0.5', facecolor=COLORS['background'], 
-                     alpha=0.9, edgecolor=COLORS['primary'], linewidth=1))
+    # Perform statistical test
+    if group_stats['statistical_tests']:
+        t_test = group_stats['statistical_tests']['t_test']
+        mann_whitney = group_stats['statistical_tests']['mann_whitney_u']
+        effect_size = group_stats['statistical_tests']['effect_size']
+        
+        significance = "***" if t_test['p_value'] < 0.001 else "**" if t_test['p_value'] < 0.01 else "*" if t_test['p_value'] < P_VALUE_THRESHOLD else ""
+        
+        stats_text = (f'Point-biserial r = {correlation:.3f}\n'
+                      f't-test p = {t_test["p_value"]:.4f} {significance}\n'
+                      f'Cohen\'s d = {effect_size["cohens_d"]:.3f}\n'
+                      f'n = {len(df)}')
+        
+        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=10, 
+                verticalalignment='top', fontweight='bold',
+                bbox=dict(boxstyle='round,pad=0.5', facecolor=COLORS['background'], 
+                         alpha=0.9, edgecolor=COLORS['primary'], linewidth=1))
     
     # Add legend for box plot components
     from matplotlib.patches import Patch
     from matplotlib.lines import Line2D
     legend_elements = [
-        Patch(facecolor=COLORS['primary'], alpha=PLOT_STYLE['alpha'], label='IQR (25th-75th percentile)'),
+        Patch(facecolor=COLORS['without_message'], alpha=PLOT_STYLE['alpha'], label='Without Message (IQR)'),
+        Patch(facecolor=COLORS['with_message'], alpha=PLOT_STYLE['alpha'], label='With Message (IQR)'),
         Line2D([0], [0], color=COLORS['success'], linewidth=PLOT_STYLE['line_width'], label='Median'),
         Line2D([0], [0], color=COLORS['text'], linewidth=PLOT_STYLE['line_width'], label='Whiskers (1.5×IQR)'),
         Line2D([0], [0], marker='o', color='w', markerfacecolor=COLORS['accent'], 
@@ -218,7 +306,7 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
     
     plt.tight_layout()
     
-    output_path = output_dir / "boxplot_concern_count_inference_time.png"
+    output_path = output_dir / "boxplot_commit_message_inference_time.png"
     plt.savefig(output_path, dpi=PLOT_STYLE['dpi'], bbox_inches='tight', facecolor='white')
     plt.close()
     
@@ -226,49 +314,38 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
 
 
 def create_regression_plot(df: pd.DataFrame, output_dir: Path) -> Path:
-    """Create scatter plot with linear regression line and confidence interval."""
+    """Create scatter plot with linear regression line for message presence vs inference time."""
     setup_plot_style()
     
+    # Use consistent figure size
     fig, ax = plt.subplots(figsize=PLOT_STYLE['figure_size'])
     
     # Perform linear regression
     regression_results = perform_linear_regression(df)
     
-    # Create scatter plot with slight jitter to show overlapping points
-    x_jitter = df['concern_count'] + np.random.normal(0, 0.03, len(df))
+    # Prepare data with jitter for visualization
+    x_vals = df['with_message'].astype(int)
+    x_jitter = x_vals + np.random.normal(0, 0.03, len(x_vals))
+    
+    # Create scatter plot
+    colors = [COLORS['without_message'] if not msg else COLORS['with_message'] 
+              for msg in df['with_message']]
     
     ax.scatter(x_jitter, df['inference_time'], 
-              color=COLORS['primary'], alpha=PLOT_STYLE['alpha'], 
+              c=colors, alpha=PLOT_STYLE['alpha'], 
               s=PLOT_STYLE['marker_size'], edgecolors=COLORS['text'], 
-              linewidth=0.5, label='Data points')
+              linewidth=0.5)
     
     # Create regression line
-    x_range = np.linspace(df['concern_count'].min(), df['concern_count'].max(), 100)
+    x_range = np.array([0, 1])
     y_pred_line = regression_results['slope'] * x_range + regression_results['intercept']
     
     ax.plot(x_range, y_pred_line, color=COLORS['secondary'], 
             linewidth=PLOT_STYLE['line_width'] + 1, alpha=0.9, 
             label=f'Regression line (R² = {regression_results["r_squared"]:.3f})')
     
-    # Calculate and add 95% confidence interval
-    n = len(df)
-    x_mean = regression_results['x_mean']
-    ss_x = regression_results['ss_x']
-    mse = regression_results['mse']
-    t_val = regression_results['t_value']
-    
-    # Standard error for each point on the line
-    se_line = np.sqrt(mse * (1/n + (x_range - x_mean)**2 / ss_x))
-    ci_upper = y_pred_line + t_val * se_line
-    ci_lower = y_pred_line - t_val * se_line
-    
-    # Fill confidence interval
-    ax.fill_between(x_range, ci_lower, ci_upper, 
-                   color=COLORS['secondary'], alpha=0.2, 
-                   label='95% Confidence interval')
-    
     # Calculate and display statistics
-    correlation, p_value = calculate_correlation(df)
+    correlation, p_value = calculate_point_biserial_correlation(df)
     significance = "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < P_VALUE_THRESHOLD else ""
     
     # Create regression equation text
@@ -276,7 +353,7 @@ def create_regression_plot(df: pd.DataFrame, output_dir: Path) -> Path:
     intercept = regression_results['intercept']
     equation = f'y = {slope:.3f}x + {intercept:.3f}'
     
-    stats_text = (f'Pearson r = {correlation:.3f} {significance}\n'
+    stats_text = (f'Point-biserial r = {correlation:.3f} {significance}\n'
                  f'R² = {regression_results["r_squared"]:.3f}\n'
                  f'{equation}\n'
                  f'n = {len(df)}')
@@ -286,30 +363,30 @@ def create_regression_plot(df: pd.DataFrame, output_dir: Path) -> Path:
             bbox=dict(boxstyle='round,pad=0.5', facecolor=COLORS['background'], 
                      alpha=0.9, edgecolor=COLORS['primary'], linewidth=1))
     
-    ax.set_xlabel('Concern Count', fontweight='bold', color=COLORS['text'])
+    ax.set_xlabel('Commit Message Presence (0=No, 1=Yes)', fontweight='bold', color=COLORS['text'])
     ax.set_ylabel('Inference Time (seconds)', fontweight='bold', color=COLORS['text'])
-    ax.set_title('Linear Regression: Concern Count vs Inference Time', 
+    ax.set_title('Linear Regression: Commit Message vs Inference Time', 
                 fontweight='bold', color=COLORS['text'], pad=20)
     
-    # Set integer ticks for x-axis
-    ax.set_xticks(sorted(df['concern_count'].unique()))
-    ax.legend(loc='lower right', framealpha=0.9)
+    # Set x-axis ticks and limits for tighter spacing
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['Without Message', 'With Message'])
+    ax.set_xlim(-0.2, 1.2)  # Tighter x-axis limits
+    ax.legend(loc='upper right', framealpha=0.9)
     
     plt.tight_layout()
     
-    output_path = output_dir / "regression_concern_count_inference_time.png"
+    output_path = output_dir / "regression_commit_message_inference_time.png"
     plt.savefig(output_path, dpi=PLOT_STYLE['dpi'], bbox_inches='tight', facecolor='white')
     plt.close()
     
     return output_path
 
 
-
-
-
 def generate_summary_stats(df: pd.DataFrame, outlier_info: dict) -> dict:
     """Generate summary statistics for the analysis."""
-    correlation, p_value = calculate_correlation(df)
+    group_stats = calculate_group_comparison(df)
+    correlation, p_value = calculate_point_biserial_correlation(df)
     regression_results = perform_linear_regression(df)
     
     stats_dict = {
@@ -317,12 +394,7 @@ def generate_summary_stats(df: pd.DataFrame, outlier_info: dict) -> dict:
         'correlation': correlation,
         'p_value': p_value,
         'significant': p_value < P_VALUE_THRESHOLD,
-        'concern_count_mean': df['concern_count'].mean(),
-        'concern_count_std': df['concern_count'].std(),
-        'inference_time_mean': df['inference_time'].mean(),
-        'inference_time_std': df['inference_time'].std(),
-        'inference_time_min': df['inference_time'].min(),
-        'inference_time_max': df['inference_time'].max(),
+        'group_statistics': group_stats,
         'outliers_detected': outlier_info['count'],
         'outliers_removed': outlier_info['removed'],
         'regression': regression_results
@@ -340,7 +412,7 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
     summary = {
         "analysis_info": {
             "timestamp": datetime.now(tz=timezone.utc).isoformat(),
-            "analysis_type": "efficiency_concern_count_correlation",
+            "analysis_type": "efficiency_commit_message_correlation",
             "input_files": csv_files,
             "outlier_detection_method": "IQR",
             "outlier_threshold": f"{OUTLIER_THRESHOLD_IQR}x IQR"
@@ -349,13 +421,11 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
             "total_samples": stats_dict['sample_size'],
             "outliers_detected": stats_dict['outliers_detected'],
             "outliers_removed": stats_dict['outliers_removed'],
-            "concern_count_range": {
-                "min": 1,  # We know this from data structure
-                "max": 5   # We know this from data structure  
-            }
+            "with_message_count": stats_dict['group_statistics']['with_message']['count'],
+            "without_message_count": stats_dict['group_statistics']['without_message']['count']
         },
         "correlation_analysis": {
-            "pearson_correlation": {
+            "point_biserial_correlation": {
                 "coefficient": round(float(stats_dict['correlation']), 4),
                 "p_value": float(stats_dict['p_value']),
                 "significant": bool(stats_dict['significant']),
@@ -376,6 +446,25 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
                 )
             }
         },
+        "group_comparison": {
+            "with_message": {
+                "count": stats_dict['group_statistics']['with_message']['count'],
+                "mean": round(stats_dict['group_statistics']['with_message']['mean'], 4),
+                "std": round(stats_dict['group_statistics']['with_message']['std'], 4),
+                "median": round(stats_dict['group_statistics']['with_message']['median'], 4),
+                "min": round(stats_dict['group_statistics']['with_message']['min'], 4),
+                "max": round(stats_dict['group_statistics']['with_message']['max'], 4)
+            },
+            "without_message": {
+                "count": stats_dict['group_statistics']['without_message']['count'],
+                "mean": round(stats_dict['group_statistics']['without_message']['mean'], 4),
+                "std": round(stats_dict['group_statistics']['without_message']['std'], 4),
+                "median": round(stats_dict['group_statistics']['without_message']['median'], 4),
+                "min": round(stats_dict['group_statistics']['without_message']['min'], 4),
+                "max": round(stats_dict['group_statistics']['without_message']['max'], 4)
+            }
+        },
+        "statistical_tests": stats_dict['group_statistics']['statistical_tests'],
         "linear_regression": {
             "equation": {
                 "slope": round(float(stats_dict['regression']['slope']), 4),
@@ -392,23 +481,6 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
                     "Weak fit" if stats_dict['regression']['r_squared'] >= 0.3 else
                     "Poor fit"
                 )
-            },
-            "confidence_interval": {
-                "level": 95,
-                "t_value": round(float(stats_dict['regression']['t_value']), 4)
-            }
-        },
-        "descriptive_statistics": {
-            "concern_count": {
-                "mean": round(float(stats_dict['concern_count_mean']), 2),
-                "std": round(float(stats_dict['concern_count_std']), 2)
-            },
-            "inference_time": {
-                "mean": round(float(stats_dict['inference_time_mean']), 4),
-                "std": round(float(stats_dict['inference_time_std']), 4),
-                "min": round(float(stats_dict['inference_time_min']), 4),
-                "max": round(float(stats_dict['inference_time_max']), 4),
-                "unit": "seconds"
             }
         },
         "outlier_analysis": {
@@ -423,7 +495,7 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
         }
     }
     
-    output_path = output_dir / "efficiency_analysis_summary.json"
+    output_path = output_dir / "efficiency_commit_message_summary.json"
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
     
@@ -431,7 +503,7 @@ def save_summary_json(stats_dict: dict, outlier_info: dict, csv_files: List[str]
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Analyze concern count vs inference time correlation from CSV files')
+    parser = argparse.ArgumentParser(description='Analyze commit message vs inference time correlation from CSV files')
     parser.add_argument('csv_files', nargs='+', help='CSV files to analyze')
     parser.add_argument('--output-dir', type=str, help='Output directory')
     parser.add_argument('--keep-outliers', action='store_true', 
@@ -447,7 +519,7 @@ def main():
         timestamp = datetime.now().strftime('%Y%m%d_%H%M')
         
         # Validate CSV structure consistency across files
-        expected_columns = {'concern_count', 'inference_time'}
+        expected_columns = {'with_message', 'inference_time'}
         csv_paths = [Path(f) for f in args.csv_files]
         
         for csv_path in csv_paths:
@@ -465,11 +537,11 @@ def main():
         file_stems = [Path(f).stem for f in args.csv_files]
         files_summary = "_".join(file_stems)[:50]
         outlier_suffix = "_with_outliers" if args.keep_outliers else "_clean"
-        output_dir = ANALYSIS_OUTPUT_DIR / f"ef_{files_summary}{outlier_suffix}_{timestamp}"
+        output_dir = ANALYSIS_OUTPUT_DIR / f"cm_{files_summary}{outlier_suffix}_{timestamp}"
     
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    print("Starting efficiency analysis: Concern Count vs Inference Time")
+    print("Starting efficiency analysis: Commit Message vs Inference Time")
     print("=" * 60)
     
     # Process CSV files
@@ -497,13 +569,21 @@ def main():
         stats = generate_summary_stats(df, outlier_info)
         
         # Print basic results
-        print(f"\nCorrelation Analysis Results:")
+        print(f"\nGroup Comparison Results:")
         print(f"- Sample size: {stats['sample_size']}")
-        print(f"- Outliers detected: {stats['outliers_detected']}")
-        print(f"- Outliers removed: {'Yes' if stats['outliers_removed'] else 'No'}")
-        print(f"- Pearson correlation: r = {stats['correlation']:.4f}")
+        print(f"- With message: {stats['group_statistics']['with_message']['count']} samples")
+        print(f"- Without message: {stats['group_statistics']['without_message']['count']} samples")
+        print(f"- Point-biserial correlation: r = {stats['correlation']:.4f}")
         print(f"- P-value: {stats['p_value']:.6f}")
         print(f"- Significant: {'Yes' if stats['significant'] else 'No'}")
+        
+        if stats['group_statistics']['statistical_tests']:
+            t_test = stats['group_statistics']['statistical_tests']['t_test']
+            print(f"- t-test p-value: {t_test['p_value']:.6f}")
+            print(f"- t-test significant: {'Yes' if t_test['significant'] else 'No'}")
+            
+            effect_size = stats['group_statistics']['statistical_tests']['effect_size']
+            print(f"- Cohen's d: {effect_size['cohens_d']:.4f} ({effect_size['interpretation']})")
         
         # Generate individual visualizations
         print(f"\nGenerating visualizations...")
@@ -519,6 +599,14 @@ def main():
         print(f"- Summary JSON: {json_path.name}")
         print(f"\nRegression equation: y = {stats['regression']['slope']:.4f}x + {stats['regression']['intercept']:.4f}")
         print(f"R² = {stats['regression']['r_squared']:.4f}")
+        
+        # Print group means for interpretation
+        with_msg_mean = stats['group_statistics']['with_message']['mean']
+        without_msg_mean = stats['group_statistics']['without_message']['mean']
+        print(f"\nGroup means:")
+        print(f"- With message: {with_msg_mean:.4f}s")
+        print(f"- Without message: {without_msg_mean:.4f}s")
+        print(f"- Difference: {with_msg_mean - without_msg_mean:.4f}s")
         
     except Exception as e:
         print(f"Error processing CSV files: {e}")
