@@ -13,9 +13,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# Paths
-RESULTS_DIR: Path = Path(__file__).parent / "results"
-ANALYSIS_DIR: Path = RESULTS_DIR / "analysis"
+# Paths - Use RQ/results directory for model results, root/results for analysis outputs
+PROJECT_ROOT = Path(__file__).parent.parent.parent  # Go up from RQ/analysis/ to project root
+RESULTS_DIR: Path = PROJECT_ROOT / "RQ" / "results"  # Model results are in RQ/results/
+ANALYSIS_DIR: Path = PROJECT_ROOT / "results" / "analysis"  # Analysis outputs go to root/results/analysis/
 
 # Output suffixes (kept for potential future use)
 OUTPUT_SUFFIX_MACRO = "_macro.csv"
@@ -28,6 +29,10 @@ def identify_outliers(df: pd.DataFrame) -> List[int]:
     
     Returns list of row indices where predicted_types is empty ("[]").
     """
+    # Check if predicted_types column exists
+    if "predicted_types" not in df.columns:
+        return []
+    
     # CSV stores empty lists as string "[]"
     outlier_mask = df["predicted_types"] == "[]"
     return df[outlier_mask].index.tolist()
@@ -213,6 +218,14 @@ def save_concern_plot(by_concern_df: pd.DataFrame, csv_path: Path) -> None:
 
 def process_csv(csv_path: Path, filter_outliers: bool = True) -> None:
     original_df = pd.read_csv(csv_path)
+    
+    # Check if this CSV has the required columns for analysis
+    required_columns = ["precision", "recall", "f1", "exact_match", "hamming_loss", "inference_time", "concern_count"]
+    missing_columns = [col for col in required_columns if col not in original_df.columns]
+    
+    if missing_columns:
+        print(f"Skipping {csv_path.name}: Missing required columns {missing_columns}")
+        return
 
     # Identify outliers for reporting
     outlier_indices = identify_outliers(original_df)

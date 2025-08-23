@@ -12,9 +12,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
-# Constants
-RESULTS_DIR: Path = Path(__file__).parent / "results"
-ANALYSIS_DIR: Path = RESULTS_DIR / "analysis"
+# Constants - Use RQ/results directory for model results, root/results for analysis outputs
+PROJECT_ROOT = Path(__file__).parent.parent.parent  # Go up from RQ/analysis/ to project root
+RESULTS_DIR: Path = PROJECT_ROOT / "RQ" / "results"  # Model results are in RQ/results/
+ANALYSIS_DIR: Path = PROJECT_ROOT / "results" / "analysis"  # Analysis outputs go to root/results/analysis/
 RELATION_VALUES: Tuple[str, str, str] = ("LLM>SLM", "Equal", "SLM>LLM")
 METRICS: Tuple[str, str, str, str] = ("precision", "recall", "f1", "exact_match")
  
@@ -257,9 +258,9 @@ def run_model_comparison(
 
 
 def main() -> None:
-    # Default model result files for comparison
-    default_slm_results = RESULTS_DIR / "Phi-4_202508101101" / "huggingface" / "Phi-4_12288_zs_msg1.csv"
-    default_llm_results = RESULTS_DIR / "gpt" / "gpt-4.1-2025-04-14_12288_os_msg1.csv"
+    # Default model result files for comparison (using actual existing files)
+    default_slm_results = RESULTS_DIR / "Phi-4_zero_shot" / "huggingface" / "Phi-4_12288_zs_msg1.csv"
+    default_llm_results = RESULTS_DIR / "gpt" / "gpt-4.1-2025-04-14_202508172102" / "gpt-4.1-2025-04-14_12288_os_msg1.csv"
 
     run_model_comparison(slm_results_path=default_slm_results, llm_results_path=default_llm_results)
 

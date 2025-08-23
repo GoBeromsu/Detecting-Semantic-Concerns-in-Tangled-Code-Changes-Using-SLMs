@@ -11,22 +11,23 @@ import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple
 from sklearn.linear_model import LinearRegression
 
-# Constants
-ANALYSIS_OUTPUT_DIR_BASE = Path("results/analysis")
+# Constants - Use root results directory (from project root)
+PROJECT_ROOT = Path(__file__).parent.parent.parent  # Go up from RQ/analysis/ to project root
+ANALYSIS_OUTPUT_DIR_BASE = PROJECT_ROOT / "results" / "analysis"
 P_VALUE_SIGNIFICANCE_THRESHOLD: float = 0.05
 
-# User-editable input: add your CSV paths here
 INPUT_CSV_PATHS: List[Path] = [
-    # Path("results/gpt/gpt-4.1-2025-04-14_1024_zs_msg1.csv"),
-    # Path("results/gpt/gpt-4.1-2025-04-14_2048_zs_msg1.csv"),
-    # Path("results/gpt/gpt-4.1-2025-04-14_4096_zs_msg1.csv"),
-    # Path("results/gpt/gpt-4.1-2025-04-14_8192_zs_msg1.csv"),
-    # Path("results/gpt/gpt-4.1-2025-04-14_12288_zs_msg1.csv"),
-    Path("results/phi-4_202508101101/huggingface/Phi-4_1024_zs_msg1.csv"),
-    Path("results/phi-4_202508101101/huggingface/Phi-4_2048_zs_msg1.csv"),
-    Path("results/phi-4_202508101101/huggingface/Phi-4_4096_zs_msg1.csv"),
-    Path("results/phi-4_202508101101/huggingface/Phi-4_8192_zs_msg1.csv"),
-    Path("results/phi-4_202508101101/huggingface/Phi-4_12288_zs_msg1.csv"),
+    # GPT-4 results (one-shot with message)
+    # PROJECT_ROOT / "RQ/results/gpt/gpt-4.1-2025-04-14_202508172102/gpt-4.1-2025-04-14_1024_os_msg1.csv",
+    # PROJECT_ROOT / "RQ/results/gpt/gpt-4.1-2025-04-14_202508172102/gpt-4.1-2025-04-14_2048_os_msg1.csv",
+    # PROJECT_ROOT / "RQ/results/gpt/gpt-4.1-2025-04-14_202508172102/gpt-4.1-2025-04-14_4096_os_msg1.csv",
+    # PROJECT_ROOT / "RQ/results/gpt/gpt-4.1-2025-04-14_202508172102/gpt-4.1-2025-04-14_8192_os_msg1.csv",
+    # PROJECT_ROOT / "RQ/results/gpt/gpt-4.1-2025-04-14_202508172102/gpt-4.1-2025-04-14_12288_os_msg1.csv",
+    
+    # Phi-4 results (zero-shot with message)
+    PROJECT_ROOT / "RQ/results/Phi-4_zero_shot/huggingface/Phi-4_4096_zs_msg1.csv",
+    PROJECT_ROOT / "RQ/results/Phi-4_zero_shot/huggingface/Phi-4_8192_zs_msg1.csv",
+    PROJECT_ROOT / "RQ/results/Phi-4_zero_shot/huggingface/Phi-4_12288_zs_msg1.csv",
 ]
 
 PERFORMANCE_METRICS = ["precision", "recall", "f1", "inference_time"]
