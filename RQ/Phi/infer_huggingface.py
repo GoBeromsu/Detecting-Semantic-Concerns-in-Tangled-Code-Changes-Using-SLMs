@@ -23,18 +23,20 @@ from datasets import load_dataset
 # Load environment variables from .env file
 load_dotenv()
 
-# REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-gguf"
-REPO_ID = "microsoft/phi-4-gguf"
-MODEL_NAME = "Phi4-SLM"  # Shortened for cleaner file/directory names
-GGUF_FILENAME = "phi-4-bf16.gguf"
+REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-gguf"
+# REPO_ID = "microsoft/phi-4-gguf"
+MODEL_NAME = "Phi4" 
+# GGUF_FILENAME = "phi-4-bf16.gguf"
+# GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-q4_K_M.gguf"
+GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-q8_0.gguf"
 
 # Paths and experiment constants (experiment script concerns)
 RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "RQ" / "results"
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Inference constants
-# CONTEXT_WINDOWS = [16384,8192,4096,2048,1024]
-CONTEXT_WINDOWS = [1024,2048,4096,8192,16384]
+CONTEXT_WINDOWS = [16384,8192,4096,2048,1024]
+# CONTEXT_WINDOWS = [1024]
 MAX_TOKENS = 16384
 SEED = 42
 TEMPERATURE = 0.3
@@ -110,9 +112,9 @@ def get_compute_device() -> str:
 
 
 def main() -> None:
-    model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}"
-    print(f"Creating results directory: {model_dir}")
-    model_dir.mkdir(parents=True, exist_ok=True)
+    base_model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}"
+    print(f"Creating base results directory: {base_model_dir}")
+    base_model_dir.mkdir(parents=True, exist_ok=True)
 
     tangled_df: pd.DataFrame = load_dataset(
         "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs",
@@ -138,7 +140,12 @@ def main() -> None:
         )
         shot_abbrev: str = shot_abbrev_map.get(shot_type, "custom")
         msg_flag: str = "msg1" if include_message else "msg0"
-        file_name: str = f"{MODEL_NAME}_{cw}_{shot_abbrev}_{msg_flag}.csv"
+        
+        # Create separate folder based on message inclusion
+        model_dir: Path = base_model_dir / f"with_message_{msg_flag}"
+        model_dir.mkdir(parents=True, exist_ok=True)
+        
+        file_name: str = f"{MODEL_NAME}_{cw}.csv"
         csv_path: Path = model_dir / file_name
         if not csv_path.exists():
             df = pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS)
