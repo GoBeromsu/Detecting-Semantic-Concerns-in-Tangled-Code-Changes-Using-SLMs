@@ -65,8 +65,9 @@ uv pip install -e ".[hpc]"
 
 echo "Installing GPU-enabled llama-cpp-python (CUDA 12.1, SM_90)..."
 uv pip uninstall llama-cpp-python
+rm -rf ~/.cache/uv/ ~/.cache/pip/
 CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=90 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON" \
-uv pip install llama-cpp-python --no-binary llama-cpp-python -v
+pip install llama-cpp-python --no-binary llama-cpp-python --no-cache-dir -v
 
 echo "Environment setup completed. To activate later: source activate phi4_env"
 
