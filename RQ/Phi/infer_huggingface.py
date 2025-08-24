@@ -24,6 +24,11 @@ from datasets import load_dataset
 # Load environment variables from .env file
 load_dotenv()
 
+# HPC storage configuration - Use fastdata area for large files
+USER = os.getenv("USER", "acq24bk")
+FASTDATA_BASE = os.getenv("FASTDATA_BASE", f"/mnt/parscratch/users/{USER}")
+HF_CACHE_DIR = os.getenv("HUGGINGFACE_HUB_CACHE", f"{FASTDATA_BASE}/.cache/huggingface/hub")
+
 REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-gguf"
 # REPO_ID = "microsoft/phi-4-gguf"
 MODEL_NAME = "Phi4" 
@@ -55,6 +60,7 @@ def measure_performance(
     csv_path: Path,
     context_len: int,
     with_message: bool,
+    cache_dir: str,
 ) -> None:
     for row in truncated_dataset.itertuples():
         actual_types: List[str] = json.loads(row.types)
@@ -71,6 +77,7 @@ def measure_performance(
                 seed=SEED,
                 use_schema=True,
                 chat_format=CHAT_FORMAT,
+                cache_dir=cache_dir,
             )
             end_time = time.time()
             inference_time = end_time - start_time
@@ -130,7 +137,7 @@ def main() -> None:
     filename = GGUF_FILENAME
     print(f"Loading model from {filename}")
     # Preload/caches model with chatml format for reproducibility
-    llms.load_model(repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT)
+    llms.load_model(repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT, cache_dir=HF_CACHE_DIR)
 
     shot_abbrev_map = {"Zero-shot": "zs", "One-shot": "os", "Two-shot": "ts"}
 
@@ -168,6 +175,7 @@ def main() -> None:
             csv_path=csv_path,
             context_len=cw,
             with_message=include_message,
+            cache_dir=HF_CACHE_DIR,
         )
 if __name__ == "__main__":
     main()

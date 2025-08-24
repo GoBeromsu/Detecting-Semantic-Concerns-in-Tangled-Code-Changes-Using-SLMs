@@ -28,6 +28,18 @@ module load CUDA/12.1.1
 module load Anaconda3/2022.05
 module load cuDNN/8.9.2.26-CUDA-12.1.1
 
+# Configure cache directories on fastdata to avoid filling home quota
+export FASTDATA_BASE="/mnt/parscratch/users/$USER"
+export HF_HOME="$FASTDATA_BASE/.cache/huggingface"
+export HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
+export TRANSFORMERS_CACHE="$HF_HOME/transformers"
+export HF_DATASETS_CACHE="$HF_HOME/datasets"
+export HF_HUB_ENABLE_HF_TRANSFER=1
+mkdir -p "$HUGGINGFACE_HUB_CACHE" "$TRANSFORMERS_CACHE" "$HF_DATASETS_CACHE"
+
+# Return to original directory
+cd "$SLURM_SUBMIT_DIR"
+
 # Activate environment using 'source activate' per Stanage rules
 echo "🔧 Activating phi4_env..."
 source activate phi4_env
