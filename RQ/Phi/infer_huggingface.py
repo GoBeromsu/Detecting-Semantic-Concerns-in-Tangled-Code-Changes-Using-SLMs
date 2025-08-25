@@ -33,7 +33,7 @@ MODEL_NAME = "Phi4"
 GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-f16.gguf"
 
 # Paths and experiment constants (experiment script concerns)
-RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "RQ" / "results"
+RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "results"
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Inference constants
@@ -115,7 +115,7 @@ def get_compute_device() -> str:
 
 
 def main() -> None:
-    base_model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}"
+    base_model_dir: Path = RESULTS_ROOT / "Phi4" / START_TIME_STR
     print(f"Creating base results directory: {base_model_dir}")
     base_model_dir.mkdir(parents=True, exist_ok=True)
 
@@ -141,14 +141,14 @@ def main() -> None:
         system_prompt: str = prompt.get_prompt_by_type(
             shot_type=shot_type, include_message=include_message
         )
-        shot_abbrev: str = shot_abbrev_map.get(shot_type, "custom")
         msg_flag: str = "msg1" if include_message else "msg0"
+        shot_abbrev: str = shot_abbrev_map.get(shot_type, "custom")
         
         # Create separate folder based on message inclusion
-        model_dir: Path = base_model_dir / f"with_message_{msg_flag}"
+        model_dir: Path = base_model_dir / msg_flag
         model_dir.mkdir(parents=True, exist_ok=True)
         
-        file_name: str = f"{MODEL_NAME}_{cw}.csv"
+        file_name: str = f"{cw}_{shot_abbrev}.csv"
         csv_path: Path = model_dir / file_name
         if not csv_path.exists():
             df = pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS)
