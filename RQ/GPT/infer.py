@@ -23,6 +23,7 @@ load_dotenv()
 
 MODEL_NAME = "gpt-4.1-2025-04-14"
 DATASET_REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
+RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "results"
 
 # Inference constants
 CONTEXT_WINDOWS = [16384,8192,4096,2048,1024]
@@ -87,9 +88,9 @@ def measure_performance(
             print(f"[{row.Index}] appended to {csv_path}")
 
 def main() -> None:
-    prompt_dir: Path = Path(__file__).resolve().parents[2] / "RQ" / "results" / "gpt" / f"{MODEL_NAME}_{START_TIME_STR}"
-    print(f"Creating results directory: {prompt_dir}")
-    prompt_dir.mkdir(parents=True, exist_ok=True)
+    base_model_dir: Path = RESULTS_ROOT / "gpt" / START_TIME_STR
+    print(f"Creating base results directory: {base_model_dir}")
+    base_model_dir.mkdir(parents=True, exist_ok=True)
     
     tangled_df: pd.DataFrame = load_dataset(DATASET_REPO_ID, split="test").to_pandas()
 
@@ -102,8 +103,12 @@ def main() -> None:
 
         shot_abbrev: str = shot_abbrev_map.get(shot_type, "custom")
         msg_flag: str = "msg1" if include_message else "msg0"
-        file_name: str = f"{MODEL_NAME}_{cw}_{shot_abbrev}_{msg_flag}.csv"
-        csv_path: Path = prompt_dir / file_name
+        
+        msg_dir: Path = base_model_dir / msg_flag
+        msg_dir.mkdir(parents=True, exist_ok=True)
+        
+        file_name: str = f"{cw}_{shot_abbrev}.csv"
+        csv_path: Path = msg_dir / file_name
 
         if not csv_path.exists():
             df = pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS)
