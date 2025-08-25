@@ -35,7 +35,6 @@ def load_model(
     filename: str,
     seed: int = RANDOM_SEED,
     chat_format: Optional[str] = None,
-    cache_dir: Optional[str] = None,
     *,
     # Performance tuning (optional)
     n_gpu_layers: Optional[int] = -1,  # Offload all layers to GPU
@@ -57,7 +56,7 @@ def load_model(
     Returns:
         A `Llama` instance configured with `n_ctx=DEFAULT_MAX_TOKENS` and the given seed.
     """
-    local_path = hf_hub_download(repo_id=repo_id, filename=filename, cache_dir=cache_dir)
+    local_path = hf_hub_download(repo_id=repo_id, filename=filename)
 
     # Create llama instance from local file path
     llm = Llama(
