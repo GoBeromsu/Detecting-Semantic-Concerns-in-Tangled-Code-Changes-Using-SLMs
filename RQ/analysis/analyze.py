@@ -15,8 +15,8 @@ import matplotlib.pyplot as plt
 
 # Paths - Use RQ/results directory for model results, root/results for analysis outputs
 PROJECT_ROOT = Path(__file__).parent.parent.parent  # Go up from RQ/analysis/ to project root
-RESULTS_DIR: Path = PROJECT_ROOT / "RQ" / "results"  # Model results are in RQ/results/
-ANALYSIS_DIR: Path = PROJECT_ROOT / "results" / "analysis"  # Analysis outputs go to root/results/analysis/
+RESULTS_DIR: Path = PROJECT_ROOT / "results"  # Model results are in RQ/results/
+ANALYSIS_DIR: Path = PROJECT_ROOT / "analysis"  # Analysis outputs go to root/results/analysis/
 
 # Output suffixes (kept for potential future use)
 OUTPUT_SUFFIX_MACRO = "_macro.csv"
