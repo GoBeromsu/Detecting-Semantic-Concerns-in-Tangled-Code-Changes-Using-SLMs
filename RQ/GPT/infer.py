@@ -25,56 +25,13 @@ MODEL_NAME = "gpt-4.1-2025-04-14"
 DATASET_REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 
 # Inference constants
-CONTEXT_WINDOWS = [4096, 2048, 1024]
-SHOT_TYPES = ["One-shot"]
+CONTEXT_WINDOWS = [16384,8192,4096,2048,1024]
+SHOT_TYPES = ["Zero-shot"]
 MAX_TOKENS = 16384
 SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M")
-
-
-def perform_api_call(model_name: str, commit: str, system_prompt: str) -> tuple[List[str], float]:
-    """Perform single API call with error handling."""
-    try:
-        start_time = time.time()
-        predicted_types = llms.openai_api_call(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            commit=commit,
-            system_prompt=system_prompt,
-            model=model_name,
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS,
-            seed=SEED,
-        )
-        end_time = time.time()
-        return predicted_types, end_time - start_time
-    except Exception as e:
-        end_time = time.time()
-        print(f"API call error: {e}")
-        return [], end_time - start_time
-
-
-def process_row(row: pd.Series, model_name: str, system_prompt: str, context_len: int, with_message: bool) -> dict:
-    """Process single row and return result."""
-    actual_types = json.loads(row.types)
-    predicted_types, inference_time = perform_api_call(model_name, row.truncated_commit, system_prompt)
-    metrics = eval_utils.calculate_metrics(predicted_types, actual_types)
-    
-    return {
-        "predicted_types": json.dumps(predicted_types),
-        "actual_types": row.types,
-        "inference_time": inference_time,
-        "shas": row.shas,
-        "precision": metrics["precision"],
-        "recall": metrics["recall"],
-        "f1": metrics["f1"],
-        "exact_match": metrics["exact_match"],
-        "hamming_loss": metrics["hamming_loss"],
-        "context_len": context_len,
-        "with_message": with_message,
-        "concern_count": len(actual_types),
-    }
 
 
 def measure_performance(
@@ -85,24 +42,49 @@ def measure_performance(
     context_len: int,
     with_message: bool,
 ) -> None:
-    """Process each row immediately and save, then retry failed ones."""
-    # Process and save each row immediately
-    for idx, (_, row) in enumerate(truncated_dataset.iterrows()):
-        result = process_row(row, model_name, system_prompt, context_len, with_message)
-        pd.DataFrame([result])[constant.DEFAULT_DF_COLUMNS].to_csv(csv_path, mode="a", header=False, index=False)
-        
-        if idx % 10 == 0:
-            print(f"[{idx}] processed and saved")
-    
-    # Check failures and retry for logging only
-    saved_results = pd.read_csv(csv_path)
-    failed_indices = saved_results[saved_results['predicted_types'] == '[]'].index
-    
-    for idx in failed_indices:
-        row = truncated_dataset.iloc[idx]
-        retry_result = process_row(row, model_name, system_prompt, context_len, with_message)
-        status = "success" if retry_result['predicted_types'] != '[]' else "failed"
-        print(f"Retry [{idx}]: {status}")
+    for row in truncated_dataset.itertuples():
+        actual_types: List[str] = json.loads(row.types)
+        shas: List[str] = json.loads(row.shas)
+        try:
+            start_time = time.time()
+            predicted_types = llms.openai_api_call(
+                api_key=os.getenv("OPENAI_API_KEY"),
+                commit=row.truncated_commit,
+                system_prompt=system_prompt,
+                model=model_name,
+                temperature=TEMPERATURE,
+                max_tokens=MAX_TOKENS,
+                seed=SEED,
+            )
+            end_time = time.time()
+            inference_time = end_time - start_time
+        except Exception as e:
+            print(f"[{row.Index}] Error: {e}")
+            predicted_types = []
+            inference_time = 0.0
+        metrics = eval_utils.calculate_metrics(predicted_types, actual_types)
+
+        result_df = pd.DataFrame([
+            {
+                "predicted_types": json.dumps(predicted_types),
+                "actual_types": row.types,
+                "inference_time": inference_time,
+                "shas": shas,
+                "precision": metrics["precision"],
+                "recall": metrics["recall"],
+                "f1": metrics["f1"],
+                "exact_match": metrics["exact_match"],
+                "hamming_loss": metrics["hamming_loss"],
+                "context_len": context_len,
+                "with_message": with_message,
+                "concern_count": len(actual_types),
+           } ],
+            columns=constant.DEFAULT_DF_COLUMNS,
+        )
+
+        result_df.to_csv(csv_path, mode="a", header=False, index=False)
+        if row.Index % 10 == 0:
+            print(f"[{row.Index}] appended to {csv_path}")
 
 def main() -> None:
     prompt_dir: Path = Path(__file__).resolve().parents[2] / "RQ" / "results" / "gpt" / f"{MODEL_NAME}_{START_TIME_STR}"
