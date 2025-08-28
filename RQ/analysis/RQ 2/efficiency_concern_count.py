@@ -16,7 +16,7 @@ from sklearn.metrics import r2_score
 import argparse
 
 # Constants - Use root results directory (from project root)
-PROJECT_ROOT = Path(__file__).parent.parent.parent  # Go up from RQ/analysis/ to project root
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ2"
 P_VALUE_THRESHOLD = 0.05
 OUTLIER_THRESHOLD_IQR = 1.5  # IQR multiplier for outlier detection

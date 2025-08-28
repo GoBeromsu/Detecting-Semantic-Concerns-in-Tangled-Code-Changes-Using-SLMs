@@ -1,0 +1,36 @@
+---
+# RQ2 Analysis Configuration
+# Configuration for all RQ2 efficiency analysis scripts
+
+scripts:
+  efficiency_commit_message:
+    script: "efficiency_commit_message.py"
+    description: "Analyzes correlation between commit message presence and inference time"
+    input_files:
+      - "results/phi_lora/avg_result/with_message_msg0/phi4_aggregated.csv"
+      - "results/phi_lora/avg_result/with_message_msg1/phi4_aggregated.csv"
+
+  efficiency_concern_count:
+    script: "efficiency_concern_count.py"
+    description: "Analyzes correlation between concern count and inference time"
+    input_files:
+      - "results/phi_lora/avg_result/with_message_msg1/phi4_aggregated.csv"
+
+  efficiency_input_tokens:
+    script: "efficiency_input_tokens.py"
+    description: "Analyzes correlation between input tokens and inference time"
+    input_files:
+      - "results/phi_lora/avg_result/with_message_msg1/phi4_aggregated.csv"
+
+  efficiency_concern_count_input_token:
+    script: "efficiency_concern_count_input_token.py"
+    description: "Multiple regression analysis of concern count and input tokens vs inference time"
+    input_files:
+      - "results/phi_lora/avg_result/with_message_msg1/phi4_aggregated.csv"
+
+# Execution order
+execution_order:
+  - "efficiency_commit_message"
+  - "efficiency_concern_count"
+  - "efficiency_input_tokens"
+  - "efficiency_concern_count_input_token"
