@@ -44,18 +44,23 @@ def average_json_files(json_files):
     
     return result
 
-def main():
-    base_path = Path("/Users/beomsu/Documents/Concern-is-All-You-Need/results/gpt")
+def process_folder(folder_path):
+    print(f"\n=== Processing {folder_path.name} ===")
     
     # Find all JSON files grouped by relative path
     file_groups = defaultdict(list)
-    for timestamp_dir in base_path.iterdir():
-        if timestamp_dir.is_dir() and timestamp_dir.name.startswith('202508'):
-            for json_file in timestamp_dir.rglob("*.json"):
-                relative_path = json_file.relative_to(timestamp_dir)
+    for sub_dir in folder_path.iterdir():
+        if sub_dir.is_dir() and sub_dir.name != "avg_result":
+            for json_file in sub_dir.rglob("*.json"):
+                relative_path = json_file.relative_to(sub_dir)
                 file_groups[str(relative_path)].append(json_file)
     
+    if not file_groups:
+        print(f"No JSON files found in {folder_path.name}")
+        return
+    
     # Process each group
+    processed_count = 0
     for relative_path, files in file_groups.items():
         if len(files) < 2:
             continue
@@ -64,11 +69,23 @@ def main():
         
         # Average and save
         averaged = average_json_files(files)
-        output_file = base_path / "avg_result" / relative_path
+        output_file = folder_path / "avg_result" / relative_path
         output_file.parent.mkdir(parents=True, exist_ok=True)
         
         with open(output_file, 'w') as f:
             json.dump(averaged, f, indent=2)
+        
+        processed_count += 1
+    
+    print(f"Processed {processed_count} file patterns in {folder_path.name}")
+
+def main():
+    results_path = Path("/Users/beomsu/Documents/Concern-is-All-You-Need/results")
+    
+    # Process each folder in results (except analysis)
+    for folder in results_path.iterdir():
+        if folder.is_dir() and folder.name != "analysis":
+            process_folder(folder)
 
 if __name__ == "__main__":
     main()
