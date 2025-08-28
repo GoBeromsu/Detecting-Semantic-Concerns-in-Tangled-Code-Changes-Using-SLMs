@@ -42,9 +42,14 @@ def load_config_from_file(config_path: Path) -> dict:
 
 def build_model_configs(config: dict = None) -> dict:
     """Build model configurations with absolute paths."""
-
-    model_configs = config.get('models', DEFAULT_MODEL_CONFIGS).copy()
-    project_root = Path(config.get('project_root', PROJECT_ROOT))
+    if config is None:
+        # Use default configuration
+        model_configs = DEFAULT_MODEL_CONFIGS.copy()
+        project_root = PROJECT_ROOT
+    else:
+        # Use provided configuration
+        model_configs = config.get('models', DEFAULT_MODEL_CONFIGS).copy()
+        project_root = Path(config.get('project_root', PROJECT_ROOT))
 
     # Convert relative paths to absolute paths
     for model_name, paths in model_configs.items():
@@ -88,7 +93,7 @@ def generate_f1_comparison(model_configs: dict) -> pd.DataFrame:
             'Model': model_name,
             'Without Msg': f"{without_msg_f1:.3f}",
             'With Msg': f"{with_msg_f1:.3f}",
-            'Δ': f"{delta_f1:+.3f}"
+            'Delta': f"{delta_f1:+.3f}"
         }
         rows.append(row)
     
@@ -115,7 +120,7 @@ def generate_full_comparison(model_configs: dict) -> pd.DataFrame:
                 'Metric': metric.upper(),
                 'Without Msg': f"{without_msg:.3f}",
                 'With Msg': f"{with_msg:.3f}",
-                'Δ': f"{delta:+.3f}"
+                'Delta': f"{delta:+.3f}"
             }
             rows.append(row)
     
@@ -160,11 +165,11 @@ def main():
     
     # Print F1 comparison table
     print("=== F1 Score Impact Analysis ===")
-    print(f"{'Model':<15} {'Without Msg':<12} {'With Msg':<10} {'Δ':<10}")
+    print(f"{'Model':<15} {'Without Msg':<12} {'With Msg':<10} {'Delta':<10}")
     print("-" * 50)
     
     for _, row in f1_df.iterrows():
-        print(f"{row['Model']:<15} {row['Without Msg']:<12} {row['With Msg']:<10} {row['Δ']:<10}")
+        print(f"{row['Model']:<15} {row['Without Msg']:<12} {row['With Msg']:<10} {row['Delta']:<10}")
     
     print(f"\n=== Full Metrics Comparison (Sample) ===")
     print(full_df.head(12).to_string(index=False))

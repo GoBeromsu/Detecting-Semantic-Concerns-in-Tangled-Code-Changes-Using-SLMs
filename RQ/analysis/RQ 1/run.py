@@ -32,7 +32,7 @@ def main():
     """Main execution."""
     script_dir = Path(__file__).parent
     config = load_config()
-    project_root = (script_dir / config.get('project_root', '../../../')).resolve()
+    project_root = (script_dir / '../../../').resolve()
     
     print("🎯 Running RQ1 Analysis Scripts")
     print("=" * 40)

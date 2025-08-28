@@ -2,8 +2,6 @@
 # RQ1 Analysis Configuration
 # Configuration for all RQ1 analysis scripts
 
-project_root: "../../../" # Relative path to project root from RQ 1 folder
-
 scripts:
   msg_impact_analysis:
     script: "msg_impact_analysis.py"
@@ -35,13 +33,21 @@ scripts:
       - "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
       - "results/gpt/avg_result/msg1/json/16384_zs.json"
 
-# Output configuration
-output:
-  base_dir: "results/analysis/RQ1"
-  timestamp_format: "%Y%m%d_%H%M"
+  context_length_performance:
+    script: "context_length_performance.py"
+    description: "Generates context length performance comparison across models"
+    models:
+      GPT-4.1:
+        path_pattern: "results/gpt/avg_result/msg1/json/{context}_zs.json"
+      Phi-4:
+        path_pattern: "results/phi/avg_result/msg1/json/{context}_zs_filtered.json"
+      "Phi-4 (FT)":
+        path_pattern: "results/phi_lora/avg_result/with_message_msg1/json/Phi4_{context}.json"
+    context_lengths: [1024, 2048, 4096, 8192, 16384]
 
-# Execution order (optional - scripts will run in this order)
+# Execution order
 execution_order:
   - "msg_impact_analysis"
   - "performance_summary"
   - "concerncount_by_model"
+  - "context_length_performance"
