@@ -6,6 +6,7 @@ Analyzes performance metrics by concern count from JSON experiment results and g
 
 import pandas as pd
 import json
+import yaml
 from pathlib import Path
 import argparse
 
@@ -14,12 +15,23 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
 
+def load_config():
+    """Load configuration from config.yaml"""
+    config_path = Path(__file__).parent / "config.yaml"
+    with open(config_path, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Generate concern count performance comparison from JSON experiment results')
-    parser.add_argument('json_files', nargs='+', help='JSON files to analyze')
     parser.add_argument('--output-dir', type=str, help='Output directory')
+    parser.add_argument('--use-config', action='store_true', default=True, help='Use config.yaml for model configuration')
     
     args = parser.parse_args()
+    
+    # Load configuration
+    config = load_config()
+    script_config = config['scripts']['concerncount_by_model']
     
     # Set output directory
     if args.output_dir:
@@ -28,18 +40,19 @@ def main():
         from datetime import datetime
         timestamp = datetime.now().strftime('%Y%m%d_%H%M')
         
-        # Generate descriptive output directory name following efficiency_input_tokens.py convention
-        file_stems = [Path(f).stem for f in args.json_files]
-        files_summary = "_".join(file_stems)[:50]
-        output_dir = ANALYSIS_OUTPUT_DIR / f"pf_concerncount_{files_summary}_{timestamp}"
+        # Generate descriptive output directory name
+        model_names = list(script_config['models'].keys())
+        models_summary = "_".join(model_names)[:50]
+        output_dir = ANALYSIS_OUTPUT_DIR / f"pf_concerncount_{models_summary}_{timestamp}"
     
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Process JSON files and collect data
+    # Process models from config and collect data
     models_data = {}
-    json_paths = [Path(f) for f in args.json_files]
     
-    for json_path in json_paths:
+    for model_name, model_config in script_config['models'].items():
+        json_path = PROJECT_ROOT / model_config['path']
+        
         if not json_path.exists():
             raise FileNotFoundError(f"JSON file not found: {json_path}")
             
@@ -49,16 +62,6 @@ def main():
         if 'metrics_by_concern' not in data:
             raise ValueError(f"Missing 'metrics_by_concern' in {json_path.name}")
         
-        # Determine model name
-        if 'gpt' in str(json_path) or data.get('model') == '16384':
-            model_name = 'GPT-4.1'
-        elif 'Lora' in str(json_path) or data.get('model') == 'Phi4':
-            model_name = 'Phi-4 (FT)'
-        elif data.get('model') == 'Phi-4' or 'zero_shot' in str(json_path):
-            model_name = 'Phi-4'
-        else:
-            model_name = json_path.stem
-        
         models_data[model_name] = data['metrics_by_concern']
     
     # Build CSV rows directly from metrics_by_concern data
@@ -66,7 +69,7 @@ def main():
     for concern_count in [1, 2, 3, 4, 5]:
         row = {'Count': concern_count}
         
-        for model_name in ['GPT-4.1', 'Phi-4', 'Phi-4 (FT)']:
+        for model_name in script_config['models'].keys():
             if model_name in models_data:
                 # Find the concern count data
                 concern_data = next((item for item in models_data[model_name] 

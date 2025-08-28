@@ -20,10 +20,13 @@ scripts:
   concerncount_by_model:
     script: "concerncount-by-model.py"
     description: "Generates concern count performance comparison"
-    input_files:
-      - "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
-      - "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
-      - "results/gpt/avg_result/msg1/json/16384_zs.json"
+    models:
+      GPT-4.1:
+        path: "results/gpt/avg_result/msg1/json/16384_zs.json"
+      Phi-4:
+        path: "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
+      "Phi-4 (FT)":
+        path: "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
 
   performance_summary:
     script: "performance_summary.py"
