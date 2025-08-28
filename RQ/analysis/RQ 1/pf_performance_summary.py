@@ -11,7 +11,7 @@ import argparse
 
 # Constants - Use root results directory (from project root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis"
+ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
 
 def main():
