@@ -94,8 +94,8 @@ EXPERIMENT_NAME: str = f"phi4-{NEW_MODEL.lower()}-lora"
 DEVICE_MAP: str = "auto"
 
 # LoRA hyperparameters optimized for Phi-4 (hidden_dim=5120)
-LORA_RANK: int = 64
-LORA_ALPHA: int = 128
+LORA_RANK: int = 128
+LORA_ALPHA: int = 256
 LORA_DROPOUT: float = 0.1
 
 # 'target_modules' is a list of the modules in the model that will be replaced with LoRA layers.
