@@ -11,25 +11,50 @@ import argparse
 
 # Constants - Use root results directory (from project root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-RESULTS_DIR = PROJECT_ROOT / "results"
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
-# Model configurations
-MODEL_CONFIGS = {
+# Default model configurations (fallback if no config provided)
+DEFAULT_MODEL_CONFIGS = {
     'GPT-4.1': {
-        'msg0_path': RESULTS_DIR / "gpt" / "avg_result" / "msg0" / "json" / "16384_zs.json",
-        'msg1_path': RESULTS_DIR / "gpt" / "avg_result" / "msg1" / "json" / "16384_zs.json"
+        'msg0_path': "results/gpt/avg_result/msg0/json/16384_zs.json",
+        'msg1_path': "results/gpt/avg_result/msg1/json/16384_zs.json"
     },
     'Phi-4': {
-        'msg0_path': RESULTS_DIR / "phi" / "avg_result" / "msg0" / "json" / "16384_zs_filtered.json",
-        'msg1_path': RESULTS_DIR / "phi" / "avg_result" / "msg1" / "json" / "16384_zs_filtered.json"
+        'msg0_path': "results/phi/avg_result/msg0/json/16384_zs_filtered.json",
+        'msg1_path': "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
     },
     'Phi-4 (FT)': {
-        'msg0_path': RESULTS_DIR / "phi_lora" / "avg_result" / "with_message_msg0" / "json" / "Phi4_16384.json",
-        'msg1_path': RESULTS_DIR / "phi_lora" / "avg_result" / "with_message_msg1" / "json" / "Phi4_16384.json"
+        'msg0_path': "results/phi_lora/avg_result/with_message_msg0/json/Phi4_16384.json",
+        'msg1_path': "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
     }
 }
 
+
+def load_config_from_file(config_path: Path) -> dict:
+    """Load model configuration from JSON file."""
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        return config
+    except Exception as e:
+        raise ValueError(f"Failed to load config from {config_path}: {e}")
+
+
+def build_model_configs(config: dict = None) -> dict:
+    """Build model configurations with absolute paths."""
+
+    model_configs = config.get('models', DEFAULT_MODEL_CONFIGS).copy()
+    project_root = Path(config.get('project_root', PROJECT_ROOT))
+
+    # Convert relative paths to absolute paths
+    for model_name, paths in model_configs.items():
+        for key, path in paths.items():
+            if isinstance(path, str):
+                model_configs[model_name][key] = project_root / path
+            else:
+                model_configs[model_name][key] = Path(path)
+    
+    return model_configs
 
 def load_metrics(json_path: Path) -> dict:
     """Load metrics from JSON file."""
@@ -100,8 +125,18 @@ def generate_full_comparison(model_configs: dict) -> pd.DataFrame:
 def main():
     parser = argparse.ArgumentParser(description='Generate message impact analysis from avg_result JSON files')
     parser.add_argument('--output-dir', type=str, help='Output directory')
+    parser.add_argument('--config', type=str, help='JSON configuration file with model paths')
     
     args = parser.parse_args()
+    
+    # Load configuration
+    if args.config:
+        config = load_config_from_file(Path(args.config))
+        model_configs = build_model_configs(config)
+        print(f"✅ Loaded configuration from {args.config}")
+    else:
+        model_configs = build_model_configs()
+        print("📋 Using default model configuration")
     
     # Set output directory
     if args.output_dir:
@@ -114,12 +149,12 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Generate F1 comparison
-    f1_df = generate_f1_comparison(MODEL_CONFIGS)
+    f1_df = generate_f1_comparison(model_configs)
     f1_csv_path = output_dir / "msg_impact_f1.csv"
     f1_df.to_csv(f1_csv_path, index=False)
     
     # Generate full comparison
-    full_df = generate_full_comparison(MODEL_CONFIGS)
+    full_df = generate_full_comparison(model_configs)
     full_csv_path = output_dir / "msg_impact_full.csv"
     full_df.to_csv(full_csv_path, index=False)
     

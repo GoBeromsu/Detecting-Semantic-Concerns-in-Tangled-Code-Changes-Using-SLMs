@@ -1,0 +1,47 @@
+---
+# RQ1 Analysis Configuration
+# Configuration for all RQ1 analysis scripts
+
+project_root: "../../../" # Relative path to project root from RQ 1 folder
+
+scripts:
+  msg_impact_analysis:
+    script: "msg_impact_analysis.py"
+    description: "Analyzes the impact of commit messages on model performance"
+    models:
+      GPT-4.1:
+        msg0_path: "results/gpt/avg_result/msg0/json/16384_zs.json"
+        msg1_path: "results/gpt/avg_result/msg1/json/16384_zs.json"
+      Phi-4:
+        msg0_path: "results/phi/avg_result/msg0/json/16384_zs_filtered.json"
+        msg1_path: "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
+      "Phi-4 (FT)":
+        msg0_path: "results/phi_lora/avg_result/with_message_msg0/json/Phi4_16384.json"
+        msg1_path: "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
+
+  concerncount_by_model:
+    script: "concerncount-by-model.py"
+    description: "Generates concern count performance comparison"
+    input_files:
+      - "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
+      - "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
+      - "results/gpt/avg_result/msg1/json/16384_zs.json"
+
+  performance_summary:
+    script: "performance_summary.py"
+    description: "Generates performance summary comparison"
+    input_files:
+      - "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
+      - "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
+      - "results/gpt/avg_result/msg1/json/16384_zs.json"
+
+# Output configuration
+output:
+  base_dir: "results/analysis/RQ1"
+  timestamp_format: "%Y%m%d_%H%M"
+
+# Execution order (optional - scripts will run in this order)
+execution_order:
+  - "msg_impact_analysis"
+  - "performance_summary"
+  - "concerncount_by_model"
