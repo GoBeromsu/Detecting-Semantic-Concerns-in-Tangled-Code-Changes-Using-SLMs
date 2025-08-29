@@ -46,7 +46,7 @@ export TMPDIR="${TMPDIR:-/tmp/gguf_conversion_$$}"
 mkdir -p "$TMPDIR"
 echo "📁 Temporary workspace: $TMPDIR"
 
-LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
+export LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
 if [ ! -d "$LLAMA_CPP_DIR" ]; then
     echo "❌ llama.cpp not found at $LLAMA_CPP_DIR"
     echo "Please run setup_env.sh first to build llama.cpp:"
