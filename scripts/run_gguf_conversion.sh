@@ -40,17 +40,27 @@ source activate phi4_env
 
 # Environment variables - HF Hub delegation
 export CUDA_VISIBLE_DEVICES=0
+export FASTDATA_BASE="/mnt/parscratch/users/$USER"
 
-# Temporary workspace
+# HuggingFace cache configuration (managed via environment variables)
+export HF_HOME="${HF_HOME:-$FASTDATA_BASE/.cache/huggingface}"
+export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$FASTDATA_BASE/.cache/huggingface/transformers}"
+export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-$FASTDATA_BASE/.cache/huggingface/datasets}"
+
+# Ensure FASTDATA_BASE directory exists
+mkdir -p "$FASTDATA_BASE"
+
+# Temporary workspace  
 export TMPDIR="${TMPDIR:-/tmp/gguf_conversion_$$}"
 mkdir -p "$TMPDIR"
 echo "📁 Temporary workspace: $TMPDIR"
 
-# llama.cpp location (environment dependent)
-export LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$HOME/llama.cpp}"
+# llama.cpp location (external dependency)
+export LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$FASTDATA_BASE/llama.cpp}"
 if [ ! -d "$LLAMA_CPP_DIR" ]; then
     echo "❌ llama.cpp not found at $LLAMA_CPP_DIR"
-    echo "💡 Set LLAMA_CPP_DIR environment variable or install to ~/llama.cpp"
+    echo "Please run setup_env.sh first to build llama.cpp:"
+    echo "sbatch scripts/setup_env.sh"
     exit 1
 else
     echo "✅ llama.cpp found at $LLAMA_CPP_DIR"
