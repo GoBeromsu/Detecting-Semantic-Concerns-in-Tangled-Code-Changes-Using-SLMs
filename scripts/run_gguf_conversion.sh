@@ -20,15 +20,12 @@ echo "Allocated CPUs: $SLURM_CPUS_PER_TASK, Memory: $SLURM_MEM_PER_NODE MB"
 
 mkdir -p logs
 
-# Setup environment - CPU-only configuration
 module purge
 module load GCCcore/12.3.0
-# module load CUDA/12.1.1
+
 module load Anaconda3/2022.05
-# module load cuDNN/8.9.2.26-CUDA-12.1.1
 module load CMake/3.26.3-GCCcore-12.3.0
 
-# Check if phi4_env exists (should be created by setup_env.sh)
 if ! conda env list | grep -q "phi4_env"; then
     echo "❌ phi4_env not found!"
     echo "Please run setup_env.sh first to create the environment:"
@@ -40,24 +37,16 @@ fi
 echo "🔧 Activating phi4_env..."
 source activate phi4_env
 
-# Environment variables - HF Hub delegation
+# Environment variables
 export CUDA_VISIBLE_DEVICES=0
 export FASTDATA_BASE="/mnt/parscratch/users/$USER"
-
-# HuggingFace cache configuration (managed via environment variables)
-export HF_HOME="${HF_HOME:-$FASTDATA_BASE/.cache/huggingface}"
-export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-$FASTDATA_BASE/.cache/huggingface/datasets}"
-
-# Ensure FASTDATA_BASE directory exists
-mkdir -p "$FASTDATA_BASE"
 
 # Temporary workspace  
 export TMPDIR="${TMPDIR:-/tmp/gguf_conversion_$$}"
 mkdir -p "$TMPDIR"
 echo "📁 Temporary workspace: $TMPDIR"
 
-# llama.cpp location (external dependency)
-export LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$FASTDATA_BASE/llama.cpp}"
+LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
 if [ ! -d "$LLAMA_CPP_DIR" ]; then
     echo "❌ llama.cpp not found at $LLAMA_CPP_DIR"
     echo "Please run setup_env.sh first to build llama.cpp:"
