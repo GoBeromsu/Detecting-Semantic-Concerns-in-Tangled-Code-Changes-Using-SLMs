@@ -44,10 +44,6 @@ HF_HUB_TOKEN = os.getenv("HF_HUB_TOKEN", None)
 # Quantization options
 QUANT_TYPES = ["q4_K_M","q8_0"]
 
-def log_memory_usage(stage: str) -> None:
-    """Simple stage logging"""
-    logger.info(f"[{stage}] Memory checkpoint")
-
 
 def clear_memory() -> None:
     """CPU memory cleanup for CPU-only workflow"""
@@ -102,13 +98,7 @@ def merge_lora_adapter() -> bool:
     logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} and merging with base model on CPU...")
     
     # Log initial memory state
-    log_memory_usage("Initial")
-
-    # Check if merged model already exists
-    merged_model_path = Path(MERGED_MODEL_DIR)
-    if (merged_model_path / "config.json").exists():
-        logger.info("✅ Merged model already exists, skipping merge")
-        return True
+    logger.info(f"Memory checkpoint")
 
     try:
         # Clear memory before starting
@@ -129,12 +119,12 @@ def merge_lora_adapter() -> bool:
             cache_dir=HF_CACHE_DIR,
         )
         
-        log_memory_usage("After CPU loading")
+        logger.info(f"Memory checkpoint")
 
         # Merge the adapter with base model on CPU
         logger.info("Starting LoRA merge process on CPU (following best practice)...")
         merged_model = model.merge_and_unload()
-        log_memory_usage("After CPU merge")
+        logger.info(f"Memory checkpoint")
         
         # Clean up original model immediately
         del model
@@ -159,7 +149,7 @@ def merge_lora_adapter() -> bool:
         # Clean up all variables aggressively
         del merged_model, tokenizer
         clear_memory()
-        log_memory_usage("After cleanup")
+        logger.info(f"Memory checkpoint")
         
         logger.info("✅ LoRA adapter merged successfully on CPU")
         return True
