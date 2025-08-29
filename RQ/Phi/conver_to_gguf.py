@@ -15,6 +15,9 @@ from huggingface_hub import create_repo, upload_folder
 import torch
 from peft import AutoPeftModelForCausalLM
 from transformers import AutoTokenizer
+import dotenv
+
+dotenv.load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -35,9 +38,8 @@ HF_CACHE_DIR = f"{FASTDATA_BASE}/.cache/huggingface/transformers"
 MODEL_NAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 HF_REPO_NAME = f"Berom0227/{MODEL_NAME}-gguf"
 HF_ADAPTER_REPO = f"Berom0227/{MODEL_NAME}-adapter"  # LoRA adapter repository from train.py
+HF_TOKEN = os.getenv("HF_TOKEN", None)
 
-# CPU-only workflow for stable LoRA merging
-CPU_ONLY_MODE = True
 
 # Quantization options
 QUANT_TYPES = ["q4_K_M","q8_0"]
@@ -243,7 +245,7 @@ def upload_to_huggingface() -> bool:
 
     try:
         # Create repository if it doesn't exist
-        create_repo(HF_REPO_NAME, repo_type="model", private=False, exist_ok=True)
+        create_repo(HF_REPO_NAME, repo_type="model", private=False, exist_ok=True,token=HF_TOKEN)
         logger.info(f"✅ Repository {HF_REPO_NAME} ready")
 
         # Upload entire GGUF directory
@@ -252,6 +254,7 @@ def upload_to_huggingface() -> bool:
             repo_id=HF_REPO_NAME,
             repo_type="model",
             commit_message="Upload GGUF quantized models",
+            token=HF_TOKEN,
         )
 
         logger.info("✅ GGUF models uploaded")
