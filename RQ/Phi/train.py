@@ -466,7 +466,8 @@ WORK_DIR = os.getenv("TMPDIR", "./tmp_gguf_conversion")
 MERGED_MODEL_DIR = f"{WORK_DIR}/merged_model"
 GGUF_OUTPUT_DIR = f"{WORK_DIR}/gguf_output"
 QUANT_TYPES = ["q4_K_M","q8_0"]
-HF_REPO_NAME = f"Berom0227/{NEW_MODEL}-gguf"
+MODEL_NAME = NEW_MODEL  # Use consistent naming with conver_to_gguf.py
+HF_REPO_NAME = f"Berom0227/{MODEL_NAME}-gguf"
 
 def clear_memory() -> None:
     """CPU memory cleanup for CPU-only workflow"""
@@ -516,7 +517,7 @@ def convert_to_gguf_fp16() -> Optional[str]:
     """Convert merged model to GGUF FP16 format"""
     logger.info("Converting to GGUF FP16...")
     
-    output_file = f"{GGUF_OUTPUT_DIR}/{NEW_MODEL}-f16.gguf"
+    output_file = f"{GGUF_OUTPUT_DIR}/{MODEL_NAME}-f16.gguf"
     convert_script = f"{LLAMA_CPP_DIR}/convert_hf_to_gguf.py"
 
     cmd = [
@@ -532,11 +533,11 @@ def convert_to_gguf_fp16() -> Optional[str]:
         logger.error(f"Conversion failed: {e}")
         return None
 
-def quantize_model_gguf(fp16_file: str, quant_type: str) -> Optional[str]:
+def quantize_model(fp16_file: str, quant_type: str) -> Optional[str]:
     """Quantize GGUF model"""
     logger.info(f"Quantizing to {quant_type}...")
     
-    output_file = f"{GGUF_OUTPUT_DIR}/{NEW_MODEL}-{quant_type}.gguf"
+    output_file = f"{GGUF_OUTPUT_DIR}/{MODEL_NAME}-{quant_type}.gguf"
     quantize_binary = f"{LLAMA_CPP_DIR}/build/bin/llama-quantize"
 
     if not Path(quantize_binary).exists():
@@ -548,12 +549,14 @@ def quantize_model_gguf(fp16_file: str, quant_type: str) -> Optional[str]:
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         logger.info(f"✅ {quant_type} quantization completed")
+        logger.debug(f"Quantize output: {result.stdout}")
         return output_file
     except subprocess.CalledProcessError as e:
         logger.error(f"Quantization failed: {e}")
+        logger.error(f"Error output: {e.stderr}")
         return None
 
-def upload_gguf_to_huggingface() -> bool:
+def upload_to_huggingface() -> bool:
     """Upload GGUF folder to Hugging Face Hub"""
     logger.info(f"Uploading to {HF_REPO_NAME}...")
 
@@ -604,14 +607,16 @@ def run_gguf_conversion_workflow() -> None:
     # Quantize models
     success_count = 1  # Count FP16 as success
     for quant_type in QUANT_TYPES:
-        quantized_file = quantize_model_gguf(fp16_file, quant_type)
+        quantized_file = quantize_model(fp16_file, quant_type)
         if quantized_file:
             success_count += 1
+        else:
+            logger.warning(f"Skipping {quant_type} quantization")
     
     logger.info(f"✅ {success_count} model(s) created successfully")
     
     # Upload to HF Hub
-    if not upload_gguf_to_huggingface():
+    if not upload_to_huggingface():
         logger.error("GGUF upload failed")
         return
     

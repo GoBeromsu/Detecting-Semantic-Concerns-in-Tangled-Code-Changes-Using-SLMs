@@ -26,18 +26,14 @@ module load Anaconda3/2022.05
 module load cuDNN/8.9.2.26-CUDA-12.1.1
 module load CMake/3.26.3-GCCcore-12.3.0
 
-# Configure cache directories on fastdata to avoid filling home quota
+# Environment variables
 export FASTDATA_BASE="/mnt/parscratch/users/$USER"
-export HF_HOME="$FASTDATA_BASE/.cache/huggingface"
-export HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
-export TRANSFORMERS_CACHE="$HF_HOME/transformers"
-export HF_DATASETS_CACHE="$HF_HOME/datasets"
-export WANDB_DIR="$FASTDATA_BASE/wandb"
-export HF_HUB_ENABLE_HF_TRANSFER=1
-mkdir -p "$HUGGINGFACE_HUB_CACHE" "$TRANSFORMERS_CACHE" "$HF_DATASETS_CACHE" "$WANDB_DIR"
 
-# Check if llama.cpp exists (should be built by setup_env.sh)
-LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
+# Temporary workspace for GGUF conversion (if triggered in train.py)
+export TMPDIR="${TMPDIR:-/tmp/gguf_conversion_$$}"
+
+# llama.cpp location (external dependency)
+export LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
 if [ ! -d "$LLAMA_CPP_DIR" ]; then
     echo "❌ llama.cpp not found at $LLAMA_CPP_DIR"
     echo "Please run setup_env.sh first to build llama.cpp:"
@@ -90,39 +86,5 @@ echo "✅ Training completed at $(date)"
 echo "📊 Job Summary:"
 sacct -j $SLURM_JOB_ID --format=JobID,JobName,Elapsed,State,ExitCode
 
-###############################################
-# Optional cleanup after successful HF upload #
-###############################################
-# Toggle cleanups (set to "true" to enable)
-CLEAN_MODEL_ARTIFACTS=true
-CLEAN_HF_MODEL_CACHE=false
-CLEAN_WANDB_LOCAL=true
-
-# Paths aligned with train.py
-MODEL_NAME="microsoft/phi-4"
-TRAIN_DIR="$FASTDATA_BASE/models/${MODEL_NAME}-LoRA"
-MERGED_DIR="$FASTDATA_BASE/models/merged_model"
-
-if [ "$CLEAN_MODEL_ARTIFACTS" = true ]; then
-  echo "🧹 Removing trained artifacts under $FASTDATA_BASE/models"
-  rm -rf "$TRAIN_DIR" "$MERGED_DIR" || true
-fi
-
-if [ "$CLEAN_HF_MODEL_CACHE" = true ]; then
-  # Remove cached base model shards to free space; disable to keep for next runs
-  echo "🧹 Removing Hugging Face model cache for $MODEL_NAME"
-  rm -rf "$HUGGINGFACE_HUB_CACHE/models--microsoft--phi-4" || true
-fi
-
-if [ "$CLEAN_WANDB_LOCAL" = true ]; then
-  echo "🧹 Cleaning W&B local directories"
-  # Fastdata WANDB_DIR
-  find "$WANDB_DIR" -maxdepth 1 -type d -name 'run-*' -mtime +0 -exec rm -rf {} + 2>/dev/null || true
-  # Repo-local wandb (from previous runs using default location)
-  REPO_WANDB_DIR="$PWD/wandb"
-  if [ -d "$REPO_WANDB_DIR" ]; then
-    rm -rf "$REPO_WANDB_DIR" || true
-  fi
-fi
 
 source deactivate 
