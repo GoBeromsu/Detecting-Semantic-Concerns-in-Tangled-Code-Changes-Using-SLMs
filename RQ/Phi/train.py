@@ -64,29 +64,14 @@ NEW_MODEL: str = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs
 HF_MODEL_REPO: str = "Berom0227/" + NEW_MODEL
 
 
-# HPC storage configuration - Use fastdata area for large files
-# Reference: Sheffield HPC Storage Guidelines
-# https://docs.hpc.shef.ac.uk/en/latest/hpc/filestore.html
-# Fastdata areas (/mnt/parscratch/users/$USER/) are designed for large files and avoid "Disk quota exceeded" errors in home directories
-USER = os.getenv("USER", "acq24bk")  # Fallback to your username if USER env var not set
-FASTDATA_BASE = os.getenv("FASTDATA_BASE", f"/mnt/parscratch/users/{USER}")
-MODEL_OUTPUT_DIR = f"{FASTDATA_BASE}/models/{MODEL_NAME}-LoRA"
-MERGED_MODEL_DIR = f"{FASTDATA_BASE}/models/merged_model"
-HF_CACHE_DIR = os.getenv("TRANSFORMERS_CACHE", f"{FASTDATA_BASE}/.cache/huggingface/transformers")
-HF_DATASETS_CACHE = os.getenv("HF_DATASETS_CACHE", f"{FASTDATA_BASE}/.cache/huggingface/datasets")
-
-# Create necessary directories
-os.makedirs(f"{FASTDATA_BASE}/models", exist_ok=True)
-os.makedirs(HF_CACHE_DIR, exist_ok=True)
-os.makedirs(HF_DATASETS_CACHE, exist_ok=True)
-
-# GGUF conversion configuration
-LLAMA_CPP_DIR = f"{FASTDATA_BASE}/llama.cpp"
-GGUF_OUTPUT_DIR = f"{FASTDATA_BASE}/models/gguf"
-HF_REPO_NAME = f"Berom0227/{NEW_MODEL}-gguf"
+# Training output configuration - HF Hub delegation
+MODEL_OUTPUT_DIR = f"./outputs/{MODEL_NAME}-LoRA"  # Local training output only
 HF_ADAPTER_REPO = f"Berom0227/{NEW_MODEL}-adapter"
-CPU_ONLY_MODE = True
-QUANT_TYPES = ["q4_K_M","q8_0"]
+
+# HF Cache delegation to environment variables
+# Cache directories managed via environment variables and symlinks
+HF_CACHE_DIR = os.getenv("TRANSFORMERS_CACHE", None)
+HF_DATASETS_CACHE = os.getenv("HF_DATASETS_CACHE", None)
 
 # Experiment tracking configuration
 WANDB_PROJECT: str = "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
@@ -191,152 +176,6 @@ def create_message_column(row) -> Dict[str, Any]:
     return {"messages": messages}
 
 
-###############
-# GGUF Utility Functions
-###############
-
-def clear_memory() -> None:
-    """CPU memory cleanup for CPU-only workflow"""
-    # Force garbage collection for CPU memory
-    gc.collect()
-    
-    # Optional: clear CUDA cache if available (but not required for CPU-only)
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-
-
-def check_dependencies() -> bool:
-    """Check if required tools are available"""
-    logger.info("Checking dependencies...")
-
-    # Check if llama.cpp exists
-    if not Path(LLAMA_CPP_DIR).exists():
-        logger.error(f"llama.cpp not found at {LLAMA_CPP_DIR}")
-        logger.info(
-            "Please clone llama.cpp: git clone https://github.com/ggerganov/llama.cpp ~/llama.cpp"
-        )
-        return False
-
-    # Check if convert_hf_to_gguf.py exists
-    convert_script = Path(LLAMA_CPP_DIR) / "convert_hf_to_gguf.py"
-    if not convert_script.exists():
-        logger.error(f"convert_hf_to_gguf.py not found at {convert_script}")
-        return False
-
-    # Check if quantize binary exists (cmake build structure)
-    quantize_binary = Path(LLAMA_CPP_DIR) / "build" / "bin" / "llama-quantize"
-    if not quantize_binary.exists():
-        logger.warning(f"quantize binary not found at {quantize_binary}")
-        logger.info(
-            "Build llama.cpp first: cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release"
-        )
-
-    logger.info("Dependencies check completed")
-    return True
-
-
-def create_gguf_output_dir() -> None:
-    """Create GGUF output directory"""
-    os.makedirs(GGUF_OUTPUT_DIR, exist_ok=True)
-    os.makedirs(MERGED_MODEL_DIR, exist_ok=True)
-    logger.info(f"Output directory: {GGUF_OUTPUT_DIR}")
-
-
-
-def convert_to_gguf_fp16() -> Optional[str]:
-    """Convert merged model to GGUF FP16 format"""
-    logger.info("Converting to GGUF FP16...")
-
-    output_file = f"{GGUF_OUTPUT_DIR}/{NEW_MODEL}-f16.gguf"
-
-    # Check if fp16 file already exists
-    if Path(output_file).exists():
-        logger.info(f"✅ FP16 file already exists, skipping conversion: {output_file}")
-        return output_file
-
-    convert_script = f"{LLAMA_CPP_DIR}/convert_hf_to_gguf.py"
-
-    cmd = [
-        "python",
-        convert_script,
-        MERGED_MODEL_DIR,
-        "--outfile",
-        output_file,
-        "--outtype",
-        "f16",
-    ]
-
-    try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        logger.info("✅ FP16 conversion completed")
-        logger.debug(f"Convert output: {result.stdout}")
-        return output_file
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Conversion failed: {e}")
-        logger.error(f"Error output: {e.stderr}")
-        return None
-
-
-def quantize_model(fp16_file: str, quant_type: str) -> Optional[str]:
-    """Quantize GGUF model"""
-    logger.info(f"Quantizing to {quant_type}...")
-
-    output_file = f"{GGUF_OUTPUT_DIR}/{NEW_MODEL}-{quant_type}.gguf"
-
-    # Check if quantized file already exists
-    if Path(output_file).exists():
-        logger.info(
-            f"✅ {quant_type} file already exists, skipping quantization: {output_file}"
-        )
-        return output_file
-
-    # Use build/bin/llama-quantize from cmake build
-    quantize_binary = f"{LLAMA_CPP_DIR}/build/bin/llama-quantize"
-
-    if not Path(quantize_binary).exists():
-        logger.error(f"Quantize binary not found: {quantize_binary}")
-        logger.info(
-            "Make sure llama.cpp is built with: cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release"
-        )
-        return None
-
-    cmd = [quantize_binary, fp16_file, output_file, quant_type]
-
-    try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        logger.info(f"✅ {quant_type} quantization completed")
-        logger.debug(f"Quantize output: {result.stdout}")
-        return output_file
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Quantization failed: {e}")
-        logger.error(f"Error output: {e.stderr}")
-        return None
-
-
-def upload_to_huggingface() -> bool:
-    """Upload GGUF folder to Hugging Face Hub"""
-    logger.info(f"Uploading to {HF_REPO_NAME}...")
-
-    try:
-        # Create repository if it doesn't exist
-        create_repo(HF_REPO_NAME, repo_type="model", private=False, exist_ok=True,token=HF_HUB_TOKEN)
-        logger.info(f"✅ Repository {HF_REPO_NAME} ready")
-
-        # Upload entire GGUF directory
-        upload_folder(
-            folder_path=GGUF_OUTPUT_DIR,
-            repo_id=HF_REPO_NAME,
-            repo_type="model",
-            commit_message="Upload GGUF quantized models",
-            token=HF_HUB_TOKEN,
-        )
-
-        logger.info("✅ GGUF models uploaded")
-        return True
-
-    except Exception as e:
-        logger.error(f"Upload failed: {e}")
-        return False
 
 
 # 'format_dataset_chatml' is a function that takes a row from the dataset and returns a dictionary
@@ -605,50 +444,191 @@ new_model = AutoPeftModelForCausalLM.from_pretrained(
 # Merge the model and adapter
 merged_model = new_model.merge_and_unload()
 
-# Save the merged model locally
-merged_model.save_pretrained(
-    MERGED_MODEL_DIR, trust_remote_code=True, safe_serialization=True
-)
-tokenizer.save_pretrained(MERGED_MODEL_DIR)
-
-# Push the merged model to Hugging Face Hub
 merged_model.push_to_hub(HF_MODEL_REPO)
 tokenizer.push_to_hub(HF_MODEL_REPO)
 
 print(f"🚀 Model successfully uploaded to: https://huggingface.co/{HF_MODEL_REPO}")
 
 ###############
-# GGUF Conversion Workflow
+# GGUF Conversion Workflow - Integrated with Training
 ###############
 logger.info("Starting GGUF conversion process...")
+logger.info("🌐 Using already loaded model from training (memory efficient)")
 
-# Check prerequisites
-if not check_dependencies():
-    logger.error("Dependencies check failed, skipping GGUF conversion")
-else:
-    # Create output directory
-    create_gguf_output_dir()
+# Import GGUF-related modules
+import subprocess
+import shutil
+import time
 
-    # Convert to FP16 (merged model already exists from above)
+# GGUF conversion configuration  
+LLAMA_CPP_DIR = os.getenv("LLAMA_CPP_DIR", f"/mnt/parscratch/users/{os.getenv('USER', 'acq24bk')}/llama.cpp")
+WORK_DIR = os.getenv("TMPDIR", "./tmp_gguf_conversion")
+MERGED_MODEL_DIR = f"{WORK_DIR}/merged_model"
+GGUF_OUTPUT_DIR = f"{WORK_DIR}/gguf_output"
+QUANT_TYPES = ["q4_K_M","q8_0"]
+HF_REPO_NAME = f"Berom0227/{NEW_MODEL}-gguf"
+
+def clear_memory() -> None:
+    """CPU memory cleanup for CPU-only workflow"""
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+def check_dependencies() -> bool:
+    """Check if required tools are available"""
+    logger.info("Checking dependencies...")
+    
+    if not Path(LLAMA_CPP_DIR).exists():
+        logger.error(f"llama.cpp not found at {LLAMA_CPP_DIR}")
+        logger.info("Please set LLAMA_CPP_DIR environment variable or build llama.cpp")
+        return False
+
+    convert_script = Path(LLAMA_CPP_DIR) / "convert_hf_to_gguf.py"
+    if not convert_script.exists():
+        logger.error(f"convert_hf_to_gguf.py not found at {convert_script}")
+        return False
+
+    quantize_binary = Path(LLAMA_CPP_DIR) / "build" / "bin" / "llama-quantize"
+    if not quantize_binary.exists():
+        logger.warning(f"quantize binary not found at {quantize_binary}")
+        logger.info("Build llama.cpp first: cmake -B build && cmake --build build --config Release")
+
+    logger.info("Dependencies check completed")
+    return True
+
+def prepare_model_for_gguf() -> bool:
+    """Prepare already loaded model for GGUF conversion"""
+    try:
+        os.makedirs(GGUF_OUTPUT_DIR, exist_ok=True)
+        os.makedirs(MERGED_MODEL_DIR, exist_ok=True)
+        
+        # Save the already merged model (no need to re-download from HF Hub)
+        merged_model.save_pretrained(MERGED_MODEL_DIR, safe_serialization=True, max_shard_size="2GB")
+        tokenizer.save_pretrained(MERGED_MODEL_DIR)
+        
+        logger.info("✅ Model prepared for GGUF conversion")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to prepare model: {e}")
+        return False
+
+def convert_to_gguf_fp16() -> Optional[str]:
+    """Convert merged model to GGUF FP16 format"""
+    logger.info("Converting to GGUF FP16...")
+    
+    output_file = f"{GGUF_OUTPUT_DIR}/{NEW_MODEL}-f16.gguf"
+    convert_script = f"{LLAMA_CPP_DIR}/convert_hf_to_gguf.py"
+
+    cmd = [
+        "python", convert_script, MERGED_MODEL_DIR,
+        "--outfile", output_file, "--outtype", "f16"
+    ]
+
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.info("✅ FP16 conversion completed")
+        return output_file
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Conversion failed: {e}")
+        return None
+
+def quantize_model_gguf(fp16_file: str, quant_type: str) -> Optional[str]:
+    """Quantize GGUF model"""
+    logger.info(f"Quantizing to {quant_type}...")
+    
+    output_file = f"{GGUF_OUTPUT_DIR}/{NEW_MODEL}-{quant_type}.gguf"
+    quantize_binary = f"{LLAMA_CPP_DIR}/build/bin/llama-quantize"
+
+    if not Path(quantize_binary).exists():
+        logger.error(f"Quantize binary not found: {quantize_binary}")
+        return None
+
+    cmd = [quantize_binary, fp16_file, output_file, quant_type]
+
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.info(f"✅ {quant_type} quantization completed")
+        return output_file
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Quantization failed: {e}")
+        return None
+
+def upload_gguf_to_huggingface() -> bool:
+    """Upload GGUF folder to Hugging Face Hub"""
+    logger.info(f"Uploading to {HF_REPO_NAME}...")
+
+    try:
+        create_repo(HF_REPO_NAME, repo_type="model", private=False, exist_ok=True, token=HF_HUB_TOKEN)
+        logger.info(f"✅ Repository {HF_REPO_NAME} ready")
+
+        upload_folder(
+            folder_path=GGUF_OUTPUT_DIR,
+            repo_id=HF_REPO_NAME,
+            repo_type="model",
+            commit_message="Upload GGUF quantized models",
+            token=HF_HUB_TOKEN,
+        )
+
+        logger.info("✅ GGUF models uploaded")
+        return True
+
+    except Exception as e:
+        logger.error(f"Upload failed: {e}")
+        return False
+
+def run_gguf_conversion_workflow() -> None:
+    """Execute GGUF conversion workflow - Top-down clean approach"""
+    logger.info("Starting GGUF conversion workflow...")
+    
+    # Check prerequisites first
+    if not check_dependencies():
+        logger.error("Dependencies check failed, skipping GGUF conversion")
+        logger.info("💡 You can run GGUF conversion separately later using: python RQ/Phi/conver_to_gguf.py")
+        return
+    
+    # Prepare model for conversion
+    if not prepare_model_for_gguf():
+        logger.error("Model preparation failed")
+        return
+    
+    # Clean up memory before conversion
+    del merged_model, new_model
+    clear_memory()
+    
+    # Convert to FP16
     fp16_file = convert_to_gguf_fp16()
     if not fp16_file:
         logger.error("FP16 conversion failed")
-    else:
-        # Quantize models
-        success_count = 1  # Count FP16 as success
+        return
+    
+    # Quantize models
+    success_count = 1  # Count FP16 as success
+    for quant_type in QUANT_TYPES:
+        quantized_file = quantize_model_gguf(fp16_file, quant_type)
+        if quantized_file:
+            success_count += 1
+    
+    logger.info(f"✅ {success_count} model(s) created successfully")
+    
+    # Upload to HF Hub
+    if not upload_gguf_to_huggingface():
+        logger.error("GGUF upload failed")
+        return
+    
+    # Success - cleanup and finish
+    logger.info("🎉 GGUF conversion and upload completed successfully!")
+    logger.info(f"GGUF models available at: https://huggingface.co/{HF_REPO_NAME}")
+    
+    # Cleanup temporary workspace
+    shutil.rmtree(WORK_DIR, ignore_errors=True)
+    logger.info("🧹 Temporary workspace cleaned up")
 
-        for quant_type in QUANT_TYPES:
-            quantized_file = quantize_model(fp16_file, quant_type)
-            if quantized_file:
-                success_count += 1
-            else:
-                logger.warning(f"Skipping {quant_type} quantization")
+# Execute GGUF conversion workflow
+try:
+    run_gguf_conversion_workflow()
+except Exception as e:
+    logger.error(f"GGUF conversion failed: {e}")
+    logger.info("💡 You can run GGUF conversion separately later using: python RQ/Phi/conver_to_gguf.py")
 
-        logger.info(f"✅ {success_count} model(s) created successfully")
+print("🎉 Training and GGUF conversion workflow completed!")
 
-        # Upload to Hugging Face Hub
-        if upload_to_huggingface():
-            logger.info("🎉 GGUF conversion and upload completed successfully!")
-            logger.info(f"GGUF models available at: https://huggingface.co/{HF_REPO_NAME}")
-        else:
-            logger.error("GGUF upload failed")
