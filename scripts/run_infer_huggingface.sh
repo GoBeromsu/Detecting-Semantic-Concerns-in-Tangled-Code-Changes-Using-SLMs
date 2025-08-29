@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=phi4_infer_hf
+#SBATCH --job-name=infer
 #SBATCH --time=24:00:00
 #SBATCH --partition=gpu-h100
 #SBATCH --gres=gpu:1
@@ -7,15 +7,15 @@
 #SBATCH --mem=128GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --output=logs/phi4_infer_%j.out
-#SBATCH --error=logs/phi4_infer_%j.err
+#SBATCH --output=logs/infer_%j.out
+#SBATCH --error=logs/infer_%j.err
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
 # Sheffield HPC Stanage - Inference (Hugging Face / GGUF) for Phi-4
 # Spec matches fine_tuning/run_training.sh; only job name and entrypoint differ
 
-echo "Starting Phi-4 inference job: $SLURM_JOB_ID"
+echo "Starting inference job: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
 echo "Allocated CPUs: $SLURM_CPUS_PER_TASK, Memory: $SLURM_MEM_PER_NODE MB"
 
@@ -50,7 +50,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "🚀 Starting inference at $(date)"
-python -u RQ/Phi/infer_huggingface.py | tee -a "logs/phi4_infer_output_${SLURM_JOB_ID}.log"
+python -u RQ/Phi/infer_huggingface.py | tee -a "logs/infer_output_${SLURM_JOB_ID}.log"
 
 echo "✅ Inference completed at $(date)"
 

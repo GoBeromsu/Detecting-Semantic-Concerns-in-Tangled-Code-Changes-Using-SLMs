@@ -1,21 +1,23 @@
 #!/bin/bash
-#SBATCH --job-name=phi4-gguf-convert
+#SBATCH --job-name=convert-gguf
 #SBATCH --time=2:00:00
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --output=logs/phi4_gguf_convert_%j.out
-#SBATCH --error=logs/phi4_gguf_convert_%j.err
+#SBATCH --output=logs/convert_%j.out
+#SBATCH --error=logs/convert_%j.err
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
 # Sheffield HPC Stanage - CPU-only GGUF Conversion for Phi-4 Fine-tuned Model
 # Convert merged LoRA model to GGUF format and upload to Hugging Face
 
-echo "Starting GGUF conversion process..."
+echo "Starting GGUF conversion job: $SLURM_JOB_ID"
+echo "Node: $SLURM_NODELIST"
+echo "Allocated CPUs: $SLURM_CPUS_PER_TASK, Memory: $SLURM_MEM_PER_NODE MB"
 
-# Create logs directory
+
 mkdir -p logs
 
 # Setup environment - CPU-only configuration
@@ -44,7 +46,6 @@ export FASTDATA_BASE="/mnt/parscratch/users/$USER"
 
 # HuggingFace cache configuration (managed via environment variables)
 export HF_HOME="${HF_HOME:-$FASTDATA_BASE/.cache/huggingface}"
-export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$FASTDATA_BASE/.cache/huggingface/transformers}"
 export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-$FASTDATA_BASE/.cache/huggingface/datasets}"
 
 # Ensure FASTDATA_BASE directory exists
@@ -93,9 +94,10 @@ if [ ! -f "$CONVERTER" ]; then
 fi
 
 echo "✅ Found converter script: $CONVERTER"
+
 # Run GGUF conversion
-echo "🚀 Starting GGUF conversion..."
-python "$CONVERTER"
+echo "🚀 Starting GGUF conversion at $(date)"
+python "$CONVERTER" | tee -a "logs/convert_output_${SLURM_JOB_ID}.log"
 
 conversion_exit_code=$?
 
@@ -107,6 +109,8 @@ else
     echo "❌ GGUF conversion failed with exit code: $conversion_exit_code"
     exit 1
 fi
+
+echo "✅ GGUF conversion completed at $(date)"
 
 # Cleanup temporary workspace
 echo "🧹 Cleaning up temporary workspace: $TMPDIR"

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=phi4_commit_sft
+#SBATCH --job-name=train
 #SBATCH --time=12:00:00
 #SBATCH --partition=gpu-h100
 #SBATCH --gres=gpu:1
@@ -7,15 +7,15 @@
 #SBATCH --mem=256GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --output=logs/phi4_training_%j.out
-#SBATCH --error=logs/phi4_training_%j.err
+#SBATCH --output=logs/train_%j.out
+#SBATCH --error=logs/train_%j.err
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
 # Sheffield HPC Stanage - A100 GPU Training + GGUF Conversion
 # Multi-Concern Commit Classification with Phi-4
 
-echo "Starting Phi-4 LoRA fine-tuning job: $SLURM_JOB_ID"
+echo "Starting training job: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
 echo "Allocated CPUs: $SLURM_CPUS_PER_TASK, Memory: $SLURM_MEM_PER_NODE MB"
 
