@@ -154,11 +154,6 @@ def convert_to_gguf_fp16() -> Optional[str]:
 
     output_file = f"{GGUF_OUTPUT_DIR}/{MODEL_NAME}-f16.gguf"
 
-    # Check if fp16 file already exists
-    if Path(output_file).exists():
-        logger.info(f"✅ FP16 file already exists, skipping conversion: {output_file}")
-        return output_file
-
     convert_script = f"{LLAMA_CPP_DIR}/convert_hf_to_gguf.py"
 
     cmd = [
@@ -187,14 +182,6 @@ def quantize_model(fp16_file: str, quant_type: str) -> Optional[str]:
     logger.info(f"Quantizing to {quant_type}...")
 
     output_file = f"{GGUF_OUTPUT_DIR}/{MODEL_NAME}-{quant_type}.gguf"
-
-    # Check if quantized file already exists
-    if Path(output_file).exists():
-        logger.info(
-            f"✅ {quant_type} file already exists, skipping quantization: {output_file}"
-        )
-        return output_file
-
     # Use build/bin/llama-quantize from cmake build
     quantize_binary = f"{LLAMA_CPP_DIR}/build/bin/llama-quantize"
 
