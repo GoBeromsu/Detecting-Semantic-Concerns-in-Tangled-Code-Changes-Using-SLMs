@@ -38,19 +38,19 @@ fi
 echo "🔧 Activating phi4_env..."
 source activate phi4_env
 
-# Set environment variables
+# Environment variables - HF Hub delegation
 export CUDA_VISIBLE_DEVICES=0
-export FASTDATA_BASE="/mnt/parscratch/users/$USER"
 
-# Ensure FASTDATA_BASE directory exists
-mkdir -p "$FASTDATA_BASE"
+# Temporary workspace
+export TMPDIR="${TMPDIR:-/tmp/gguf_conversion_$$}"
+mkdir -p "$TMPDIR"
+echo "📁 Temporary workspace: $TMPDIR"
 
-# Check if llama.cpp exists (should be built by setup_env.sh)
-LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
+# llama.cpp location (environment dependent)
+export LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$HOME/llama.cpp}"
 if [ ! -d "$LLAMA_CPP_DIR" ]; then
     echo "❌ llama.cpp not found at $LLAMA_CPP_DIR"
-    echo "Please run setup_env.sh first to build llama.cpp:"
-    echo "sbatch scripts/setup_env.sh"
+    echo "💡 Set LLAMA_CPP_DIR environment variable or install to ~/llama.cpp"
     exit 1
 else
     echo "✅ llama.cpp found at $LLAMA_CPP_DIR"
@@ -92,11 +92,15 @@ conversion_exit_code=$?
 if [ $conversion_exit_code -eq 0 ]; then
     echo "🎉 GGUF conversion completed successfully!"
     echo "📊 File sizes in GGUF directory:"
-    ls -lh "$FASTDATA_BASE/models/gguf/"
+    ls -lh "$TMPDIR/gguf_output/" 2>/dev/null || echo "GGUF files uploaded to HF Hub"
 else
     echo "❌ GGUF conversion failed with exit code: $conversion_exit_code"
     exit 1
 fi
+
+# Cleanup temporary workspace
+echo "🧹 Cleaning up temporary workspace: $TMPDIR"
+rm -rf "$TMPDIR"
 
 # Deactivate environment
 source deactivate

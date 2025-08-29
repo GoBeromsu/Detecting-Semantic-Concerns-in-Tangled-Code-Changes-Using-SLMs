@@ -25,20 +25,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Configuration - Match train.py settings
-USER = os.getenv("USER", "acq24bk")
-FASTDATA_BASE = f"/mnt/parscratch/users/{USER}"
+# Configuration - HF Hub delegation
 BASE_MODEL_ID = "microsoft/phi-4"
-MERGED_MODEL_DIR = f"{FASTDATA_BASE}/models/merged_model"
-GGUF_OUTPUT_DIR = f"{FASTDATA_BASE}/models/gguf"
-LLAMA_CPP_DIR = f"{FASTDATA_BASE}/llama.cpp"
-HF_CACHE_DIR = f"{FASTDATA_BASE}/.cache/huggingface/transformers"
-
-# Model naming (align with train.py NEW_MODEL)
 MODEL_NAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 HF_REPO_NAME = f"Berom0227/{MODEL_NAME}-gguf"
-HF_ADAPTER_REPO = f"Berom0227/{MODEL_NAME}-adapter"  # LoRA adapter repository from train.py
+HF_ADAPTER_REPO = f"Berom0227/{MODEL_NAME}-adapter"
 HF_HUB_TOKEN = os.getenv("HF_HUB_TOKEN", None)
+
+# Temporary workspace - environment dependent
+WORK_DIR = os.getenv("TMPDIR", "./tmp_gguf_conversion")
+MERGED_MODEL_DIR = f"{WORK_DIR}/merged_model"
+GGUF_OUTPUT_DIR = f"{WORK_DIR}/gguf_output"
+
+# Dependencies - environment dependent  
+LLAMA_CPP_DIR = os.getenv("LLAMA_CPP_DIR", os.path.expanduser("~/llama.cpp"))
+
+# HF Cache delegation to environment variables
+HF_CACHE_DIR = os.getenv("TRANSFORMERS_CACHE", None)
 
 
 # Quantization options
@@ -83,8 +86,8 @@ def create_output_dir() -> None:
 
 
 def merge_lora_adapter() -> bool:
-    """Load LoRA adapter from HF Hub and merge with base model on CPU (best practice)"""
-    logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} and merging with base model on CPU...")
+    """HF Hub Delegation: Load LoRA adapter from HF Hub and merge with base model on CPU"""
+    logger.info(f"🌐 HF Hub Delegation: Loading LoRA adapter from {HF_ADAPTER_REPO} and merging with base model on CPU...")
     
     # Log initial memory state
     logger.info(f"Memory checkpoint")
@@ -243,7 +246,7 @@ def main():
     # Create output directory
     create_output_dir()
 
-    # Merge LoRA adapter with base model
+    # Download and merge LoRA adapter from HF Hub
     if not merge_lora_adapter():
         logger.error("LoRA adapter merge failed")
         sys.exit(1)
