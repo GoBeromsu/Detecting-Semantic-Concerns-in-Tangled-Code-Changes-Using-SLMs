@@ -44,17 +44,6 @@ HF_HUB_TOKEN = os.getenv("HF_HUB_TOKEN", None)
 # Quantization options
 QUANT_TYPES = ["q4_K_M","q8_0"]
 
-
-def clear_memory() -> None:
-    """CPU memory cleanup for CPU-only workflow"""
-    # Force garbage collection for CPU memory
-    gc.collect()
-    
-    # Optional: clear CUDA cache if available (but not required for CPU-only)
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-
-
 def check_dependencies() -> bool:
     """Check if required tools are available"""
     logger.info("Checking dependencies...")
@@ -102,7 +91,7 @@ def merge_lora_adapter() -> bool:
 
     try:
         # Clear memory before starting
-        clear_memory()
+        gc.collect()
         
         # Use float32 for CPU merge - optimal for CPU processing and precision
         compute_dtype = torch.float32
@@ -128,7 +117,7 @@ def merge_lora_adapter() -> bool:
         
         # Clean up original model immediately
         del model
-        clear_memory()
+        gc.collect()
         
         # Load tokenizer
         logger.info("Loading tokenizer...")
@@ -148,7 +137,7 @@ def merge_lora_adapter() -> bool:
         
         # Clean up all variables aggressively
         del merged_model, tokenizer
-        clear_memory()
+        gc.collect()
         logger.info(f"Memory checkpoint")
         
         logger.info("✅ LoRA adapter merged successfully on CPU")
