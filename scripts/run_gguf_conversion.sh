@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=phi4-gguf-convert
-#SBATCH --time=4:00:00
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=256GB
+#SBATCH --time=2:00:00
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=128GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --output=logs/phi4_gguf_convert_%j.out
@@ -21,9 +21,9 @@ mkdir -p logs
 # Setup environment - CPU-only configuration
 module purge
 module load GCCcore/12.3.0
-module load CUDA/12.1.1
+# module load CUDA/12.1.1
 module load Anaconda3/2022.05
-module load cuDNN/8.9.2.26-CUDA-12.1.1
+# module load cuDNN/8.9.2.26-CUDA-12.1.1
 module load CMake/3.26.3-GCCcore-12.3.0
 
 # Check if phi4_env exists (should be created by setup_env.sh)
