@@ -83,13 +83,6 @@ if [ ! -f "$CONVERTER" ]; then
 fi
 
 echo "✅ Found converter script: $CONVERTER"
-
-# Load environment variables if .env exists
-if [ -f ".env" ]; then
-    echo "📄 Loading environment variables from .env"
-    source .env
-fi
-
 # Run GGUF conversion
 echo "🚀 Starting GGUF conversion..."
 python "$CONVERTER"

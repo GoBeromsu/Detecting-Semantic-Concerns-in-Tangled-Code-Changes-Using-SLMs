@@ -286,16 +286,16 @@ def main():
         sys.exit(1)
 
     # Quantize models
-    # success_count = 1  # Count FP16 as success
+    success_count = 1  # Count FP16 as success
 
-    # for quant_type in QUANT_TYPES:
-    #     quantized_file = quantize_model(fp16_file, quant_type)
-    #     if quantized_file:
-    #         success_count += 1
-    #     else:
-    #         logger.warning(f"Skipping {quant_type} quantization")
+    for quant_type in QUANT_TYPES:
+        quantized_file = quantize_model(fp16_file, quant_type)
+        if quantized_file:
+            success_count += 1
+        else:
+            logger.warning(f"Skipping {quant_type} quantization")
 
-    # logger.info(f"✅ {success_count} model(s) created successfully")
+    logger.info(f"✅ {success_count} model(s) created successfully")
 
     # Upload to Hugging Face Hub
     if upload_to_huggingface():
