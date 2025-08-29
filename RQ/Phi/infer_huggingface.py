@@ -24,13 +24,11 @@ from datasets import load_dataset
 # Load environment variables from .env file
 load_dotenv()
 
-# REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-gguf"
-REPO_ID = "microsoft/phi-4-gguf"
+REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-gguf"
+# REPO_ID = "microsoft/phi-4-gguf"
 MODEL_NAME = "Phi4" 
-GGUF_FILENAME = "phi-4-bf16.gguf"
-# GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-q4_K_M.gguf"
-# GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-q8_0.gguf"
-# GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-f16.gguf"
+# GGUF_FILENAME = "phi-4-bf16.gguf"
+GGUF_FILENAME = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs-f16.gguf"
 
 # Paths and experiment constants (experiment script concerns)
 RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "results"
