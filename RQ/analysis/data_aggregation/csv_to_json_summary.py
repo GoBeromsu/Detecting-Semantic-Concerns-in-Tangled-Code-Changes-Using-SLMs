@@ -13,10 +13,14 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# Paths - Use RQ/results directory for model results, root/results for analysis outputs
-PROJECT_ROOT = Path(__file__).parent.parent.parent  # Go up from RQ/analysis/ to project root
-RESULTS_DIR: Path = PROJECT_ROOT / "results"  # Model results are in RQ/results/
-ANALYSIS_DIR: Path = PROJECT_ROOT / "analysis"  # Analysis outputs go to root/results/analysis/
+# Paths - Use root/results directory for model results, root/results/analysis for analysis outputs
+PROJECT_ROOT = Path(
+    __file__
+).parent.parent.parent.parent  # Go up from RQ/analysis/data_aggregation/ to project root
+RESULTS_DIR: Path = PROJECT_ROOT / "results"  # Model results are in root/results/
+ANALYSIS_DIR: Path = (
+    PROJECT_ROOT / "results" / "analysis"
+)  # Analysis outputs go to root/results/analysis/
 
 # Output suffixes (kept for potential future use)
 OUTPUT_SUFFIX_MACRO = "_macro.csv"
@@ -24,15 +28,16 @@ OUTPUT_SUFFIX_BY_CONCERN = "_macro_by_concern.csv"
 
 FILTER_OUTLIERS = True
 
+
 def identify_outliers(df: pd.DataFrame) -> List[int]:
     """Identify outlier rows where model failed to predict any types.
-    
+
     Returns list of row indices where predicted_types is empty ("[]").
     """
     # Check if predicted_types column exists
     if "predicted_types" not in df.columns:
         return []
-    
+
     # CSV stores empty lists as string "[]"
     outlier_mask = df["predicted_types"] == "[]"
     return df[outlier_mask].index.tolist()
@@ -70,7 +75,14 @@ def compute_macro(df: pd.DataFrame) -> pd.DataFrame:
 
     Requires: precision, recall, f1, exact_match, hamming_loss, inference_time
     """
-    required = ["precision", "recall", "f1", "exact_match", "hamming_loss", "inference_time"]
+    required = [
+        "precision",
+        "recall",
+        "f1",
+        "exact_match",
+        "hamming_loss",
+        "inference_time",
+    ]
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns for macro metrics: {missing}")
@@ -92,7 +104,14 @@ def compute_macro_by_concern(df: pd.DataFrame) -> pd.DataFrame:
 
     grouped = (
         df.groupby("concern_count")[
-            ["precision", "recall", "f1", "exact_match", "hamming_loss", "inference_time"]
+            [
+                "precision",
+                "recall",
+                "f1",
+                "exact_match",
+                "hamming_loss",
+                "inference_time",
+            ]
         ]
         .mean()
         .reset_index()
@@ -132,7 +151,9 @@ def build_summary_json(
     # experiment_id: <model>_<context>_<yes|no>_<YYYYMMDD>
     created_at = datetime.now(tz=timezone.utc)
     date_str = created_at.strftime("%Y%m%d")
-    experiment_id = f"{model}_{context_length}_{'yes' if with_message else 'no'}_{date_str}"
+    experiment_id = (
+        f"{model}_{context_length}_{'yes' if with_message else 'no'}_{date_str}"
+    )
 
     # Macro metrics mapping
     macro_row = macro_df.iloc[0]
@@ -171,10 +192,10 @@ def build_summary_json(
         "metrics_by_concern": metrics_by_concern,
         "created_at": created_at.isoformat(),
     }
-    
+
     if outlier_info:
         summary["outliers"] = outlier_info
-    
+
     return summary
 
 
@@ -218,21 +239,32 @@ def save_concern_plot(by_concern_df: pd.DataFrame, csv_path: Path) -> None:
 
 def process_csv(csv_path: Path, filter_outliers: bool = True) -> None:
     original_df = pd.read_csv(csv_path)
-    
+
     # Check if this CSV has the required columns for analysis
-    required_columns = ["precision", "recall", "f1", "exact_match", "hamming_loss", "inference_time", "concern_count"]
-    missing_columns = [col for col in required_columns if col not in original_df.columns]
-    
+    required_columns = [
+        "precision",
+        "recall",
+        "f1",
+        "exact_match",
+        "hamming_loss",
+        "inference_time",
+        "concern_count",
+    ]
+    missing_columns = [
+        col for col in required_columns if col not in original_df.columns
+    ]
+
     if missing_columns:
         print(f"Skipping {csv_path.name}: Missing required columns {missing_columns}")
         return
 
     # Identify outliers for reporting
     outlier_indices = identify_outliers(original_df)
-    outlier_info = {
-        "indices": outlier_indices,
-        "count": len(outlier_indices)
-    } if outlier_indices else None
+    outlier_info = (
+        {"indices": outlier_indices, "count": len(outlier_indices)}
+        if outlier_indices
+        else None
+    )
 
     # Filter dataframe if requested
     if filter_outliers and outlier_indices:
@@ -247,7 +279,9 @@ def process_csv(csv_path: Path, filter_outliers: bool = True) -> None:
     json_suffix = "_filtered" if filter_outliers and outlier_indices else ""
     out_json = csv_path.parent / "json" / f"{csv_path.stem}{json_suffix}.json"
 
-    summary = build_summary_json(original_df, macro_df, by_concern_df, csv_path, outlier_info)
+    summary = build_summary_json(
+        original_df, macro_df, by_concern_df, csv_path, outlier_info
+    )
     save_json(summary, out_json)
     save_concern_plot(by_concern_df, csv_path)
 
@@ -255,7 +289,9 @@ def process_csv(csv_path: Path, filter_outliers: bool = True) -> None:
     print(f"Saved: {out_json.relative_to(base_root)}")
     if outlier_info:
         print(f"Found {outlier_info['count']} outliers: {outlier_info['indices']}")
-    print(f"Saved: {(csv_path.parent / 'plot' / f'{csv_path.stem}_by_concern.png').relative_to(base_root)}")
+    print(
+        f"Saved: {(csv_path.parent / 'plot' / f'{csv_path.stem}_by_concern.png').relative_to(base_root)}"
+    )
 
 
 def main() -> None:
