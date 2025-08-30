@@ -82,7 +82,7 @@ DEVICE_MAP: str = "auto"
 # LoRA hyperparameters optimized for Phi-4 (hidden_dim=5120)
 LORA_RANK: int = 128
 LORA_ALPHA: int = 256
-LORA_DROPOUT: float = 0.1
+LORA_DROPOUT: float = 0.05
 
 # 'target_modules' is a list of the modules in the model that will be replaced with LoRA layers.
 TARGET_MODULES: list[str] = [
