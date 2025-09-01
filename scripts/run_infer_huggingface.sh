@@ -12,8 +12,10 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
-# Sheffield HPC Stanage - Inference (Hugging Face / GGUF) for Phi-4
+# Sheffield HPC Stanage
 # Spec matches fine_tuning/run_training.sh; only job name and entrypoint differ
+
+MODEL_TYPE="Qwen" # Options: "Phi" or "Qwen"
 
 echo "Starting inference job: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
@@ -33,7 +35,7 @@ echo "🔧 Activating phi4_env..."
 source activate phi4_env
 
 # Start periodic GPU utilization logging (every 60 s)
-GPU_LOG="logs/gpu_usage_${SLURM_JOB_ID}.csv"
+GPU_LOG="logs/gpu_usage_${SLURM_JOB_ID}_${MODEL_TYPE}.csv"
 echo "timestamp,power.draw[W],gpu.util[%],mem.util[%],mem.used[MiB]" > "$GPU_LOG"
 (
   while true; do
@@ -50,7 +52,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "🚀 Starting inference at $(date)"
-python -u RQ/Phi/infer_huggingface.py | tee -a "logs/infer_output_${SLURM_JOB_ID}.log"
+python -u RQ/${MODEL_TYPE}/infer_huggingface.py | tee -a "logs/infer_output_${SLURM_JOB_ID}_${MODEL_TYPE}.log"
 
 echo "✅ Inference completed at $(date)"
 
