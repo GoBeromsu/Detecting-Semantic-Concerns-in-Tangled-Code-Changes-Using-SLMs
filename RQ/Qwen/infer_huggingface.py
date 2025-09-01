@@ -27,9 +27,8 @@ load_dotenv()
 REPO_ID = "Qwen/Qwen3-14B-GGUF"
 MODEL_NAME = "Qwen3-14B"
 
-# Paths and experiment constants
-RESULTS_ROOT: Path = Path("results")
-RESULTS_SUBDIR: str = "huggingface"
+# Paths and experiment constants (experiment script concerns)
+RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "results"
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Inference constants (mirror Phi)
@@ -40,10 +39,9 @@ TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
 
 # llama.cpp preferred chat template for Qwen
-CHAT_FORMAT = "qwen"
+CHAT_FORMAT = "chatml"
 
-SHOT_TYPES = ["Zero-shot", "One-shot", "Two-shot"]
-
+SHOT_TYPES = ["Zero-shot"]
 
 def measure_performance(
     repo_id: str,
@@ -109,15 +107,18 @@ def get_compute_device() -> str:
         device_name: str = torch.cuda.get_device_name(0)
         major, minor = torch.cuda.get_device_capability(0)
         return f"cuda ({device_name}, cc={major}.{minor})"
-    mps_available: bool = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    mps_available: bool = (
+        hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    )
     if mps_available:
         return "mps (Apple Silicon)"
     return "cpu"
 
 
 def main() -> None:
-    model_dir: Path = RESULTS_ROOT / f"{MODEL_NAME}_{START_TIME_STR}" / RESULTS_SUBDIR
-    model_dir.mkdir(parents=True, exist_ok=True)
+    base_model_dir: Path = RESULTS_ROOT / MODEL_NAME / START_TIME_STR
+    print(f"Creating base results directory: {base_model_dir}")
+    base_model_dir.mkdir(parents=True, exist_ok=True)
 
     tangled_df: pd.DataFrame = load_dataset(
         "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs",
@@ -128,11 +129,12 @@ def main() -> None:
     print(f"Hugging Face device: {device_info}")
 
     is_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    # macOS (MPS): 4-bit Q4_K_M; H100/CUDA: 8-bit Q8_0
     filename = "Qwen3-14B-Q4_K_M.gguf" if is_mps else "Qwen3-14B-Q8_0.gguf"
 
     # Preload model with Qwen chat template for reproducibility
-    llms.load_model(repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT)
+    llms.load_model(
+        repo_id=REPO_ID, filename=filename, seed=SEED, chat_format=CHAT_FORMAT
+    )
 
     shot_abbrev_map = {"Zero-shot": "zs", "One-shot": "os", "Two-shot": "ts"}
 
@@ -143,9 +145,14 @@ def main() -> None:
         system_prompt: str = prompt.get_prompt_by_type(
             shot_type=shot_type, include_message=include_message
         )
-        shot_abbrev: str = shot_abbrev_map.get(shot_type, "custom")
         msg_flag: str = "msg1" if include_message else "msg0"
-        file_name: str = f"{MODEL_NAME}_{cw}_{shot_abbrev}_{msg_flag}.csv"
+        shot_abbrev: str = shot_abbrev_map.get(shot_type, "custom")
+
+        # Create separate folder based on message inclusion
+        model_dir: Path = base_model_dir / msg_flag
+        model_dir.mkdir(parents=True, exist_ok=True)
+
+        file_name: str = f"{cw}_{shot_abbrev}.csv"
         csv_path: Path = model_dir / file_name
         if not csv_path.exists():
             df = pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS)
@@ -170,5 +177,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
