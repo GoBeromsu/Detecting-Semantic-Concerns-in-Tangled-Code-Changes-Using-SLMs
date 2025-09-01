@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=infer
-#SBATCH --time=24:00:00
+#SBATCH --time=20:00:00
 #SBATCH --partition=gpu-h100
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=128GB
+#SBATCH --mem=64GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --output=logs/infer_%j.out
