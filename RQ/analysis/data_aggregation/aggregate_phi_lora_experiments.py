@@ -13,14 +13,11 @@ from typing import List, Dict
 # Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 RESULTS_DIR = PROJECT_ROOT / "results"
-PHI_LORA_DIR = RESULTS_DIR / "phi_lora"
-OUTPUT_DIR = PHI_LORA_DIR / "avg_result"
+TARGET_DIR = RESULTS_DIR / "phi_lora"
+OUTPUT_DIR = TARGET_DIR / "avg_result"
 
 # Experiment folders to aggregate
 EXPERIMENT_FOLDERS = ["phi-4-Lora", "phi-4-Lora_2", "phi-4-Lora_3"]
-
-# Context lengths available
-CONTEXT_LENGTHS = [1024, 2048, 4096, 8192, 16384]
 
 # Message types
 MESSAGE_TYPES = ["with_message_msg0", "with_message_msg1"]
@@ -49,35 +46,37 @@ def aggregate_inference_times(dfs: List[pd.DataFrame]) -> pd.DataFrame:
 
 
 def process_message_type(message_type: str) -> pd.DataFrame:
-    """Process a single message type across all experiments and context lengths."""
+    """Process a single message type across all experiments by finding CSV files."""
     print(f"Processing {message_type}...")
     
     all_data = []
     
-    for context_length in CONTEXT_LENGTHS:
-        print(f"  Processing context length: {context_length}")
+    # Find all CSV files for this message type across experiments
+    for exp_folder in EXPERIMENT_FOLDERS:
+        message_dir = TARGET_DIR / exp_folder / message_type
         
-        # Collect dataframes from all experiments for this context length
-        dfs_for_context = []
-        
-        for exp_folder in EXPERIMENT_FOLDERS:
-            csv_path = PHI_LORA_DIR / exp_folder / message_type / f"Phi4_{context_length}.csv"
+        if not message_dir.exists():
+            print(f"  Warning: Directory {message_dir} not found")
+            continue
             
-            if csv_path.exists():
-                df = pd.read_csv(csv_path)
-                dfs_for_context.append(df)
-                print(f"    Loaded {len(df)} rows from {exp_folder}")
-            else:
-                print(f"    Warning: {csv_path} not found")
+        # Find all CSV files in this message type directory
+        csv_files = list(message_dir.glob("*.csv"))
         
-        if dfs_for_context:
-            # Aggregate inference times for this context length
-            aggregated_df = aggregate_inference_times(dfs_for_context)
-            all_data.append(aggregated_df)
-            print(f"    Aggregated {len(aggregated_df)} rows for context {context_length}")
-    
+        if not csv_files:
+            print(f"  Warning: No CSV files found in {message_dir}")
+            continue
+  
+        for csv_file in csv_files:
+            print(f"    Processing {csv_file.name}")
+            
+            try:
+                df = pd.read_csv(csv_file)
+                all_data.append(df)
+                print(f"Loaded {len(df)} rows")
+            except Exception as e:
+                print(f"Error loading {csv_file.name}: {e}")
     if all_data:
-        # Combine all context lengths into single dataframe
+        # Combine all dataframes into single dataframe
         combined_df = pd.concat(all_data, ignore_index=True)
         print(f"  Total combined rows: {len(combined_df)}")
         return combined_df
@@ -101,10 +100,10 @@ def main():
     
     print("🔄 Aggregating Phi-LoRA Experiments")
     print("=" * 50)
-    print(f"Input directory: {PHI_LORA_DIR}")
+    print(f"Input directory: {TARGET_DIR}")
     print(f"Output directory: {output_dir}")
     print(f"Experiment folders: {EXPERIMENT_FOLDERS}")
-    print(f"Context lengths: {CONTEXT_LENGTHS}")
+
     
     # Process each message type
     for message_type in MESSAGE_TYPES:
