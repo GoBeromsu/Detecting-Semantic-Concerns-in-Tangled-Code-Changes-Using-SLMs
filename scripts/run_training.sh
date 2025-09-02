@@ -13,7 +13,9 @@
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
 # Sheffield HPC Stanage - A100 GPU Training + GGUF Conversion
-# Multi-Concern Commit Classification with Phi-4
+# Multi-Concern Commit Classification with Phi-4/Qwen
+
+MODEL_TYPE="Qwen" # Options: "Phi" or "Qwen"
 
 echo "Starting training job: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
@@ -60,7 +62,7 @@ export TOKENIZERS_PARALLELISM=false
 export NCCL_DEBUG=INFO  # Multi-GPU communication debugging
 
 # Start periodic GPU utilization logging (every 60 s)
-GPU_LOG="logs/gpu_usage_${SLURM_JOB_ID}.csv"
+GPU_LOG="logs/gpu_usage_${SLURM_JOB_ID}_${MODEL_TYPE}.csv"
 echo "timestamp,power.draw[W],gpu.util[%],mem.util[%],mem.used[MiB]" > "$GPU_LOG"
 (
   while true; do
@@ -77,8 +79,8 @@ cleanup() {
 trap cleanup EXIT
 
 # Run training
-echo "🔥 Starting training at $(date)"
-python -u RQ/Phi/train.py
+echo "🔥 Starting ${MODEL_TYPE} training at $(date)"
+python -u RQ/${MODEL_TYPE}/train.py
 
 echo "✅ Training completed at $(date)"
 
