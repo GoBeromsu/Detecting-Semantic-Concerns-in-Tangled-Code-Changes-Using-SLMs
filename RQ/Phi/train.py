@@ -247,19 +247,8 @@ tokenizer = AutoTokenizer.from_pretrained(
     cache_dir=HF_CACHE_DIR,
 )
 
-# The padding token is set to the unknown token.
-tokenizer.pad_token = tokenizer.unk_token
-tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
-# The padding side is set to 'left', meaning that padding tokens will be added to the left (start) of the sequence.
-# Left padding is preferred for causal LM training (different from 'right' padding used in data formatting)
 tokenizer.padding_side = "left"
 
-# 'AutoModelForCausalLM.from_pretrained' is a method that loads a pre-trained model for causal language modeling from the Hugging Face Model Hub.
-# 'model_id' is passed as an argument to specify which model to load.
-# 'torch_dtype' is set to the compute data type determined earlier.
-# 'trust_remote_code' is set to True to trust the remote code in the model files.
-# 'device_map' is passed as an argument to specify the device mapping for distributed training.
-# 'attn_implementation' is set to the attention implementation determined earlier.
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_ID,
     torch_dtype=compute_dtype,
@@ -268,37 +257,6 @@ model = AutoModelForCausalLM.from_pretrained(
     attn_implementation=attn_implementation,
     cache_dir=HF_CACHE_DIR,
 )
-
-
-# This code block is used to define the training arguments for the model.
-
-# 'TrainingArguments' is a class that holds the arguments for training a model.
-# 'output_dir' is the directory where the model and its checkpoints will be saved.
-# 'evaluation_strategy' is set to "steps", meaning that evaluation will be performed after a certain number of training steps.
-# 'do_eval' is set to True, meaning that evaluation will be performed.
-# 'optim' is set to "adamw_torch", meaning that the AdamW optimizer from PyTorch will be used.
-# 'per_device_train_batch_size' and 'per_device_eval_batch_size' are set to 8, meaning that the batch size for training and evaluation will be 8 per device.
-# 'gradient_accumulation_steps' is set to 4, meaning that gradients will be accumulated over 4 steps before performing a backward/update pass.
-# 'log_level' is set to "debug", meaning that all log messages will be printed.
-# 'save_strategy' is set to "epoch", meaning that the model will be saved after each epoch.
-# 'logging_steps' is set to 100, meaning that log messages will be printed every 100 steps.
-# 'learning_rate' is set to 1e-4, which is the learning rate for the optimizer.
-# 'fp16' is set to the opposite of whether bfloat16 is supported on the current CUDA device.
-# 'bf16' is set to whether bfloat16 is supported on the current CUDA device.
-# 'eval_steps' is set to 100, meaning that evaluation will be performed every 100 steps.
-# 'num_train_epochs' is set to 3, meaning that the model will be trained for 3 epochs.
-# 'warmup_ratio' is set to 0.1, meaning that 10% of the total training steps will be used for the warmup phase.
-# 'lr_scheduler_type' is set to "linear", meaning that a linear learning rate scheduler will be used.
-# 'report_to' is set to "wandb", meaning that training and evaluation metrics will be reported to Weights & Biases.
-# 'seed' is set to 42, which is the seed for the random number generator.
-
-# LoraConfig object is created with the following parameters:
-# 'r' (rank of the low-rank approximation) is set to 16,
-# 'lora_alpha' (scaling factor) is set to 16,
-# 'lora_dropout' dropout probability for Lora layers is set to 0.05,
-# 'task_type' (set to TaskType.CAUSAL_LM indicating the task type),
-# 'target_modules' (the modules to which LoRA is applied) choosing linear layers except the output layer..
-
 
 args = SFTConfig(
     output_dir=MODEL_OUTPUT_DIR,
@@ -354,13 +312,6 @@ peft_config = LoraConfig(
     target_modules=TARGET_MODULES,
 )
 
-# 'model' is the model that will be trained.
-# 'train_dataset' and 'eval_dataset' are the datasets that will be used for training and evaluation, respectively.
-# 'peft_config' is the configuration for peft, which is used for instruction tuning.
-# 'processing_class' is the tokenizer that will be used to tokenize the input text.
-# This uses the second tokenizer (training tokenizer) to convert text strings to token IDs
-# 'args' are the training arguments that were defined earlier.
-
 trainer = SFTTrainer(
     model=model,
     train_dataset=processed_train_dataset,
@@ -370,10 +321,7 @@ trainer = SFTTrainer(
     args=args,
 )
 
-# 'trainer.train()' is a method that starts the training of the model.
-# It uses the training dataset, evaluation dataset, and training arguments that were provided when the trainer was initialized.
 
-# trainer.train() 전에 체크포인트 확인
 last_checkpoint = None
 if os.path.isdir(args.output_dir):
     last_checkpoint = get_last_checkpoint(args.output_dir)
@@ -383,11 +331,9 @@ if last_checkpoint is not None:
 else:
     trainer.train()
 
-# 'trainer.save_model()' is a method that saves the trained model locally.
-# The model will be saved in the directory specified by 'output_dir' in the training arguments.
 trainer.save_model()
 
-# Log the trained adapter checkpoint directory as a W&B Artifact for traceability
+
 adapter_artifact = wandb.Artifact(
     name=f"{NEW_MODEL.lower()}-adapter",
     type="model",
