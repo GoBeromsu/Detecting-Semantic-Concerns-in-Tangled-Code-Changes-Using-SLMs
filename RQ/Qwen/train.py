@@ -215,10 +215,6 @@ tokenizer = AutoTokenizer.from_pretrained(
     use_fast=True,
     cache_dir=HF_CACHE_DIR,
 )
-
-# Configure tokenizer for causal language modeling
-tokenizer.pad_token = tokenizer.unk_token
-tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
 tokenizer.padding_side = "left"  # Left padding for causal LM
 
 # Load pre-trained Qwen3-14B model

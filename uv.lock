@@ -2900,12 +2900,15 @@ dependencies = [
     { name = "numpy", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "openai" },
     { name = "pandas" },
+    { name = "peft" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "tiktoken" },
     { name = "tqdm" },
     { name = "transformers" },
+    { name = "trl" },
+    { name = "wandb" },
 ]
 
 [package.optional-dependencies]
@@ -2919,10 +2922,7 @@ dev = [
 ]
 hpc = [
     { name = "hf-transfer" },
-    { name = "peft" },
     { name = "sentencepiece" },
-    { name = "trl" },
-    { name = "wandb" },
 ]
 
 [package.metadata]
@@ -2938,7 +2938,7 @@ requires-dist = [
     { name = "numpy" },
     { name = "openai", specifier = ">=1.0.0" },
     { name = "pandas", specifier = ">=2.1.0" },
-    { name = "peft", marker = "extra == 'hpc'", specifier = ">=0.10.0" },
+    { name = "peft", specifier = ">=0.10.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "pyyaml" },
@@ -2950,8 +2950,8 @@ requires-dist = [
     { name = "torch", marker = "extra == 'dev'" },
     { name = "tqdm", specifier = ">=4.66.0" },
     { name = "transformers", specifier = ">=4.55.0" },
-    { name = "trl", marker = "extra == 'hpc'", specifier = ">=0.8.0" },
-    { name = "wandb", marker = "extra == 'hpc'", specifier = ">=0.16.0" },
+    { name = "trl", specifier = ">=0.8.0" },
+    { name = "wandb", specifier = ">=0.16.0" },
 ]
 provides-extras = ["dev", "hpc"]
 
