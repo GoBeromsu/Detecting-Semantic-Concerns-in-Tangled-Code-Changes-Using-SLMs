@@ -8,7 +8,7 @@ __pycache__/
 models/llama.cpp
 results/
 
-.wandb/
+wandb/
 # C extensions
 *.so
 
