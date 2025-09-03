@@ -9,7 +9,6 @@ import time
 import torch
 from itertools import product
 from datetime import datetime
-from time import sleep
 
 # Ensure project root on path
 sys.path.append(str(Path(__file__).resolve().parents[2]))
