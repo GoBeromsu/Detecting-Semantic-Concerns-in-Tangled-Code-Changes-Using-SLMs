@@ -4,7 +4,6 @@ Fine-tuning Qwen3-14B for Untangling Multi-Concern Commits
 Dataset: Untangling Multi-Concern Commits with Small Language Models
 Task: Predict reasoning and concern types from commit messages and diffs
 Input: commit_message, diff → Output: types
-
 Usage: python train.py
 """
 
@@ -43,7 +42,7 @@ DATASET_NAME: str = (
     "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 )
 
-NEW_MODEL: str = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
+NEW_MODEL: str = "Semantic-Concern-SLM-Qwen"
 HF_MODEL_REPO: str = "Berom0227/" + NEW_MODEL
 
 

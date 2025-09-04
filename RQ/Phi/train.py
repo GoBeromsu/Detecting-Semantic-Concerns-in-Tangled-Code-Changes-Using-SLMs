@@ -60,7 +60,7 @@ DATASET_NAME: str = (
     "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 )
 
-NEW_MODEL: str = "Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
+NEW_MODEL: str = "Semantic-Concern-SLM-Phi"
 HF_MODEL_REPO: str = "Berom0227/" + NEW_MODEL
 
 
