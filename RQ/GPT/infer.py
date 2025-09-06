@@ -22,17 +22,19 @@ from datasets import load_dataset
 load_dotenv()
 
 MODEL_NAME = "gpt-4.1-2025-04-14"
-DATASET_REPO_ID = "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
+DATASET_REPO_ID = (
+    "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
+)
 RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "results"
 
 # Inference constants
-CONTEXT_WINDOWS = [16384,8192,4096,2048,1024]
+CONTEXT_WINDOWS = [12288, 8192, 4096, 2048, 1024]
 SHOT_TYPES = ["Zero-shot"]
 MAX_TOKENS = 16384
 SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
-START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M")
+START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 
 def measure_performance(
@@ -65,21 +67,23 @@ def measure_performance(
             inference_time = 0.0
         metrics = eval_utils.calculate_metrics(predicted_types, actual_types)
 
-        result_df = pd.DataFrame([
-            {
-                "predicted_types": json.dumps(predicted_types),
-                "actual_types": row.types,
-                "inference_time": inference_time,
-                "shas": shas,
-                "precision": metrics["precision"],
-                "recall": metrics["recall"],
-                "f1": metrics["f1"],
-                "exact_match": metrics["exact_match"],
-                "hamming_loss": metrics["hamming_loss"],
-                "context_len": context_len,
-                "with_message": with_message,
-                "concern_count": len(actual_types),
-           } ],
+        result_df = pd.DataFrame(
+            [
+                {
+                    "predicted_types": json.dumps(predicted_types),
+                    "actual_types": row.types,
+                    "inference_time": inference_time,
+                    "shas": shas,
+                    "precision": metrics["precision"],
+                    "recall": metrics["recall"],
+                    "f1": metrics["f1"],
+                    "exact_match": metrics["exact_match"],
+                    "hamming_loss": metrics["hamming_loss"],
+                    "context_len": context_len,
+                    "with_message": with_message,
+                    "concern_count": len(actual_types),
+                }
+            ],
             columns=constant.DEFAULT_DF_COLUMNS,
         )
 
@@ -87,26 +91,29 @@ def measure_performance(
         if row.Index % 10 == 0:
             print(f"[{row.Index}] appended to {csv_path}")
 
+
 def main() -> None:
     base_model_dir: Path = RESULTS_ROOT / "gpt" / START_TIME_STR
     print(f"Creating base results directory: {base_model_dir}")
     base_model_dir.mkdir(parents=True, exist_ok=True)
-    
+
     tangled_df: pd.DataFrame = load_dataset(DATASET_REPO_ID, split="test").to_pandas()
 
     shot_abbrev_map = {"Zero-shot": "zs", "One-shot": "os", "Two-shot": "ts"}
 
-    for shot_type, cw, include_message in product(SHOT_TYPES, CONTEXT_WINDOWS, (True, False)):
+    for shot_type, cw, include_message in product(
+        SHOT_TYPES, CONTEXT_WINDOWS, (True, False)
+    ):
         system_prompt: str = prompt.get_prompt_by_type(
             shot_type=shot_type, include_message=include_message
         )
 
         shot_abbrev: str = shot_abbrev_map.get(shot_type, "custom")
         msg_flag: str = "msg1" if include_message else "msg0"
-        
+
         msg_dir: Path = base_model_dir / msg_flag
         msg_dir.mkdir(parents=True, exist_ok=True)
-        
+
         file_name: str = f"{cw}_{shot_abbrev}.csv"
         csv_path: Path = msg_dir / file_name
 
