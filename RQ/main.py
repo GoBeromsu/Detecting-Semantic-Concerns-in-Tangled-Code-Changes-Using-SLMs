@@ -46,14 +46,15 @@ def add_truncated_commits(
                 diffs, remaining_tokens, encoding
             )
             truncated_text: str = (
-                f"- given commit message:\n {message}\n Diff: {truncated_diffs}"
+                f"- The given commit message: {message}\n Diff: {truncated_diffs}"
             )
         else:
             truncated_diffs: str = _truncate_diffs_equally(
                 diffs, context_window, encoding
             )
-            truncated_text: str = f"- given commit diff: \n {truncated_diffs}"
-
+            truncated_text: str = (
+                f"- The given commit message: \n Diff: {truncated_diffs}"
+            )
         truncated_texts.append(truncated_text)
         token_lengths.append(len(encoding.encode(truncated_text)))
 
