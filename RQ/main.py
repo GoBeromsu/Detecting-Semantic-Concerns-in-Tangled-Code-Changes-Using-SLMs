@@ -39,22 +39,16 @@ def add_truncated_commits(
         message: str = str(row.get("commit_message", ""))
         diffs: List[str] = json.loads(row.get("diff", "[]"))
 
-        if include_message:
-            message_tokens: List[int] = encoding.encode(message)
-            remaining_tokens: int = max(context_window - len(message_tokens), 0)
-            truncated_diffs: str = _truncate_diffs_equally(
-                diffs, remaining_tokens, encoding
-            )
-            truncated_text: str = (
-                f"- The given commit message: {message}\n Diff: {truncated_diffs}"
-            )
-        else:
-            truncated_diffs: str = _truncate_diffs_equally(
-                diffs, context_window, encoding
-            )
-            truncated_text: str = (
-                f"- The given commit message: \n Diff: {truncated_diffs}"
-            )
+        message_tokens: List[int] = encoding.encode(message) if include_message else []
+        remaining_tokens: int = max(context_window - len(message_tokens), 0)
+        truncated_diffs: str = _truncate_diffs_equally(
+            diffs, remaining_tokens, encoding
+        )
+        
+        message_part: str = message if include_message else ""
+        truncated_text: str = (
+            f"- The given commit message: {message_part}\n Diff: {truncated_diffs}"
+        )
         truncated_texts.append(truncated_text)
         token_lengths.append(len(encoding.encode(truncated_text)))
 
