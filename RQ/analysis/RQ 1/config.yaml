@@ -48,9 +48,21 @@ scripts:
         path_pattern: "results/phi_lora/avg_result/with_message_msg1/json/Phi4_{context}.json"
     context_lengths: [1024, 2048, 4096, 8192, 16384]
 
+  model_comparison_analysis:
+    script: "model_comparison_analysis.py"
+    description: "Compares individual predictions between LLM, SLM, and Fine-tuned SLM models"
+    models:
+      LLM:
+        csv_path: "results/gpt/20250906184004/msg1/12288_zs.csv"
+      SLM:
+        csv_path: "results/phi/phi-4/msg1/16384_zs.csv"
+      "Fine-tuned SLM":
+        csv_path: "results/phi_lora/phi-4-Lora/with_message_msg1/Phi4_16384.csv"
+
 # Execution order
 execution_order:
   - "msg_impact_analysis"
   - "performance_summary"
   - "concerncount_by_model"
   - "context_length_performance"
+  - "model_comparison_analysis"
