@@ -1,40 +1,78 @@
-# Concern is All You Need: Semantic Untangling with Small Language Models
+# Detecting Semantic Concerns in Tangled Code Changes Using Small Language Models
 
-## Tangled Dataset Naming Convention
+**Author:** Beomsu Koh  
+**Institution:** University of Sheffield  
+**Project Type:** MSc Computer Science Dissertation  
+**Dataset:** [Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs](https://huggingface.co/datasets/Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs)
 
-Each dataset filename is structured to encode its key configuration.
+## Overview
 
-**Format**: `c{N}_t{T}_s{S}_{u|m}_{types}.json`
+This repository contains the complete implementation and analysis for detecting semantic concerns in tangled code changes using Small Language Models (SLMs). The project investigates how fine-tuned SLMs can identify and separate different types of concerns (e.g., fixes, features, refactoring) in multi-concern commits.
 
-#### Components
-- `c{N}`: number of concerns per sample (e.g., `c2` = 2 concerns)
-- `t{T}`: number of concern types available in dataset (e.g., `t4` = 4 types)
-- `s{S}`: number of total samples (e.g., `s10` = 10 cases)
-- `u` or `m`: concern composition strategy
-	- `u`: unique types only (no repeated type in a sample)
-	- `m`: mixed types allowed (types can repeat)
-- `{types}`: ordered concern type abbreviations
+## Project Structure
 
-#### Concern Type Abbreviations
+### 📊 Core Directories
 
-The ranking of concern types is based on the classification performance of GPT-4, following the evaluation protocol from [this paper](https://dl.acm.org/doi/10.1145/3691620.3694999). Specifically, the F1 scores achieved by GPT-4 (G4) across concern categories are used to determine the prioritised order.
+```text
+├── datasets/           # Dataset creation and processing scripts
+├── RQ/                # Research Questions - Models and Analysis
+│   ├── GPT/           # GPT-4.1 inference scripts
+│   ├── Phi/           # Phi-4 model training and inference
+│   ├── Qwen/          # Qwen3-14B model training and inference
+│   └── analysis/      # Results analysis (RQ1, RQ2)
+├── visual_eval/       # Streamlit dashboard for results visualization
+├── scripts/           # HPC deployment scripts for University of Sheffield
+├── results/           # Generated analysis results and outputs
+└── utils/             # Shared utilities (prompts, evaluation, LLM APIs)
+```
 
-| Abbrev | Type   |
-|--------|--------|
-| `ci`   | cicd   |
-| `bu`   | build  |
-| `do`   | docs   |
-| `te`   | test   |
-| `fe`   | feat   |
-| `fi`   | fix    |
-| `re`   | refactor |
-| `st`   | style  |
+### 🗂️ Key Components
 
-#### Filename Examples
+#### `datasets/`
 
-| Filename                          | Description                                         |
-| --------------------------------- | --------------------------------------------------- |
-| `c2_t2_s10_u_ci_bu.json`          | 2 concerns, 2 types, 10 samples, unique types       |
-| `c3_t4_s10_m_ci_bu_do_te.json`    | 3 concerns, 4 types, 10 samples, mixed types        |
-| `c3_t5_s10_u_ci_bu_do_te_fe.json` | 3 concerns, 5 types, 10 samples, unique types       |
+Scripts and tools for creating the HuggingFace dataset used in this research:
 
+- Sample atomic commits from repositories
+- Generate tangled (multi-concern) commits
+- Upload processed data to HuggingFace Hub
+
+#### `RQ/` (Research Questions)
+
+**RQ1: Performance Analysis**
+
+- Model comparison (GPT-4.1 vs Phi-4 vs Fine-tuned Phi-4)
+- Context length impact analysis
+- Message inclusion effects
+
+**RQ2: Efficiency Analysis**
+
+- Inference time correlations
+- Computational complexity analysis
+
+**Model Implementation:**
+
+- `GPT/`: OpenAI GPT-4.1 inference pipeline
+- `Phi/`: Microsoft Phi-4 training and inference
+- `Qwen/`: Qwen3-14B training and inference
+
+#### `visual_eval/`
+
+Interactive Streamlit dashboard for:
+
+- Real-time model evaluation
+- Results visualization
+- Dataset exploration
+
+#### `scripts/`
+
+HPC deployment scripts for University of Sheffield's Stanage cluster:
+
+- Environment setup
+- Training job submission
+- Inference execution
+- GGUF model conversion
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
