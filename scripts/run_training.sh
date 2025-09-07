@@ -15,7 +15,7 @@
 # Sheffield HPC Stanage - A100 GPU Training + GGUF Conversion
 # Multi-Concern Commit Classification with Phi-4/Qwen
 
-MODEL_TYPE="Qwen" # Options: "Phi" or "Qwen"
+MODEL_TYPE="Phi" # Options: "Phi" or "Qwen"
 
 echo "Starting training job: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
