@@ -34,7 +34,7 @@ RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "results"
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Inference constants
-CONTEXT_WINDOWS = [16384,8192,4096,2048,1024]
+CONTEXT_WINDOWS = [12288,8192,4096,2048,1024]
 # CONTEXT_WINDOWS = [1024]
 MAX_TOKENS = 16384
 SEED = 42

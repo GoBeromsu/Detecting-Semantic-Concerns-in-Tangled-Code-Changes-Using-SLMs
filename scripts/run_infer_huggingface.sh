@@ -15,7 +15,7 @@
 # Sheffield HPC Stanage
 # Spec matches fine_tuning/run_training.sh; only job name and entrypoint differ
 
-MODEL_TYPE="Qwen" # Options: "Phi" or "Qwen"
+MODEL_TYPE="Phi" # Options: "Phi" or "Qwen"
 
 echo "Starting inference job: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
