@@ -88,6 +88,9 @@ PER_DEVICE_TRAIN_BATCH_SIZE: int = 1  # Adjust based on GPU memory
 GRADIENT_ACCUMULATION_STEPS: int = 16  # Adjust to maintain effective batch size
 WARMUP_RATIO: float = 0.1  # Experiment with: 0.1, 0.2
 
+# Dataset processing configuration
+NUM_WORKERS: int = 4          # Parallel processing for dataset mapping
+
 # Fixed Training Configuration
 PER_DEVICE_EVAL_BATCH_SIZE: int = 2
 LOGGING_STEPS: int = 100
@@ -144,9 +147,14 @@ def apply_chat_template(row: Dict[str, Any], tokenizer) -> Dict[str, Any]:
 def prepare_dataset(dataset, tokenizer) -> Any:
     """Pipeline: raw → messages → chatML text."""
     cols = dataset.column_names
-    return dataset.map(create_message_column, desc=f"Building messages").map(
+    return dataset.map(
+        create_message_column, 
+        num_proc=NUM_WORKERS,  # Parallel processing for better performance
+        desc=f"Building messages"
+    ).map(
         lambda row: apply_chat_template(row, tokenizer),
         remove_columns=cols,
+        num_proc=NUM_WORKERS,  # Parallel processing for better performance
         desc=f"Applying chatML",
     )
 
