@@ -7,6 +7,7 @@ Input: commit_message, diff → Output: types
 
 Usage: python train.py
 """
+
 # Reference : https://github.com/microsoft/PhiCookBook/blob/main/code/03.Finetuning/Phi-3-finetune-lora-python.ipynb
 import json
 import sys
@@ -42,7 +43,7 @@ logging.basicConfig(
 )
 
 load_dotenv()
-HF_HUB_TOKEN = os.getenv("HF_HUB_TOKEN", None)
+HF_HUB_TOKEN = os.getenv("HF_HUB_TOKEN아", None)
 login(token=HF_HUB_TOKEN)
 
 # Fixed Configuration (Infrastructure & Model Architecture)
@@ -89,7 +90,7 @@ GRADIENT_ACCUMULATION_STEPS: int = 16  # Adjust to maintain effective batch size
 WARMUP_RATIO: float = 0.1  # Experiment with: 0.1, 0.2
 
 # Dataset processing configuration
-NUM_WORKERS: int = 4          # Parallel processing for dataset mapping
+NUM_WORKERS: int = 4  # Parallel processing for dataset mapping
 
 # Fixed Training Configuration
 PER_DEVICE_EVAL_BATCH_SIZE: int = 2
@@ -97,6 +98,7 @@ LOGGING_STEPS: int = 100
 EVAL_STEPS: int = 100
 
 set_seed(SEED)
+
 
 def prepare_datasets():
     """Load and process training datasets"""
@@ -118,6 +120,7 @@ def prepare_datasets():
 
     return processed_train_dataset, processed_test_dataset, tokenizer
 
+
 def create_message_column(row: Dict[str, Any]) -> Dict[str, Any]:
     """Wrap raw commit into system/user/assistant chat format."""
     user_content = (
@@ -135,6 +138,7 @@ def create_message_column(row: Dict[str, Any]) -> Dict[str, Any]:
         ]
     }
 
+
 def apply_chat_template(row: Dict[str, Any], tokenizer) -> Dict[str, Any]:
     """Convert messages into chatML-formatted text."""
     return {
@@ -148,9 +152,9 @@ def prepare_dataset(dataset, tokenizer) -> Any:
     """Pipeline: raw → messages → chatML text."""
     cols = dataset.column_names
     return dataset.map(
-        create_message_column, 
+        create_message_column,
         num_proc=NUM_WORKERS,  # Parallel processing for better performance
-        desc=f"Building messages"
+        desc=f"Building messages",
     ).map(
         lambda row: apply_chat_template(row, tokenizer),
         remove_columns=cols,
@@ -158,9 +162,11 @@ def prepare_dataset(dataset, tokenizer) -> Any:
         desc=f"Applying chatML",
     )
 
+
 ###########
 # Training
 ###########
+
 
 def train_model(processed_train_dataset, tokenizer):
     if torch.cuda.is_bf16_supported():
@@ -311,6 +317,7 @@ def merge_and_upload_model(model, trainer, args, compute_dtype, tokenizer):
 
     return merged_model
 
+
 ###############
 # GGUF Conversion Workflow - Integrated with Training
 ###############
@@ -329,6 +336,7 @@ GGUF_OUTPUT_DIR = f"{WORK_DIR}/gguf_output"
 QUANT_TYPES = ["q4_K_M", "q8_0"]
 MODEL_NAME = NEW_MODEL  # Use consistent naming with conver_to_gguf.py
 HF_REPO_NAME = f"Berom0227/{MODEL_NAME}-gguf"
+
 
 def clear_memory() -> None:
     """CPU memory cleanup for CPU-only workflow"""
@@ -515,25 +523,30 @@ def run_gguf_conversion(merged_model, tokenizer) -> None:
 def main():
     """Main training pipeline execution"""
     logger.info("🚀 Starting Phi-4 fine-tuning pipeline...")
-    
+
     # 1. Setup environment and authentication
     wandb.login()
     wandb.init(project=WANDB_PROJECT, name=EXPERIMENT_NAME)
 
     # 2. Prepare datasets
     processed_train_dataset, processed_test_dataset, tokenizer = prepare_datasets()
-    
+
     # 3. Train the model
-    model, trainer, args, compute_dtype = train_model(processed_train_dataset, tokenizer)
-    
+    model, trainer, args, compute_dtype = train_model(
+        processed_train_dataset, tokenizer
+    )
+
     # 4. Merge and upload model
-    merged_model = merge_and_upload_model(model, trainer, args, compute_dtype, tokenizer)
-    
+    merged_model = merge_and_upload_model(
+        model, trainer, args, compute_dtype, tokenizer
+    )
+
     # 5. Optional GGUF conversion
     try:
         run_gguf_conversion(merged_model, tokenizer)
     except Exception as e:
         logger.error(f"GGUF conversion failed: {e}")
+
 
 if __name__ == "__main__":
     main()

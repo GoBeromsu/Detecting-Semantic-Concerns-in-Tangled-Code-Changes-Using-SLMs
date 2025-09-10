@@ -1,0 +1,52 @@
+# Configuration for Phi-4 model training
+model:
+  id: "microsoft/phi-4"
+  name: "microsoft/phi-4"
+  new_model: "Semantic-Concern-SLM-Phi"
+  dataset_name: "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
+  
+# LoRA configuration
+lora:
+  rank: 16
+  alpha: 16
+  dropout: 0.05
+  target_modules:
+    - "k_proj"
+    - "q_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "down_proj"
+    - "up_proj"
+
+# Training hyperparameters
+training:
+  learning_rate: 5e-5
+  num_train_epochs: 5
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 16
+  warmup_ratio: 0.1
+  logging_steps: 100
+  eval_steps: 100
+  save_strategy: "epoch"
+  seed: 42
+  max_seq_length: 16384
+  packing: true
+
+# Technical configuration
+technical:
+  device_map: "auto"
+  num_workers: 4  # For dataset processing
+
+# Weights & Biases
+wandb:
+  project: "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
+  experiment_name: "phi4-semantic-concern-slm-phi-lora"
+
+# Model card tags
+tags:
+  - "phi-4"
+  - "fine-tuned"
+  - "commit-analysis"
+  - "software-engineering"
