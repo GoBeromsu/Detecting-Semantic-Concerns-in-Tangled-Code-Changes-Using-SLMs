@@ -22,20 +22,31 @@ import wandb
 from datasets import load_dataset
 from peft import LoraConfig, TaskType
 
-
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    TrainingArguments,
     set_seed,
 )
-
+from huggingface_hub import login, create_repo, upload_folder
+from dotenv import load_dotenv
 from transformers.trainer_utils import get_last_checkpoint
 
 from trl import SFTTrainer, SFTConfig
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
 
+
+HF_HUB_TOKEN = os.getenv("HF_HUB_TOKEN", None)
+load_dotenv()
+login(token=HF_HUB_TOKEN)
+
+# Fixed Configuration (Infrastructure & Model Architecture)
+# Qwen3-14B vs Phi-4: Different base model with larger parameters (14B vs ~14B)
 MODEL_ID: str = "Qwen/Qwen3-14B"
 MODEL_NAME: str = "Qwen/Qwen3-14B"
 DATASET_NAME: str = (
@@ -44,32 +55,22 @@ DATASET_NAME: str = (
 
 NEW_MODEL: str = "Semantic-Concern-SLM-Qwen"
 HF_MODEL_REPO: str = "Berom0227/" + NEW_MODEL
-
-
-# Training output configuration - HF Hub delegation
 MODEL_OUTPUT_DIR = f"./outputs/{MODEL_NAME}-LoRA"  # Local training output only
 HF_ADAPTER_REPO = f"Berom0227/{NEW_MODEL}-adapter"
 
-# HF Cache delegation to environment variables
-# Cache directories managed via environment variables and symlinks
 HF_CACHE_DIR = os.getenv("TRANSFORMERS_CACHE", None)
 HF_DATASETS_CACHE = os.getenv("HF_DATASETS_CACHE", None)
 
-# Experiment tracking configuration
 WANDB_PROJECT: str = "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
 EXPERIMENT_NAME: str = f"qwen3-14b-{NEW_MODEL.lower()}-lora"
 
 DEVICE_MAP: str = "auto"
+MAX_SEQ_LENGTH: int = 16_384
+SEED: int = 42  # Same as Phi for consistency
 
-# LoRA hyperparameters optimized for Qwen3-14B (hidden_dim=5120)
-LORA_RANK: int = 128
-LORA_ALPHA: int = 256
-LORA_DROPOUT: float = 0.05
-
-# 'target_modules' is a list of the modules in the model that will be replaced with LoRA layers.
 TARGET_MODULES: list[str] = [
     "k_proj",
-    "q_proj",
+    "q_proj", 
     "v_proj",
     "o_proj",
     "gate_proj",
@@ -77,306 +78,255 @@ TARGET_MODULES: list[str] = [
     "up_proj",
 ]
 
-# Training configuration
-MAX_SEQ_LENGTH: int = 16_384
-NUM_WORKERS: int = 4
+# Experimental Variables (Tune these for different experiments)
+# Qwen3-14B optimized: Larger LoRA parameters due to bigger model size
+LORA_RANK: int = 128          # Qwen: 128 vs Phi: 16 (larger model needs higher rank)
+LORA_ALPHA: int = 256         # Qwen: 256 vs Phi: 16 (scaled with rank)  
+LORA_DROPOUT: float = 0.05    # Same as Phi
 
-set_seed(1234)
+LEARNING_RATE: float = 5e-5   # Same as Phi
+NUM_TRAIN_EPOCHS: int = 5     # Same as Phi
+PER_DEVICE_TRAIN_BATCH_SIZE: int = 1  # Same as Phi
+GRADIENT_ACCUMULATION_STEPS: int = 16 # Same as Phi
+WARMUP_RATIO: float = 0.1     # Same as Phi
 
-######################
-# Connect to Hugging Face Hub
-######################
-from huggingface_hub import login, create_repo, upload_folder
-from dotenv import load_dotenv
+# Dataset processing configuration
+NUM_WORKERS: int = 4          # Parallel processing for dataset mapping (same as Phi)
 
-# Load environment variables from .env file
-load_dotenv()
+# Fixed Training Configuration
+PER_DEVICE_EVAL_BATCH_SIZE: int = 2
+LOGGING_STEPS: int = 100
+EVAL_STEPS: int = 100
 
-# Login to Hugging Face Hub using token from environment
-HF_HUB_TOKEN = os.getenv("HF_HUB_TOKEN", None)
-login(token=HF_HUB_TOKEN)
-
-######################
-# Setup Experiment Tracking
-######################
-# Initialize Weights & Biases following reference notebook pattern
-wandb.login()
-wandb.init(project=WANDB_PROJECT, name=EXPERIMENT_NAME)
-
-## Dataset Loading
-train_dataset = load_dataset(
-    DATASET_NAME,
-    split="train",
-    cache_dir=HF_DATASETS_CACHE,
-)
-
-test_dataset = load_dataset(
-    DATASET_NAME,
-    split="test",
-    cache_dir=HF_DATASETS_CACHE,
-)
-
-######################
-# Step 1: Dataset Preprocessing Setup
-######################
-# Load tokenizer for data formatting
-tokenizer_id = MODEL_ID
-tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, cache_dir=HF_CACHE_DIR)
-tokenizer.padding_side = "right"
-
-###############
-# Setup logging
-###############
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
+set_seed(SEED)
 
 
-######################
-# Step 2: Dataset Processing for Fine-tuning
-######################
-def create_message_column(row) -> Dict[str, Any]:
-    """Create messages column for multi-concern commit classification."""
-    # Create structured prompt for commit analysis
-    # user_content = f"# Commit Message\n{row['commit_message']}\n\n# Diff\n```diff\n{row['diff']}\n```\n"
+def setup_environment():
+    """Initialize environment and authentication"""
+    wandb.login()
+    wandb.init(project=WANDB_PROJECT, name=EXPERIMENT_NAME)
+
+
+def prepare_datasets():
+    """Load and process training datasets"""
+    train_dataset = load_dataset(DATASET_NAME, split="train", cache_dir=HF_DATASETS_CACHE)
+    test_dataset = load_dataset(DATASET_NAME, split="test", cache_dir=HF_DATASETS_CACHE)
+    
+    # Same tokenizer settings as Phi for consistency
+    tokenizer = AutoTokenizer.from_pretrained(
+        MODEL_ID,
+        trust_remote_code=True,
+        use_fast=True,
+        cache_dir=HF_CACHE_DIR,
+    )
+    tokenizer.padding_side = "left"  # Same as Phi
+    
+    processed_train_dataset = prepare_dataset(train_dataset, tokenizer)
+    processed_test_dataset = prepare_dataset(test_dataset, tokenizer)
+    
+    return processed_train_dataset, processed_test_dataset, tokenizer
+
+
+def create_message_column(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Wrap raw commit into system/user/assistant chat format."""
     user_content = (
         f"- given commit message:\n {row['commit_message']}\n Diff: {row['diff']}"
     )
-    parsed_types = json.loads(row["types"])
-    assistant_content = json.dumps({"types": parsed_types}, ensure_ascii=False)
+    assistant_content = json.dumps(
+        {"types": json.loads(row["types"])}, ensure_ascii=False
+    )
 
-    messages = [
-        {"role": "system", "content": get_system_prompt()},
-        {"role": "user", "content": user_content},
-        {"role": "assistant", "content": assistant_content},
-    ]
+    return {
+        "messages": [
+            {"role": "system", "content": get_system_prompt()},
+            {"role": "user", "content": user_content},
+            {"role": "assistant", "content": assistant_content},
+        ]
+    }
 
-    return {"messages": messages}
-
-
-def format_dataset_chatml(row) -> Dict[str, Any]:
-    """Format dataset with chat template for multi-concern commit classification."""
+def apply_chat_template(row: Dict[str, Any], tokenizer) -> Dict[str, Any]:
+    """Convert messages into chatML-formatted text."""
     return {
         "text": tokenizer.apply_chat_template(
             row["messages"], tokenize=False, add_generation_prompt=False
         )
     }
 
+def prepare_dataset(dataset, tokenizer) -> Any:
+    """Pipeline: raw → messages → chatML text."""
+    cols = dataset.column_names
+    return dataset.map(
+        create_message_column, 
+        num_proc=NUM_WORKERS,  # Parallel processing for better performance
+        desc=f"Building messages"
+    ).map(
+        lambda row: apply_chat_template(row, tokenizer),
+        remove_columns=cols,
+        num_proc=NUM_WORKERS,  # Parallel processing for better performance
+        desc=f"Applying chatML",
+    )
 
-column_names = list(train_dataset.features)
+###########
+# Training
+###########
 
-# Apply chat template formatting to training data
-train_dataset_with_messages = train_dataset.map(
-    create_message_column,
-    num_proc=NUM_WORKERS,
-    desc="Creating messages column for multi-concern commit train data",
-)
+def train_model(processed_train_dataset, tokenizer):
+    # Same precision logic as Phi
+    if torch.cuda.is_bf16_supported():
+        compute_dtype, attn_implementation = torch.bfloat16, "flash_attention_2"
+    else:
+        compute_dtype, attn_implementation = torch.float16, "sdpa"
 
-processed_train_dataset = train_dataset_with_messages.map(
-    format_dataset_chatml,
-    num_proc=NUM_WORKERS,
-    remove_columns=column_names,
-    desc="Applying chat template to multi-concern commit train data",
-)
+    # Same tokenizer setup as Phi
+    tokenizer.padding_side = "left"
 
-# Apply chat template formatting to test data (optional)
-test_dataset_with_messages = test_dataset.map(
-    create_message_column,
-    num_proc=NUM_WORKERS,
-    desc="Creating messages column for multi-concern commit test data",
-)
-
-processed_test_dataset = test_dataset_with_messages.map(
-    format_dataset_chatml,
-    num_proc=NUM_WORKERS,
-    remove_columns=column_names,
-    desc="Applying chat template to multi-concern commit test data",
-)
-
-######################
-# Step 3: Model and Tokenizer Setup for Training
-######################
-# Configure precision and attention implementation
-if torch.cuda.is_bf16_supported():
-    compute_dtype = torch.bfloat16
-    attn_implementation = "flash_attention_2"
-else:
-    compute_dtype = torch.float16
-    attn_implementation = "sdpa"
-
-# Load tokenizer for training (with specific settings for causal LM)
-tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_ID,
-    trust_remote_code=True,
-    add_eos_token=True,
-    use_fast=True,
-    cache_dir=HF_CACHE_DIR,
-)
-tokenizer.padding_side = "left"  # Left padding for causal LM
-
-# Load pre-trained Qwen3-14B model
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_ID,
-    torch_dtype=compute_dtype,
-    trust_remote_code=True,
-    device_map=DEVICE_MAP,
-    attn_implementation=attn_implementation,
-    cache_dir=HF_CACHE_DIR,
-)
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL_ID,
+        torch_dtype=compute_dtype,
+        trust_remote_code=True,
+        device_map=DEVICE_MAP,
+        attn_implementation=attn_implementation,
+        cache_dir=HF_CACHE_DIR,
+    )
 
 
-######################
-# Step 4: LoRA Configuration and Training Setup
-######################
+    args = SFTConfig(
+        output_dir=MODEL_OUTPUT_DIR,
+        eval_strategy="no",
+        optim="adamw_torch",
+        per_device_train_batch_size=PER_DEVICE_TRAIN_BATCH_SIZE,
+        gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
+        gradient_checkpointing=True,
+        per_device_eval_batch_size=PER_DEVICE_EVAL_BATCH_SIZE,
+        log_level="debug",
+        save_strategy="epoch",  # Same as Phi
+        logging_steps=LOGGING_STEPS,
+        learning_rate=LEARNING_RATE,
+        fp16=not torch.cuda.is_bf16_supported(),
+        bf16=torch.cuda.is_bf16_supported(),
+        eval_steps=EVAL_STEPS,
+        num_train_epochs=NUM_TRAIN_EPOCHS,
+        warmup_ratio=WARMUP_RATIO,
+        lr_scheduler_type="linear",
+        report_to="wandb",
+        seed=SEED,  # Same as Phi
+        push_to_hub=True,
+        hub_strategy="every_save",
+        hub_model_id=HF_MODEL_REPO + "-adapter",
+        max_length=MAX_SEQ_LENGTH,
+        packing=True,
+    )
 
-
-# Configure LoRA (Low-Rank Adaptation) for efficient fine-tuning
-peft_config = LoraConfig(
-    r=LORA_RANK,
-    lora_alpha=LORA_ALPHA,
-    lora_dropout=LORA_DROPOUT,
-    task_type=TaskType.CAUSAL_LM,
-    target_modules=TARGET_MODULES,
-)
-
-# Training configuration
-args = SFTConfig(
-    output_dir=MODEL_OUTPUT_DIR,
-    eval_strategy="no",
-    optim="adamw_torch",
-    per_device_train_batch_size=1,  # Reduce memory usage
-    gradient_accumulation_steps=16,  # Compensate for small batch size
-    gradient_checkpointing=True,  # Further reduce memory usage
-    per_device_eval_batch_size=2,
-    log_level="debug",
-    save_strategy="no",  # HPC guarantees full training; checkpoint loading requires PyTorch 2.6.0+ (CUDA 12.1+ only) - see https://pytorch.org/get-started/previous-versions/
-    logging_steps=100,
-    learning_rate=5e-5,
-    fp16=not torch.cuda.is_bf16_supported(),
-    bf16=torch.cuda.is_bf16_supported(),
-    eval_steps=100,
-    num_train_epochs=5,
-    warmup_ratio=0.1,
-    lr_scheduler_type="linear",
-    report_to="wandb",
-    seed=42,
-    push_to_hub=True,
-    hub_strategy="every_save",
-    hub_model_id=HF_MODEL_REPO + "-adapter",
-    max_length=MAX_SEQ_LENGTH,
-    packing=True,
-)
-
-# Update W&B config with hyperparameters
-wandb.config.update(
-    {
-        "model_id": MODEL_ID,
-        "learning_rate": 1e-4,
-        "num_train_epochs": 3,
-        "logging_steps": 100,
-        "eval_steps": 100,
-        "per_device_train_batch_size": 1,
-        "gradient_accumulation_steps": 16,
-        "lora_r": LORA_RANK,
-        "lora_alpha": LORA_ALPHA,
-        "lora_dropout": LORA_DROPOUT,
-        "max_length": MAX_SEQ_LENGTH,
-    },
-    allow_val_change=True,
-)
-
-######################
-# Step 5: Fine-tuning Execution
-######################
-# Initialize SFT trainer with LoRA configuration
-trainer = SFTTrainer(
-    model=model,
-    train_dataset=processed_train_dataset,
-    peft_config=peft_config,
-    processing_class=tokenizer,
-    args=args,
-)
-
-# Check for existing checkpoints and resume if available
-last_checkpoint = None
-if os.path.isdir(args.output_dir):
-    last_checkpoint = get_last_checkpoint(args.output_dir)
-
-# Start training
-if last_checkpoint is not None:
-    trainer.train(resume_from_checkpoint=last_checkpoint)
-else:
-    trainer.train()
-
-# Save the trained LoRA adapter
-trainer.save_model()
-
-# Log the trained adapter checkpoint directory as a W&B Artifact for traceability
-adapter_artifact = wandb.Artifact(
-    name=f"{NEW_MODEL.lower()}-adapter",
-    type="model",
-    metadata={
-        "base_model": MODEL_ID,
-        "peft": {"r": LORA_RANK, "alpha": LORA_ALPHA, "dropout": LORA_DROPOUT},
-        "training": {
-            "learning_rate": 1e-4,
-            "epochs": 3,
-            "per_device_train_batch_size": 1,
-            "gradient_accumulation_steps": 16,
+    # Make the most relevant hyperparameters visible in the W&B run config
+    wandb.config.update(
+        {
+            "model_id": MODEL_ID,
+            "learning_rate": LEARNING_RATE,
+            "num_train_epochs": NUM_TRAIN_EPOCHS,
+            "logging_steps": LOGGING_STEPS,
+            "eval_steps": EVAL_STEPS,
+            "per_device_train_batch_size": PER_DEVICE_TRAIN_BATCH_SIZE,
+            "gradient_accumulation_steps": GRADIENT_ACCUMULATION_STEPS,
+            "lora_r": LORA_RANK,
+            "lora_alpha": LORA_ALPHA,
+            "lora_dropout": LORA_DROPOUT,
             "max_length": MAX_SEQ_LENGTH,
         },
-    },
-)
-adapter_artifact.add_dir(args.output_dir)
-wandb.log_artifact(adapter_artifact)
+        allow_val_change=True,
+    )
 
-# Create model card before freeing trainer
-print("📝 Creating model card and uploading to Hub...")
-trainer.create_model_card(
-    model_name=HF_MODEL_REPO,
-    tags=["qwen3-14b", "fine-tuned", "commit-analysis", "software-engineering"],
-    dataset_name=[
-        "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
-    ],
-)
+    peft_config = LoraConfig(
+        r=LORA_RANK,
+        lora_alpha=LORA_ALPHA,
+        lora_dropout=LORA_DROPOUT,
+        task_type=TaskType.CAUSAL_LM,
+        target_modules=TARGET_MODULES,
+    )
 
-wandb.finish()
+    trainer = SFTTrainer(
+        model=model,
+        train_dataset=processed_train_dataset,
+        peft_config=peft_config,
+        processing_class=tokenizer,
+        args=args,
+    )
 
-######################
-# Step 6: Model Merging and Upload to Hub
-######################
-# Free up GPU memory before merging
-del model
-del trainer
-import gc
+    last_checkpoint = None
+    if os.path.isdir(args.output_dir):
+        last_checkpoint = get_last_checkpoint(args.output_dir)
 
-gc.collect()
-torch.cuda.empty_cache()
-gc.collect()
+    if last_checkpoint is not None:
+        trainer.train(resume_from_checkpoint=last_checkpoint)
+    else:
+        trainer.train()
 
-from peft import AutoPeftModelForCausalLM
+    trainer.save_model()
 
-# Load the trained LoRA adapter and merge with base model
-new_model = AutoPeftModelForCausalLM.from_pretrained(
-    args.output_dir,
-    low_cpu_mem_usage=True,
-    return_dict=True,
-    torch_dtype=compute_dtype,
-    trust_remote_code=True,
-    device_map=DEVICE_MAP,
-    cache_dir=HF_CACHE_DIR,
-)
+    adapter_artifact = wandb.Artifact(
+        name=f"{NEW_MODEL.lower()}-adapter",
+        type="model",
+        metadata={
+            "base_model": MODEL_ID,
+            "peft": {"r": LORA_RANK, "alpha": LORA_ALPHA, "dropout": LORA_DROPOUT},
+            "training": {
+                "learning_rate": LEARNING_RATE,
+                "epochs": NUM_TRAIN_EPOCHS,
+                "per_device_train_batch_size": PER_DEVICE_TRAIN_BATCH_SIZE,
+                "gradient_accumulation_steps": GRADIENT_ACCUMULATION_STEPS,
+                "max_length": MAX_SEQ_LENGTH,
+            },
+        },
+    )
+    adapter_artifact.add_dir(args.output_dir)
+    wandb.log_artifact(adapter_artifact)
 
-# Merge LoRA weights into the base model
-merged_model = new_model.merge_and_unload()
+    # Create model card before freeing trainer
+    print("📝 Creating model card and uploading to Hub...")
+    trainer.create_model_card(
+        model_name=HF_MODEL_REPO,
+        tags=["qwen3-14b", "fine-tuned", "commit-analysis", "software-engineering"],
+        dataset_name=[DATASET_NAME],
+    )
 
-# Upload merged model to Hugging Face Hub
-merged_model.push_to_hub(HF_MODEL_REPO)
-tokenizer.push_to_hub(HF_MODEL_REPO)
+    # Close the W&B run cleanly
+    wandb.finish()
+    
+    return model, trainer, args, compute_dtype
 
-print(f"🚀 Model successfully uploaded to: https://huggingface.co/{HF_MODEL_REPO}")
+def merge_and_upload_model(model, trainer, args, compute_dtype, tokenizer):
+    """Merge LoRA adapter with base model and upload to HF Hub"""
+    print("🔄 Merging LoRA adapter with base model...")
+    
+    # Free up GPU memory before merging
+    del model
+    del trainer
+    gc.collect()
+    torch.cuda.empty_cache()
+    gc.collect()
+
+    # Import AutoPeftModelForCausalLM for merging
+    from peft import AutoPeftModelForCausalLM
+
+    # Load the trained adapter model
+    new_model = AutoPeftModelForCausalLM.from_pretrained(
+        args.output_dir,
+        low_cpu_mem_usage=True,
+        return_dict=True,
+        torch_dtype=compute_dtype,
+        trust_remote_code=True,
+        device_map=DEVICE_MAP,
+        cache_dir=HF_CACHE_DIR,
+    )
+
+    # Merge the model and adapter
+    merged_model = new_model.merge_and_unload()
+
+    merged_model.push_to_hub(HF_MODEL_REPO)
+    tokenizer.push_to_hub(HF_MODEL_REPO)
+
+    print(f"🚀 Model successfully uploaded to: https://huggingface.co/{HF_MODEL_REPO}")
+    
+    return merged_model
 
 ######################
 # Step 7: GGUF Conversion (Optional)
@@ -425,12 +375,13 @@ def check_dependencies() -> bool:
     return True
 
 
-def prepare_model_for_gguf() -> bool:
-    """Save merged model for GGUF conversion"""
+def prepare_model_for_gguf(merged_model, tokenizer) -> bool:
+    """Prepare already loaded model for GGUF conversion"""
     try:
         os.makedirs(GGUF_OUTPUT_DIR, exist_ok=True)
         os.makedirs(MERGED_MODEL_DIR, exist_ok=True)
 
+        # Save the already merged model (no need to re-download from HF Hub)
         merged_model.save_pretrained(
             MERGED_MODEL_DIR, safe_serialization=True, max_shard_size="2GB"
         )
@@ -517,23 +468,24 @@ def upload_to_huggingface() -> bool:
         return False
 
 
-def run_gguf_conversion_workflow() -> None:
-    """Execute complete GGUF conversion workflow"""
+def run_gguf_conversion_workflow(merged_model, tokenizer) -> None:
+    """Execute GGUF conversion workflow - Top-down clean approach"""
     logger.info("Starting GGUF conversion workflow...")
 
+    # Check prerequisites first
     if not check_dependencies():
         logger.error("Dependencies check failed, skipping GGUF conversion")
         logger.info(
-            "💡 You can run GGUF conversion separately later using: python RQ/Qwen/conver_to_gguf.py"
+            "💡 You can run GGUF conversion separately later using: python RQ/Qwen/convert_to_gguf.py"
         )
         return
 
-    if not prepare_model_for_gguf():
+    # Prepare model for conversion
+    if not prepare_model_for_gguf(merged_model, tokenizer):
         logger.error("Model preparation failed")
         return
 
     # Clean up memory before conversion
-    del merged_model, new_model
     clear_memory()
 
     # Convert to FP16
@@ -543,31 +495,57 @@ def run_gguf_conversion_workflow() -> None:
         return
 
     # Quantize models
-    success_count = 1
+    success_count = 1  # Count FP16 as success
     for quant_type in QUANT_TYPES:
         quantized_file = quantize_model(fp16_file, quant_type)
         if quantized_file:
             success_count += 1
+        else:
+            logger.warning(f"Skipping {quant_type} quantization")
 
     logger.info(f"✅ {success_count} model(s) created successfully")
 
-    # Upload to Hub
-    if upload_to_huggingface():
-        logger.info("🎉 GGUF conversion completed!")
-        logger.info(f"GGUF models available at: https://huggingface.co/{HF_REPO_NAME}")
+    # Upload to HF Hub
+    if not upload_to_huggingface():
+        logger.error("GGUF upload failed")
+        return
 
-    # Cleanup
+    # Success - cleanup and finish
+    logger.info("🎉 GGUF conversion and upload completed successfully!")
+    logger.info(f"GGUF models available at: https://huggingface.co/{HF_REPO_NAME}")
+
+    # Cleanup temporary workspace
     shutil.rmtree(WORK_DIR, ignore_errors=True)
     logger.info("🧹 Temporary workspace cleaned up")
 
 
-# Execute GGUF conversion workflow
-try:
-    run_gguf_conversion_workflow()
-except Exception as e:
-    logger.error(f"GGUF conversion failed: {e}")
-    logger.info(
-        "💡 You can run GGUF conversion separately later using: python RQ/Qwen/conver_to_gguf.py"
-    )
+def main():
+    """Main training pipeline execution"""
+    logger.info("🚀 Starting Qwen3-14B fine-tuning pipeline...")
+    
+    # 1. Setup environment and authentication
+    setup_environment()
+    
+    # 2. Prepare datasets
+    processed_train_dataset, processed_test_dataset, tokenizer = prepare_datasets()
+    
+    # 3. Train the model
+    model, trainer, args, compute_dtype = train_model(processed_train_dataset, tokenizer)
+    
+    # 4. Merge and upload model
+    merged_model = merge_and_upload_model(model, trainer, args, compute_dtype, tokenizer)
+    
+    # 5. Optional GGUF conversion
+    try:
+        run_gguf_conversion_workflow(merged_model, tokenizer)
+    except Exception as e:
+        logger.error(f"GGUF conversion failed: {e}")
+        logger.info(
+            "💡 You can run GGUF conversion separately later using: python RQ/Qwen/convert_to_gguf.py"
+        )
+    
+    print("🎉 Training and GGUF conversion workflow completed!")
 
-print("🎉 Training and GGUF conversion workflow completed!")
+
+if __name__ == "__main__":
+    main()
