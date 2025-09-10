@@ -3,24 +3,25 @@
 #SBATCH --time=12:00:00
 #SBATCH --partition=gpu-h100
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=256GB
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=128GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --output=logs/train_%j.out
-#SBATCH --error=logs/train_%j.err
+#SBATCH --output=logs/train_%x_%j.out
+#SBATCH --error=logs/train_%x_%j.err
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
-# Sheffield HPC Stanage - A100 GPU Training + GGUF Conversion
-# Multi-Concern Commit Classification with Phi-4/Qwen
+set -euo pipefail
 
-MODEL_TYPE="Phi" # Options: "Phi" or "Qwen"
+MODEL_TYPE=${1:-"Phi"}
+[[ "$MODEL_TYPE" =~ ^(Phi|Qwen)$ ]] || { echo "MODEL_TYPE must be Phi or Qwen"; exit 1; }
 
+echo "MODEL_TYPE=${MODEL_TYPE}"
 echo "Starting training job: $SLURM_JOB_ID"
-echo "Node: $SLURM_NODELIST"
 echo "Allocated CPUs: $SLURM_CPUS_PER_TASK, Memory: $SLURM_MEM_PER_NODE MB"
 
+# Load required modules
 module purge
 module load GCCcore/12.3.0
 module load CUDA/12.1.1
@@ -48,11 +49,9 @@ fi
 # Return to original directory
 cd "$SLURM_SUBMIT_DIR"
 
-# Ensure logs directory exists
 mkdir -p logs
 
-# Activate environment using 'source activate' instead of 'conda activate'
-echo "🔧 Activating phi4_env..."
+# Activate Python environment
 source activate phi4_env
 
 # Set environment variables
@@ -61,32 +60,28 @@ export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
 export TOKENIZERS_PARALLELISM=false
 export NCCL_DEBUG=INFO  # Multi-GPU communication debugging
 
-# Start periodic GPU utilization logging (every 60 s)
+# Start GPU monitoring
 GPU_LOG="logs/gpu_usage_${SLURM_JOB_ID}_${MODEL_TYPE}.csv"
-echo "timestamp,power.draw[W],gpu.util[%],mem.util[%],mem.used[MiB]" > "$GPU_LOG"
+echo "timestamp,power.draw[W],gpu.util[%],mem.util[%],mem.used[MiB],temp.gpu[C]" > "$GPU_LOG"
 (
   while true; do
-    nvidia-smi --query-gpu=timestamp,power.draw,utilization.gpu,utilization.memory,memory.used --format=csv,noheader >> "$GPU_LOG"
+    nvidia-smi --query-gpu=timestamp,power.draw,utilization.gpu,utilization.memory,memory.used,temperature.gpu --format=csv,noheader,nounits >> "$GPU_LOG"
     sleep 60
   done
 ) &
 GPU_MON_PID=$!
 
-# Ensure GPU logger is terminated on script exit
+# Cleanup function
 cleanup() {
   kill "$GPU_MON_PID" 2>/dev/null || true
 }
 trap cleanup EXIT
 
-# Run training
-echo "🔥 Starting ${MODEL_TYPE} training at $(date)"
+# Start training
+echo "Starting ${MODEL_TYPE} training at $(date)"
 python -u RQ/${MODEL_TYPE}/train.py
-
-echo "✅ Training completed at $(date)"
+echo "Training completed at $(date)"
 
 # Display basic job info
-echo "📊 Job Summary:"
 sacct -j $SLURM_JOB_ID --format=JobID,JobName,Elapsed,State,ExitCode
-
-
 source deactivate 
