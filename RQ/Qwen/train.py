@@ -41,8 +41,8 @@ logging.basicConfig(
 )
 
 
-HF_HUB_TOKEN = os.getenv("HF_HUB_TOKEN", None)
 load_dotenv()
+HF_HUB_TOKEN = os.getenv("HF_HUB_TOKEN", None)
 login(token=HF_HUB_TOKEN)
 
 # Fixed Configuration (Infrastructure & Model Architecture)
