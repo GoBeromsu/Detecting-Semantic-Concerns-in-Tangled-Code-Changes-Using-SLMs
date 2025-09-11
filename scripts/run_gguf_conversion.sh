@@ -76,7 +76,7 @@ echo "✅ Found project root: $PROJECT_ROOT"
 cd "$PROJECT_ROOT"
 
 # Set converter script path
-CONVERTER="$PROJECT_ROOT/RQ/Phi/conver_to_gguf.py"
+CONVERTER="$PROJECT_ROOT/RQ/SLM/convert_to_gguf.py"
 
 if [ ! -f "$CONVERTER" ]; then
     echo "❌ Could not locate conver_to_gguf.py at: $CONVERTER"
@@ -85,9 +85,12 @@ fi
 
 echo "✅ Found converter script: $CONVERTER"
 
-# Run GGUF conversion
-echo "🚀 Starting GGUF conversion at $(date)"
-python "$CONVERTER" | tee -a "logs/convert_output_${SLURM_JOB_ID}.log"
+# Determine model type from first argument or default to phi
+MODEL_TYPE=${1:-"phi"}
+
+# Run GGUF conversion with model type
+echo "🚀 Starting GGUF conversion for ${MODEL_TYPE} at $(date)"
+python "$CONVERTER" --model "${MODEL_TYPE,,}" | tee -a "logs/convert_output_${SLURM_JOB_ID}.log"
 
 conversion_exit_code=$?
 
