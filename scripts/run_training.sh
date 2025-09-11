@@ -53,7 +53,6 @@ mkdir -p logs
 
 # Activate Python environment
 source activate phi4_env
-
 # Set environment variables
 export CUDA_VISIBLE_DEVICES=0
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
@@ -79,7 +78,14 @@ trap cleanup EXIT
 
 # Start training
 echo "Starting ${MODEL_TYPE} training at $(date)"
-python -u RQ/${MODEL_TYPE}/train.py
+if [[ "$MODEL_TYPE" == "Phi" ]]; then
+    python -u RQ/SLM/train.py --config RQ/SLM/configs/phi.yml
+elif [[ "$MODEL_TYPE" == "Qwen" ]]; then
+    python -u RQ/SLM/train.py --config RQ/SLM/configs/qwen.yml
+else
+    echo "Unsupported MODEL_TYPE: $MODEL_TYPE"
+    exit 1
+fi
 echo "Training completed at $(date)"
 
 # Display basic job info

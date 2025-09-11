@@ -254,12 +254,11 @@ def train_model(processed_train_dataset, tokenizer, config: Dict[str, Any]):
     # Save model
     trainer.save_model()
     
-    # Log artifact to W&B
-    adapter_artifact = wandb.Artifact(
-        name=f"{config['model']['new_model'].lower()}-adapter",
-        type="model",
-        metadata={
+    # Log metadata to W&B (artifact upload delegated to Hugging Face Hub via push_to_hub=True)
+    wandb.log({
+        "model_metadata": {
             "base_model": config['model']['id'],
+            "hf_adapter_repo": hf_adapter_repo,
             "peft": {
                 "r": config['lora']['rank'], 
                 "alpha": config['lora']['alpha'], 
@@ -272,10 +271,8 @@ def train_model(processed_train_dataset, tokenizer, config: Dict[str, Any]):
                 "gradient_accumulation_steps": config['training']['gradient_accumulation_steps'],
                 "max_length": config['training']['max_seq_length'],
             },
-        },
-    )
-    adapter_artifact.add_dir(args.output_dir)
-    wandb.log_artifact(adapter_artifact)
+        }
+    })
     
     # Create model card
     logger.info("📝 Creating model card and uploading to Hub...")
