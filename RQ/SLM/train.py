@@ -3,8 +3,8 @@
 Unified Training Script for Fine-tuning Language Models
 
 Usage:
-    python train.py --config config/phi.yml
-    python train.py --config config/qwen.yml
+    python train.py --config configs/phi.yml
+    python train.py --config configs/qwen.yml
     python train.py  # Default: config/phi.yml
 """
 
@@ -159,6 +159,8 @@ def train_model(processed_train_dataset, tokenizer, config: Dict[str, Any]):
     else:
         compute_dtype, attn_implementation = torch.float16, "sdpa"
     
+    learning_rate = float(config['training']['learning_rate'])
+    
     # Load model
     model = AutoModelForCausalLM.from_pretrained(
         config['model']['id'],
@@ -186,7 +188,7 @@ def train_model(processed_train_dataset, tokenizer, config: Dict[str, Any]):
         log_level="debug",
         save_strategy=config['training']['save_strategy'],
         logging_steps=config['training']['logging_steps'],
-        learning_rate=config['training']['learning_rate'],
+        learning_rate=learning_rate,
         fp16=not torch.cuda.is_bf16_supported(),
         bf16=torch.cuda.is_bf16_supported(),
         eval_steps=config['training']['eval_steps'],
@@ -206,7 +208,7 @@ def train_model(processed_train_dataset, tokenizer, config: Dict[str, Any]):
     wandb.config.update(
         {
             "model_id": config['model']['id'],
-            "learning_rate": config['training']['learning_rate'],
+            "learning_rate": learning_rate,
             "num_train_epochs": config['training']['num_train_epochs'],
             "logging_steps": config['training']['logging_steps'],
             "eval_steps": config['training']['eval_steps'],
