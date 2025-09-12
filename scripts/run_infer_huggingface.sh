@@ -12,11 +12,12 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
-# Sheffield HPC Stanage
-# Spec matches fine_tuning/run_training.sh; only job name and entrypoint differ
+set -euo pipefail
 
-MODEL_TYPE="Phi" # Options: "Phi" or "Qwen"
+MODEL_TYPE=${1:-"Phi"}
+[[ "$MODEL_TYPE" =~ ^(Phi|Qwen)$ ]] || { echo "MODEL_TYPE must be Phi or Qwen"; exit 1; }
 
+echo "MODEL_TYPE=${MODEL_TYPE}"
 echo "Starting inference job: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
 echo "Allocated CPUs: $SLURM_CPUS_PER_TASK, Memory: $SLURM_MEM_PER_NODE MB"
@@ -51,7 +52,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "🚀 Starting inference at $(date)"
-python -u RQ/${MODEL_TYPE}/infer_huggingface.py | tee -a "logs/infer_output_${SLURM_JOB_ID}_${MODEL_TYPE}.log"
+python -u RQ/SLM/infer.py --model "${MODEL_TYPE,,}" | tee -a "logs/infer_output_${SLURM_JOB_ID}_${MODEL_TYPE}.log"
 
 echo "✅ Inference completed at $(date)"
 
