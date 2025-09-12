@@ -18,9 +18,6 @@ MODEL_TYPE=${1:-"Phi"}
 [[ "$MODEL_TYPE" =~ ^(Phi|Qwen)$ ]] || { echo "MODEL_TYPE must be Phi or Qwen"; exit 1; }
 
 echo "MODEL_TYPE=${MODEL_TYPE}"
-echo "Starting inference job: $SLURM_JOB_ID"
-echo "Node: $SLURM_NODELIST"
-echo "Allocated CPUs: $SLURM_CPUS_PER_TASK, Memory: $SLURM_MEM_PER_NODE MB"
 
 # Ensure logs directory exists
 mkdir -p logs

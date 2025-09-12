@@ -60,8 +60,8 @@ MODEL_CONFIGS = {
     }
 }
 
-# Experiment configuration
-RESULTS_ROOT: Path = Path(__file__).resolve().parents[1] / "results"
+# Experiment configuration  
+RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "results"
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Default inference parameters
@@ -185,7 +185,7 @@ def run_inference(
     if shot_types is None:
         shot_types = DEFAULT_SHOT_TYPES
     
-    # Get compute device
+    # Get compute device (for information only)
     device = get_compute_device()
     
     # Create results directory
