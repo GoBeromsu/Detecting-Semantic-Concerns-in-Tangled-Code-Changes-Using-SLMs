@@ -10,9 +10,12 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
-# Sheffield HPC Stanage - CPU-only GGUF Conversion for Phi-4 Fine-tuned Model
-# Convert merged LoRA model to GGUF format and upload to Hugging Face
+set -euo pipefail
 
+MODEL_TYPE=${1:-"Phi"}
+[[ "$MODEL_TYPE" =~ ^(Phi|Qwen)$ ]] || { echo "MODEL_TYPE must be Phi or Qwen"; exit 1; }
+
+echo "MODEL_TYPE=${MODEL_TYPE}"
 echo "Starting GGUF conversion job: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
 echo "Allocated CPUs: $SLURM_CPUS_PER_TASK, Memory: $SLURM_MEM_PER_NODE MB"
@@ -84,12 +87,9 @@ fi
 
 echo "✅ Found converter script: $CONVERTER"
 
-# Determine model type from first argument or default to phi
-MODEL_TYPE=${1:-"phi"}
-
 # Run GGUF conversion with model type
 echo "🚀 Starting GGUF conversion for ${MODEL_TYPE} at $(date)"
-python "$CONVERTER" --model "${MODEL_TYPE,,}" | tee -a "logs/convert_output_${SLURM_JOB_ID}.log"
+python "$CONVERTER" --model "${MODEL_TYPE,,}" | tee -a "logs/convert_output_${SLURM_JOB_ID}_${MODEL_TYPE}.log"
 
 conversion_exit_code=$?
 
