@@ -167,13 +167,14 @@ def run_inference(
     # Get compute device (for information only)
     device = get_compute_device()
     
-    # Create results directory
+    # Create results directory - match Phi structure
     model_display_name = model_config["model_name"]
-    experiment_dir = RESULTS_ROOT / f"infer_{model_display_name}_{START_TIME_STR}"
-    experiment_dir.mkdir(parents=True, exist_ok=True)
+    base_model_dir = RESULTS_ROOT / model_display_name / START_TIME_STR
+    print(f"Creating base results directory: {base_model_dir}")
+    base_model_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"Starting inference for {model_display_name}")
-    print(f"Results will be saved to: {experiment_dir}")
+    print(f"Results will be saved to: {base_model_dir}")
     
 
     # Pre-load GGUF model for better performance (all SLM models are GGUF)
@@ -190,16 +191,27 @@ def run_inference(
         "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs",
         split="test"
     )
+    dataset_df = pd.DataFrame(dataset)
     
-    # Run experiments for different configurations
+    # Run experiments for different configurations (Zero-shot only)
     for shot_type, context_len in product(shot_types, context_windows):
         print(f"\n{'='*60}")
         print(f"Configuration: {shot_type}, Context: {context_len}, Message: {include_message}")
         print(f"{'='*60}")
         
-        # Prepare output path
-        csv_filename = f"{model_display_name}_{shot_type}_ctx{context_len}_msg{include_message}.csv"
-        csv_path = experiment_dir / csv_filename
+        # Get system prompt
+        system_prompt = prompt.get_prompt_by_type(
+            shot_type=shot_type, include_message=include_message
+        )
+        
+        # Create folder structure based on message inclusion (match Phi structure)
+        msg_flag = "msg1" if include_message else "msg0"
+        model_dir = base_model_dir / msg_flag
+        model_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Prepare output path with Phi-style naming (Zero-shot only)
+        csv_filename = f"{context_len}_zs.csv"
+        csv_path = model_dir / csv_filename
         
         # Initialize CSV with headers
         if not csv_path.exists():
@@ -207,13 +219,7 @@ def run_inference(
                 csv_path, index=False
             )
         
-        # Get system prompt
-        system_prompt = prompt.get_prompt_by_type(
-            shot_type=shot_type, include_message=include_message
-        )
-        
         # Prepare dataset with truncation
-        dataset_df = pd.DataFrame(dataset)
         truncated_dataset = rq_main.add_truncated_commits(
             dataset_df,
             context_window=context_len,
@@ -236,7 +242,7 @@ def run_inference(
     
     print(f"\n{'='*60}")
     print(f"🎉 All experiments completed!")
-    print(f"📊 Results saved to: {experiment_dir}")
+    print(f"📊 Results saved to: {base_model_dir}")
     print(f"{'='*60}")
 
 
