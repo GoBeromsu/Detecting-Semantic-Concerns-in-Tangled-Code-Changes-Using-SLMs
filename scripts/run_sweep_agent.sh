@@ -15,7 +15,17 @@
 
 set -euo pipefail
 
-SWEEP_ID=${1:-"gobeumsu-university-of-sheffield/slm-concern-detection-qwen/pqyterlh"}
+
+SWEEP_INPUT=$1
+if [[ $SWEEP_INPUT == *"/"* ]]; then
+    # Full path provided
+    SWEEP_ID=$SWEEP_INPUT
+else
+    # Only ID provided, add full path
+    SWEEP_ID="gobeumsu-university-of-sheffield/slm-concern-detection-qwen/$SWEEP_INPUT"
+fi
+
+echo "Using sweep ID: $SWEEP_ID"
 
 # Load required modules
 module purge
