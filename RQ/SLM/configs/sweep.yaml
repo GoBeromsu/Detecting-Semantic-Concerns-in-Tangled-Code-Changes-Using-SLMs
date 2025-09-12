@@ -3,7 +3,13 @@ method: bayes
 metric:
   name: train/loss
   goal: minimize
-
+command:
+  - ${env}
+  - python
+  - ${program}
+  - --config
+  - configs/qwen.yml
+  - ${args}
 parameters:
   learning_rate:
     values: [1e-4, 2e-4, 5e-4, 1e-3]
