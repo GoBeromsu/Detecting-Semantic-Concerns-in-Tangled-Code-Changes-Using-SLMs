@@ -29,7 +29,7 @@ training:
   warmup_ratio: 0.1
   logging_steps: 100
   eval_steps: 100
-  save_strategy: "epoch"
+  save_strategy: "no" # For sweep
   seed: 42
   max_seq_length: 16384
   packing: true
