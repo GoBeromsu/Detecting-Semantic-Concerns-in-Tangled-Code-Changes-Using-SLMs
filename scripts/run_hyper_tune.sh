@@ -73,6 +73,10 @@ trap cleanup EXIT
 echo "Creating wandb sweep for ${MODEL_TYPE} at $(date)"
 cd RQ/SLM
 
+# Login to wandb (will use cached credentials if available)
+echo "Checking wandb authentication..."
+wandb login --relogin
+
 # Create sweep with appropriate config
 if [[ "$MODEL_TYPE" == "Phi" ]]; then
     SWEEP_ID=$(wandb sweep configs/sweep.yaml --project "slm-concern-detection-phi" | grep "wandb agent" | awk '{print $NF}')
