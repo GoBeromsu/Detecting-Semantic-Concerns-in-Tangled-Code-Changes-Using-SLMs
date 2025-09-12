@@ -14,8 +14,10 @@
 
 set -euo pipefail
 
-MODEL_TYPE=${1:-"Phi"}
-[[ "$MODEL_TYPE" =~ ^(Phi|Qwen)$ ]] || { echo "MODEL_TYPE must be Phi or Qwen"; exit 1; }
+# Convert input to lowercase and use directly
+MODEL_INPUT=${1:-"phi"}
+MODEL_PARAM=$(echo "$MODEL_INPUT" | tr '[:upper:]' '[:lower:]')
+MODEL_TYPE=$(echo "$MODEL_INPUT" | sed 's/.*/\L&/; s/\b\w/\U&/g')
 
 echo "MODEL_TYPE=${MODEL_TYPE}"
 
@@ -49,7 +51,8 @@ cleanup() {
 trap cleanup EXIT
 
 echo "🚀 Starting inference at $(date)"
-python -u RQ/SLM/infer.py --model "${MODEL_TYPE,,}" | tee -a "logs/infer_output_${SLURM_JOB_ID}_${MODEL_TYPE}.log"
+
+python -u RQ/SLM/infer.py --model "${MODEL_PARAM}" | tee -a "logs/infer_output_${SLURM_JOB_ID}_${MODEL_TYPE}.log"
 
 echo "✅ Inference completed at $(date)"
 
