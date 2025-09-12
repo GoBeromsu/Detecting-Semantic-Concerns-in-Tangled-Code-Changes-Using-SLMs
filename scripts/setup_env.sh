@@ -61,5 +61,7 @@ rm -rf ~/.cache/uv/ ~/.cache/pip/
 CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=90" \
 python -m pip install llama-cpp-python --no-binary llama-cpp-python --no-cache-dir -v
 
+python -m pip install deepspeed accelerate
+
 echo "Environment setup completed. To activate later: source activate venv"
 source deactivate
