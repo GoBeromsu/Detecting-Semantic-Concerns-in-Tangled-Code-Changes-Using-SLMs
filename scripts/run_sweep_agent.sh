@@ -17,9 +17,6 @@ set -euo pipefail
 
 SWEEP_ID=${1:-"gobeumsu-university-of-sheffield/slm-concern-detection-qwen/pqyterlh"}
 
-echo "SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID"
-echo "Starting sweep agent for: $SWEEP_ID"
-
 # Load required modules
 module purge
 module load GCCcore/12.3.0
