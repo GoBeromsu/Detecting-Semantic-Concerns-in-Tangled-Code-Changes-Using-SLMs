@@ -7,8 +7,9 @@
 #SBATCH --mem=128GB
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --output=logs/%x_%j.out
-#SBATCH --error=logs/%x_%j.err
+#SBATCH --array=1-5  # Run 5 agents simultaneously
+#SBATCH --output=logs/%x_%j_%a.out
+#SBATCH --error=logs/%x_%j_%a.err
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=bkoh3@sheffield.ac.uk
 
