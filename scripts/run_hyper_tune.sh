@@ -44,6 +44,12 @@ echo "[INFO] llama.cpp found."
 # Return to original directory
 cd "$SLURM_SUBMIT_DIR"
 
+# Load environment variables from .env file
+if [ -f .env ]; then
+    echo "Loading environment variables from .env file"
+    export $(cat .env | grep -v '^#' | xargs)
+fi
+
 mkdir -p logs
 
 # Activate Python environment
@@ -73,19 +79,29 @@ trap cleanup EXIT
 echo "Creating wandb sweep for ${MODEL_TYPE} at $(date)"
 cd RQ/SLM
 
-# Login to wandb (will use cached credentials if available)
-echo "Checking wandb authentication..."
-wandb login --relogin
+# Login to wandb using API key from .env
+echo "Logging in to wandb..."
+if [ -n "${WANDB_API_KEY:-}" ]; then
+    echo $WANDB_API_KEY | wandb login
+    echo "Successfully logged in to wandb"
+else
+    echo "ERROR: WANDB_API_KEY not found in .env file"
+    exit 1
+fi
 
 # Create sweep with appropriate config
+echo "Creating sweep configuration..."
 if [[ "$MODEL_TYPE" == "Phi" ]]; then
-    SWEEP_ID=$(wandb sweep configs/sweep.yaml --project "slm-concern-detection-phi" | grep "wandb agent" | awk '{print $NF}')
+    SWEEP_OUTPUT=$(wandb sweep configs/sweep.yaml --project "slm-concern-detection-phi")
 elif [[ "$MODEL_TYPE" == "Qwen" ]]; then
-    SWEEP_ID=$(wandb sweep configs/sweep.yaml --project "slm-concern-detection-qwen" | grep "wandb agent" | awk '{print $NF}')
+    SWEEP_OUTPUT=$(wandb sweep configs/sweep.yaml --project "slm-concern-detection-qwen")
 else
     echo "Unsupported MODEL_TYPE: $MODEL_TYPE"
     exit 1
 fi
+
+echo "Sweep output: $SWEEP_OUTPUT"
+SWEEP_ID=$(echo "$SWEEP_OUTPUT" | grep "wandb agent" | awk '{print $NF}')
 
 echo "Sweep created with ID: $SWEEP_ID"
 echo "Starting sweep agent at $(date)"
