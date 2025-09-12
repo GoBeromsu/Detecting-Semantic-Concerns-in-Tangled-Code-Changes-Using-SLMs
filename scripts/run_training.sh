@@ -53,7 +53,6 @@ mkdir -p logs
 source activate venv
 # Set environment variables
 export CUDA_VISIBLE_DEVICES=0
-export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
 export TOKENIZERS_PARALLELISM=false
 export NCCL_DEBUG=INFO  # Multi-GPU communication debugging
 
