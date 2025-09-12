@@ -219,9 +219,7 @@ def run_inference(
             )
         
         # Get system prompt
-        system_prompt = prompt.get_system_prompt(
-            include_multi_shot=(shot_type != "Zero-shot")
-        )
+        system_prompt = prompt.get_system_prompt()
         
         # Prepare dataset with truncation
         truncated_dataset = rq_main.truncate_dataset(
