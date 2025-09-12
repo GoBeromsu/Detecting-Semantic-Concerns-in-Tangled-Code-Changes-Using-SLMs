@@ -117,64 +117,57 @@ def create_output_dir() -> None:
 
 
 def merge_lora_adapter() -> bool:
-    """HF Hub Delegation: Load LoRA adapter from HF Hub and merge with base model on CPU"""
-    logger.info(f"🌐 HF Hub Delegation: Loading LoRA adapter from {HF_ADAPTER_REPO} and merging with base model on CPU...")
+    """Load LoRA adapter from HF Hub and merge with base model"""
+    logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} and merging...")
     
-    # Log initial memory state
     logger.info(f"Memory checkpoint")
 
     try:
-        # Clear memory before starting
         gc.collect()
+        torch.cuda.empty_cache() if torch.cuda.is_available() else None
         
-        # Use float32 for CPU merge - optimal for CPU processing and precision
-        compute_dtype = torch.float32
-        logger.info("Using float32 for CPU-only merge (optimal CPU precision)")
+        # bfloat16: 2x memory reduction vs float32, native H100 support  
+        compute_dtype = torch.bfloat16
         
-        # Load directly to CPU for merge - best practice for LoRA merge
-        logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} directly to CPU...")
         model = AutoPeftModelForCausalLM.from_pretrained(
             HF_ADAPTER_REPO,
             low_cpu_mem_usage=True,
             torch_dtype=compute_dtype,
             trust_remote_code=True,
-            device_map={"": "cpu"},  # Force all components to CPU for stable merge
+            device_map="auto",
             cache_dir=HF_CACHE_DIR,
         )
         
         logger.info(f"Memory checkpoint")
 
-        # Merge the adapter with base model on CPU
-        logger.info("Starting LoRA merge process on CPU (following best practice)...")
+        logger.info("Starting LoRA merge...")
         merged_model = model.merge_and_unload()
         logger.info(f"Memory checkpoint")
         
-        # Clean up original model immediately
         del model
         gc.collect()
+        torch.cuda.empty_cache() if torch.cuda.is_available() else None
         
-        # Load tokenizer
         logger.info("Loading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(
             BASE_MODEL_ID, trust_remote_code=True, cache_dir=HF_CACHE_DIR
         )
         
-        # Save merged model and tokenizer with memory-efficient sharding
-        logger.info("Saving merged model with memory-efficient sharding...")
+        logger.info("Saving merged model...")
         merged_model.save_pretrained(
             MERGED_MODEL_DIR, 
             trust_remote_code=True, 
             safe_serialization=True,
-            max_shard_size="2GB"  # Smaller shards for better memory efficiency
+            max_shard_size="2GB"
         )
         tokenizer.save_pretrained(MERGED_MODEL_DIR)
         
-        # Clean up all variables aggressively
         del merged_model, tokenizer
         gc.collect()
+        torch.cuda.empty_cache() if torch.cuda.is_available() else None
         logger.info(f"Memory checkpoint")
         
-        logger.info("✅ LoRA adapter merged successfully on CPU")
+        logger.info("✅ LoRA adapter merged successfully")
         return True
 
     except Exception as e:
@@ -216,13 +209,12 @@ def quantize_model(fp16_file: str, quant_type: str) -> Optional[str]:
     logger.info(f"Quantizing to {quant_type}...")
 
     output_file = f"{GGUF_OUTPUT_DIR}/{MODEL_NAME}-{quant_type}.gguf"
-    # Use build/bin/llama-quantize from cmake build
     quantize_binary = f"{LLAMA_CPP_DIR}/build/bin/llama-quantize"
 
     if not Path(quantize_binary).exists():
         logger.error(f"Quantize binary not found: {quantize_binary}")
         logger.info(
-            "Make sure llama.cpp is built with: cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release"
+            "Build llama.cpp: cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release"
         )
         return None
 
