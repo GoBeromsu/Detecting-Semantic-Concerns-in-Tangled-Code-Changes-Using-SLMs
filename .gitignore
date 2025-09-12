@@ -7,7 +7,7 @@ __pycache__/
 # Project specific
 models/llama.cpp
 results/
-
+CLAUDE.md
 wandb/
 # C extensions
 *.so
