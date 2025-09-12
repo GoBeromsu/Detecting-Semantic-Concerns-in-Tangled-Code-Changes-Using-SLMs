@@ -89,34 +89,31 @@ else
     exit 1
 fi
 
-# Create sweep with appropriate config
+# Create sweep and automatically start agent
 echo "Creating sweep configuration..."
 if [[ "$MODEL_TYPE" == "Phi" ]]; then
-    SWEEP_OUTPUT=$(wandb sweep configs/sweep.yaml --project "slm-concern-detection-phi")
+    wandb sweep configs/sweep.yaml --project "slm-concern-detection-phi" | tee sweep_output.log
+    SWEEP_ID=$(grep "wandb agent" sweep_output.log | awk '{print $NF}')
 elif [[ "$MODEL_TYPE" == "Qwen" ]]; then
-    SWEEP_OUTPUT=$(wandb sweep configs/sweep.yaml --project "slm-concern-detection-qwen")
+    wandb sweep configs/sweep.yaml --project "slm-concern-detection-qwen" | tee sweep_output.log
+    SWEEP_ID=$(grep "wandb agent" sweep_output.log | awk '{print $NF}')
 else
     echo "Unsupported MODEL_TYPE: $MODEL_TYPE"
     exit 1
 fi
 
-echo "Sweep output: $SWEEP_OUTPUT"
-SWEEP_ID=$(echo "$SWEEP_OUTPUT" | grep "wandb agent" | awk '{print $NF}')
+echo ""
+echo "🚀 Starting hyperparameter optimization..."
+echo "Sweep ID: $SWEEP_ID"
+echo "Starting agent at $(date)"
 
-echo "Sweep created with ID: $SWEEP_ID"
-echo "Starting sweep agent at $(date)"
-
-# Set config file based on model type
-if [[ "$MODEL_TYPE" == "Phi" ]]; then
-    export CONFIG_FILE="configs/phi.yml"
-elif [[ "$MODEL_TYPE" == "Qwen" ]]; then
-    export CONFIG_FILE="configs/qwen.yml"
-fi
-
-# Run sweep agent
+# Run sweep agent automatically
 wandb agent $SWEEP_ID
 
 echo "Hyperparameter tuning completed at $(date)"
+
+# Clean up
+rm -f sweep_output.log
 
 # Display basic job info
 sacct -j $SLURM_JOB_ID --format=JobID,JobName,Elapsed,State,ExitCode
