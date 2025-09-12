@@ -1,4 +1,7 @@
 {
+  "distributed_training": {
+    "backend": "nccl"
+  },
   "zero_optimization": {
     "stage": 2,
     "offload_optimizer": { "device": "cpu", "pin_memory": true },

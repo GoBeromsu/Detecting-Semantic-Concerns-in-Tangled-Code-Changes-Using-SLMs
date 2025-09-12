@@ -72,8 +72,6 @@ trap cleanup EXIT
 
 # Start training
 echo "Starting ${MODEL_TYPE} training at $(date)"
-export DS_BUILD_CPU_ADAM=0
-
 if [[ "$MODEL_TYPE" == "Phi" ]]; then
     python -u RQ/SLM/train.py --config RQ/SLM/configs/phi.yml
 elif [[ "$MODEL_TYPE" == "Qwen" ]]; then
