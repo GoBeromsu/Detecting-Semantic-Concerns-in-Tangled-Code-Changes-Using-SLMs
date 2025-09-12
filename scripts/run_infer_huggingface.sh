@@ -26,13 +26,13 @@ mkdir -p logs
 
 module purge
 module load GCCcore/12.3.0
-module load CUDA/12.1.1
+module load CUDA/12.4.0
 module load Anaconda3/2022.05
 module load cuDNN/8.9.2.26-CUDA-12.1.1
 
 # Activate environment using 'source activate' per Stanage rules
-echo "🔧 Activating phi4_env..."
-source activate phi4_env
+echo "🔧 Activating venv..."
+source activate venv
 
 # Start periodic GPU utilization logging (every 60 s)
 GPU_LOG="logs/gpu_usage_${SLURM_JOB_ID}_${MODEL_TYPE}.csv"

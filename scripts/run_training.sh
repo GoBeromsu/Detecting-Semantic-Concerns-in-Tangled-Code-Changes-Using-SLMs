@@ -23,7 +23,7 @@ echo "Starting training job: $SLURM_JOB_ID"
 # Load required modules
 module purge
 module load GCCcore/12.3.0
-module load CUDA/12.1.1
+module load CUDA/12.4.0
 module load Anaconda3/2022.05
 module load cuDNN/8.9.2.26-CUDA-12.1.1
 module load CMake/3.26.3-GCCcore-12.3.0
@@ -51,7 +51,7 @@ cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs
 
 # Activate Python environment
-source activate phi4_env
+source activate venv
 # Set environment variables
 export CUDA_VISIBLE_DEVICES=0
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512

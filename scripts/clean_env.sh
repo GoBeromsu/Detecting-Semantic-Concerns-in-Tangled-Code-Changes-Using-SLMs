@@ -18,12 +18,12 @@ module load GCCcore/12.3.0
 module load Anaconda3/2022.05
 
 # Remove existing environment if exists
-if conda env list | grep -q "phi4_env"; then
-    echo "🗑️ Removing existing phi4_env..."
-    conda remove -n phi4_env --all -y
-    echo "✅ Environment phi4_env removed successfully!"
+if conda env list | grep -q "venv"; then
+    echo "🗑️ Removing existing venv..."
+    conda remove -n venv --all -y
+    echo "✅ Environment venv removed successfully!"
 else
-    echo "ℹ️ Environment phi4_env not found. Nothing to clean."
+    echo "ℹ️ Environment venv not found. Nothing to clean."
 fi
 
 echo "🧹 Cleanup completed!" 

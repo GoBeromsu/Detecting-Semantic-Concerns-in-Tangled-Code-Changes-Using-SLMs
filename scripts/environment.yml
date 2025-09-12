@@ -1,4 +1,4 @@
-name: phi4_env
+name: venv
 channels:
   - pytorch
   - conda-forge
