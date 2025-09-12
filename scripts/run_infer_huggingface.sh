@@ -28,7 +28,6 @@ module purge
 module load GCCcore/12.3.0
 module load CUDA/12.4.0
 module load Anaconda3/2022.05
-module load cuDNN/8.9.2.26-CUDA-12.1.1
 
 # Activate environment using 'source activate' per Stanage rules
 echo "🔧 Activating venv..."
