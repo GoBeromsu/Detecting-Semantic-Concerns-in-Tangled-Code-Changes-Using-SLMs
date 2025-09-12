@@ -50,25 +50,9 @@ if [ -n "${WANDB_API_KEY:-}" ]; then
     echo "Successfully logged in to wandb"
 fi
 
-# Start GPU monitoring
-GPU_LOG="logs/gpu_usage_agent_${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}.csv"
-echo "timestamp,power.draw[W],gpu.util[%],mem.util[%],mem.used[MiB],temp.gpu[C]" > "$GPU_LOG"
-(
-  while true; do
-    nvidia-smi --query-gpu=timestamp,power.draw,utilization.gpu,utilization.memory,memory.used,temperature.gpu --format=csv,noheader,nounits >> "$GPU_LOG"
-    sleep 60
-  done
-) &
-GPU_MON_PID=$!
 
-# Cleanup function
-cleanup() {
-  kill "$GPU_MON_PID" 2>/dev/null || true
-}
-trap cleanup EXIT
 
 # Run wandb agent
-echo "Starting wandb agent (Task ID: $SLURM_ARRAY_TASK_ID) at $(date)"
 cd RQ/SLM
 wandb agent $SWEEP_ID
 
