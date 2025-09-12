@@ -24,9 +24,8 @@ echo "Setting up HPC environment using uv and pyproject extras..."
 
 mkdir -p logs
 
-# Resolve repository root using Git
-REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || { echo "ERROR: Not in a Git repository"; exit 1; })"
-echo "Using Git repository root: $REPO_DIR"
+REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+echo "[INFO] Using repository root: $REPO_DIR"
 
 module purge
 module load GCCcore/12.3.0
@@ -34,16 +33,10 @@ module load CUDA/12.4.0
 module load Anaconda3/2022.05
 module load CMake/3.26.3-GCCcore-12.3.0
 
-# Create or reuse conda environment from YAML
-if conda env list | grep -q "venv"; then
-    echo "Found existing conda env venv. Reusing."
-else
-    echo "Creating conda env from scripts/environment.yml..."
-    conda env create -f "$REPO_DIR/scripts/environment.yml" || { echo "Failed to create conda env"; exit 1; }
+if ! conda env list | grep -q "venv"; then
+    echo "[INFO] Creating new conda env 'venv'..."
+    conda env create -f "$REPO_DIR/scripts/environment.yml"
 fi
-
-# Activate via 'source activate' (required when Anaconda is provided via module)
-echo "Activating conda env (source activate)..."
 source activate venv
 
 export TMPDIR=/fastdata/$USER/tmp
