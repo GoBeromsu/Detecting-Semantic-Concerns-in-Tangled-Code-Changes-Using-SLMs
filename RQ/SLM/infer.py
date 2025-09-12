@@ -51,7 +51,7 @@ MODEL_CONFIGS = {
     },
     "qwen": {
         "repo_id": "Qwen/Qwen3-14B-GGUF",
-        "filename": "Qwen3-14B-GGUF/qwen3-14b-f16.gguf",
+        "filename": "Qwen3-14B-Q8_0.gguf",
         "model_name": "Qwen3-14B",
         "chat_format": "chatml",
     }
