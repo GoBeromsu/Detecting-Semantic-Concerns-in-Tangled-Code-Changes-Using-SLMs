@@ -4,9 +4,8 @@ metric:
   name: train/loss
   goal: minimize
 command:
-  - ${env}
   - python
-  - ${program}
+  - train.py
   - --config
   - configs/qwen.yml
   - ${args}
