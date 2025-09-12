@@ -39,7 +39,7 @@ if ! conda env list | grep -q "venv"; then
 fi
 source activate venv
 
-export TMPDIR=/fastdata/$USER/tmp
+export TMPDIR=$PWD/tmp
 mkdir -p $TMPDIR
 
 echo "Installing uv..."
