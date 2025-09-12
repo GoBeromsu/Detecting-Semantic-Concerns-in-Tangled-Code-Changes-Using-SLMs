@@ -333,6 +333,11 @@ def main():
         default="RQ/SLM/configs/phi.yml",
         help="Path to configuration file (default: RQ/SLM/configs/phi.yml)"
     )
+    # Add wandb sweep parameters
+    parser.add_argument("--learning_rate", type=float, help="Learning rate for sweep")
+    parser.add_argument("--lora_rank", type=int, help="LoRA rank for sweep")
+    parser.add_argument("--lora_alpha", type=int, help="LoRA alpha for sweep")
+    
     args = parser.parse_args()
     
     # Load configuration
@@ -355,13 +360,13 @@ def main():
     # 3. Prepare datasets
     processed_train_dataset, processed_test_dataset, tokenizer = prepare_datasets_from_config(config)
     
-    # 4. Override config with wandb sweep parameters if available
-    if hasattr(wandb.config, 'learning_rate'):
-        config['training']['learning_rate'] = wandb.config.learning_rate
-    if hasattr(wandb.config, 'lora_rank'):
-        config['lora']['rank'] = wandb.config.lora_rank
-    if hasattr(wandb.config, 'lora_alpha'):
-        config['lora']['alpha'] = wandb.config.lora_alpha
+    # 4. Override config with command line arguments (wandb sweep parameters)
+    if args.learning_rate is not None:
+        config['training']['learning_rate'] = args.learning_rate
+    if args.lora_rank is not None:
+        config['lora']['rank'] = args.lora_rank
+    if args.lora_alpha is not None:
+        config['lora']['alpha'] = args.lora_alpha
     
     # Log the hyperparameters being used
     logger.info(f"Using hyperparameters: lr={config['training']['learning_rate']}, "
