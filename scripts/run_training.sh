@@ -19,7 +19,6 @@ MODEL_TYPE=${1:-"Phi"}
 
 echo "MODEL_TYPE=${MODEL_TYPE}"
 echo "Starting training job: $SLURM_JOB_ID"
-echo "Allocated CPUs: $SLURM_CPUS_PER_TASK, Memory: $SLURM_MEM_PER_NODE MB"
 
 # Load required modules
 module purge
