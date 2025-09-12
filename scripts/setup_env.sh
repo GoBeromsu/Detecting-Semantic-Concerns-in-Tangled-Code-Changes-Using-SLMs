@@ -47,10 +47,10 @@ python -m pip install --upgrade uv
 
 # Install CUDA-specific PyTorch separately (avoid generic CPU wheel)
 echo "Installing CUDA-specific PyTorch..."
-pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+python -m pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
 # Install flash-attn explicitly; --no-build-isolation ensures env compilers are used
 echo "Installing flash-attn (no build isolation)..."
-python -m pip install flash-attn==2.7.4.post1 --no-build-isolation
+python -m pip install flash-attn --no-build-isolation
 
 # Install application dependencies from pyproject extras (.[hpc])
 cd "$REPO_DIR"
@@ -58,8 +58,8 @@ uv pip install -e ".[hpc]"
 
 uv pip uninstall llama-cpp-python
 rm -rf ~/.cache/uv/ ~/.cache/pip/
-CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=90 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON" \
-pip install llama-cpp-python --no-binary llama-cpp-python --no-cache-dir -v
+CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=90" \
+python -m pip install llama-cpp-python --no-binary llama-cpp-python --no-cache-dir -v
 
 echo "Environment setup completed. To activate later: source activate venv"
 source deactivate
