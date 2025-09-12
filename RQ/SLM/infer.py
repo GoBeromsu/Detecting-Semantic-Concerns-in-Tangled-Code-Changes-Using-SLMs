@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Unified Inference Script for Fine-tuned Models
+Unified Inference Script for Fine-tuned SLM Models
 
 Usage:
     python infer.py --model phi
-    python infer.py --model qwen
-    python infer.py --model gpt  # For GPT baseline
+    python infer.py --model qwen  
     python infer.py  # Default: phi
 """
 
@@ -36,27 +35,19 @@ from datasets import load_dataset
 # Load environment variables
 load_dotenv()
 
-# Model configurations
+# Model configurations - SLM only (Phi and Qwen)
 MODEL_CONFIGS = {
     "phi": {
         "repo_id": "Berom0227/Semantic-Concern-SLM-Phi-gguf",
         "filename": "Semantic-Concern-SLM-Phi-f16.gguf",
         "model_name": "Phi4",
-        "use_gguf": True,
         "chat_format": "chatml",
     },
     "qwen": {
         "repo_id": "Berom0227/Semantic-Concern-SLM-Qwen-gguf",
         "filename": "Semantic-Concern-SLM-Qwen-f16.gguf",
         "model_name": "Qwen3-14B",
-        "use_gguf": True,
         "chat_format": "chatml",
-    },
-    "gpt": {
-        "model_id": "gpt-4-1106-preview",
-        "model_name": "GPT-4",
-        "use_gguf": False,
-        "api_type": "openai",
     }
 }
 
@@ -106,28 +97,16 @@ def measure_performance(
         try:
             start_time = time.time()
             
-            if model_config.get("use_gguf", False):
-                # GGUF model (Phi, Qwen)
-                predicted_types = llms.hugging_face_api_call(
-                    repo_id=model_config["repo_id"],
-                    filename=model_config["filename"],
-                    commit=row.truncated_commit,
-                    system_prompt=system_prompt,
-                    temperature=temperature,
-                    seed=seed,
-                    use_schema=True,
-                    chat_format=model_config.get("chat_format", "chatml"),
-                )
-            else:
-                # API model (GPT)
-                predicted_types = llms.openai_api_call(
-                    model=model_config["model_id"],
-                    commit=row.truncated_commit,
-                    system_prompt=system_prompt,
-                    temperature=temperature,
-                    seed=seed,
-                    use_schema=True,
-                )
+            predicted_types = llms.hugging_face_api_call(
+                repo_id=model_config["repo_id"],
+                filename=model_config["filename"],
+                commit=row.truncated_commit,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                seed=seed,
+                use_schema=True,
+                chat_format=model_config["chat_format"],
+            )
             
             end_time = time.time()
             inference_time = end_time - start_time
@@ -145,7 +124,7 @@ def measure_performance(
             "predicted_types": json.dumps(predicted_types),
             "actual_types": row.types,
             "inference_time": inference_time,
-            "shas": json.dumps(shas),
+            "shas": shas,
             "precision": metrics["precision"],
             "recall": metrics["recall"],
             "f1": metrics["f1"],
@@ -196,6 +175,16 @@ def run_inference(
     print(f"Starting inference for {model_display_name}")
     print(f"Results will be saved to: {experiment_dir}")
     
+
+    # Pre-load GGUF model for better performance (all SLM models are GGUF)
+    print(f"Pre-loading GGUF model: {model_config['filename']}")
+    llms.load_model(
+        repo_id=model_config["repo_id"],
+        filename=model_config["filename"], 
+        seed=seed,
+        chat_format=model_config["chat_format"]
+    )
+    
     # Load dataset
     dataset = load_dataset(
         "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs",
@@ -219,14 +208,16 @@ def run_inference(
             )
         
         # Get system prompt
-        system_prompt = prompt.get_system_prompt()
+        system_prompt = prompt.get_prompt_by_type(
+            shot_type=shot_type, include_message=include_message
+        )
         
         # Prepare dataset with truncation
-        truncated_dataset = rq_main.truncate_dataset(
-            dataset,
-            max_tokens=context_len,
-            with_message=include_message,
-            model=model_display_name.lower(),
+        dataset_df = pd.DataFrame(dataset)
+        truncated_dataset = rq_main.add_truncated_commits(
+            dataset_df,
+            context_window=context_len,
+            include_message=include_message,
         )
         
         # Run inference
@@ -258,8 +249,8 @@ def main():
         "--model",
         type=str,
         default="phi",
-        choices=["phi", "qwen", "gpt"],
-        help="Model to use for inference (default: phi)"
+        choices=["phi", "qwen"],
+        help="SLM model to use for inference (default: phi)"
     )
     parser.add_argument(
         "--context-windows",
