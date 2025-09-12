@@ -193,19 +193,19 @@ def run_inference(
     )
     dataset_df = pd.DataFrame(dataset)
     
-    # Run experiments for different configurations (Zero-shot only)
-    for shot_type, context_len in product(shot_types, context_windows):
+    # Run experiments for different configurations (Zero-shot only, match Phi structure)
+    for shot_type, context_len, include_msg in product(shot_types, context_windows, (True, False)):
         print(f"\n{'='*60}")
-        print(f"Configuration: {shot_type}, Context: {context_len}, Message: {include_message}")
+        print(f"Configuration: {shot_type}, Context: {context_len}, Message: {include_msg}")
         print(f"{'='*60}")
         
         # Get system prompt
         system_prompt = prompt.get_prompt_by_type(
-            shot_type=shot_type, include_message=include_message
+            shot_type=shot_type, include_message=include_msg
         )
         
         # Create folder structure based on message inclusion (match Phi structure)
-        msg_flag = "msg1" if include_message else "msg0"
+        msg_flag = "msg1" if include_msg else "msg0"
         model_dir = base_model_dir / msg_flag
         model_dir.mkdir(parents=True, exist_ok=True)
         
@@ -223,7 +223,7 @@ def run_inference(
         truncated_dataset = rq_main.add_truncated_commits(
             dataset_df,
             context_window=context_len,
-            include_message=include_message,
+            include_message=include_msg,
         )
         
         # Run inference
@@ -233,7 +233,7 @@ def run_inference(
             system_prompt=system_prompt,
             csv_path=csv_path,
             context_len=context_len,
-            with_message=include_message,
+            with_message=include_msg,
             temperature=temperature,
             seed=seed,
         )
