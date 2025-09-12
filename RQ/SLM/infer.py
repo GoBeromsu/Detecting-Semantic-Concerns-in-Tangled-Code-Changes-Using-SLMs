@@ -43,11 +43,18 @@ MODEL_CONFIGS = {
         "model_name": "Phi4",
         "chat_format": "chatml",
     },
-    "qwen": {
+    "qwen_lora": {
         "repo_id": "Berom0227/Semantic-Concern-SLM-Qwen-gguf",
         "filename": "Semantic-Concern-SLM-Qwen-f16.gguf",
         "model_name": "Qwen3-14B",
         "chat_format": "chatml",
+    }
+    "qwen":{
+        "repo_id": "Qwen/Qwen3-14B-GGUF",
+        "filename": "Qwen3-14B-GGUF/qwen3-14b-f16.gguf",
+        "model_name": "Qwen/Qwen3-14B",
+        "chat_format": "chatml",
+    }
     }
 }
 
