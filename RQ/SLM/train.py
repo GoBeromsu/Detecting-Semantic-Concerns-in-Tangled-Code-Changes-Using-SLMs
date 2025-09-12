@@ -202,7 +202,7 @@ def train_model(processed_train_dataset, tokenizer, config: Dict[str, Any]):
         hub_model_id=hf_adapter_repo,
         max_length=config['training']['max_seq_length'],
         packing=config['training']['packing'],
-        deepspeed="RQ/SLM/configs/deepspeed.json",
+        # deepspeed="RQ/SLM/configs/deepspeed.json",
     )
     
     # Update W&B config
