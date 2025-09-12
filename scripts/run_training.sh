@@ -36,13 +36,10 @@ export TMPDIR="${TMPDIR:-/tmp/gguf_conversion_$$}"
 # llama.cpp location (external dependency)
 export LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
 if [ ! -d "$LLAMA_CPP_DIR" ]; then
-    echo "❌ llama.cpp not found at $LLAMA_CPP_DIR"
-    echo "Please run setup_env.sh first to build llama.cpp:"
-    echo "sbatch scripts/setup_env.sh"
+    echo "[ERROR] llama.cpp not found at $LLAMA_CPP_DIR"
     exit 1
-else
-    echo "✅ llama.cpp found at $LLAMA_CPP_DIR"
 fi
+echo "[INFO] llama.cpp found."
 
 # Return to original directory
 cd "$SLURM_SUBMIT_DIR"
