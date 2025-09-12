@@ -51,7 +51,7 @@ source activate venv
 # Set environment variables
 export CUDA_VISIBLE_DEVICES=0
 export TOKENIZERS_PARALLELISM=false
-export NCCL_DEBUG=INFO  # Multi-GPU communication debugging
+# export NCCL_DEBUG=INFO  # Multi-GPU communication debugging
 
 # Start GPU monitoring
 GPU_LOG="logs/gpu_usage_${SLURM_JOB_ID}_${MODEL_TYPE}.csv"
