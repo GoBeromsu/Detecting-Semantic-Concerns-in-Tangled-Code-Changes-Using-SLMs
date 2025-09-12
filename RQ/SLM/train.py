@@ -355,6 +355,18 @@ def main():
     # 3. Prepare datasets
     processed_train_dataset, processed_test_dataset, tokenizer = prepare_datasets_from_config(config)
     
+    # 4. Override config with wandb sweep parameters if available
+    if hasattr(wandb.config, 'learning_rate'):
+        config['training']['learning_rate'] = wandb.config.learning_rate
+    if hasattr(wandb.config, 'lora_rank'):
+        config['lora']['rank'] = wandb.config.lora_rank
+    if hasattr(wandb.config, 'lora_alpha'):
+        config['lora']['alpha'] = wandb.config.lora_alpha
+    
+    # Log the hyperparameters being used
+    logger.info(f"Using hyperparameters: lr={config['training']['learning_rate']}, "
+                f"rank={config['lora']['rank']}, alpha={config['lora']['alpha']}")
+    
     # 4. Train the model
     model, trainer, training_args, compute_dtype, hf_model_repo = train_model(
         processed_train_dataset, tokenizer, config
