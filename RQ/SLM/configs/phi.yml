@@ -8,7 +8,7 @@ model:
 # LoRA configuration
 lora:
   rank: 16
-  alpha: 16
+  alpha: 32
   dropout: 0.05
   target_modules:
     - "k_proj"
