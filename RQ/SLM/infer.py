@@ -38,6 +38,12 @@ load_dotenv()
 # Model configurations - SLM only (Phi and Qwen)
 MODEL_CONFIGS = {
     "phi": {
+        "repo_id": "microsoft/phi-4-gguf",
+        "filename": "phi-4-bf16.gguf",
+        "model_name": "Phi4",
+        "chat_format": "chatml",
+    },
+    "phi_lora": {
         "repo_id": "Berom0227/Semantic-Concern-SLM-Phi-gguf",
         "filename": "Semantic-Concern-SLM-Phi-f16.gguf",
         "model_name": "Phi4",
