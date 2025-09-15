@@ -10,14 +10,6 @@ lora:
   rank: 16
   alpha: 32
   dropout: 0.05
-  target_modules:
-    - "k_proj"
-    - "q_proj"
-    - "v_proj"
-    - "o_proj"
-    - "gate_proj"
-    - "down_proj"
-    - "up_proj"
 
 # Training hyperparameters
 training:

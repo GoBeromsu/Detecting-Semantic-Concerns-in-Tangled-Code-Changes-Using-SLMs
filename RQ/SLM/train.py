@@ -229,7 +229,7 @@ def train_model(processed_train_dataset, tokenizer, config: Dict[str, Any]):
         lora_alpha=config['lora']['alpha'],
         lora_dropout=config['lora']['dropout'],
         task_type=TaskType.CAUSAL_LM,
-        target_modules=config['lora']['target_modules'],
+        target_modules="all-linear",
     )
     
     # Create trainer
