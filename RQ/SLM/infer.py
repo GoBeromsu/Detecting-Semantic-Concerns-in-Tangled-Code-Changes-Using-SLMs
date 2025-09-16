@@ -56,8 +56,8 @@ MODEL_CONFIGS = {
         "chat_format": "chatml",
     },
     "qwen": {
-        "repo_id": "Qwen/Qwen3-14B-GGUF",
-        "filename": "Qwen3-14B-Q8_0.gguf",
+        "repo_id": "Berom0227/Qwen3-14B-Pure-gguf",
+        "filename": "Qwen3-14B-Pure-bf16.gguf",
         "model_name": "Qwen3-14B",
         "chat_format": "chatml",
     }
