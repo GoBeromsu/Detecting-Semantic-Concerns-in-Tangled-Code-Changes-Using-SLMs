@@ -6,9 +6,6 @@ from .openai import (
 from .hugging_face import (
     get_models,
     load_model,
-    # New transformer-based functions
-    load_transformer_model,
-    transformer_api_call,
 )
 from .hugging_face import api_call as hugging_face_api_call
 from .lmstudio import api_call as lmstudio_api_call
@@ -79,9 +76,6 @@ __all__ = [
     "api_call",  # Unified API call (primary interface)
     "get_models",
     "load_model",
-    # New transformer-based functions
-    "load_transformer_model",
-    "transformer_api_call",
     "DEFAULT_TEMPERATURE",
     "DEFAULT_MAX_TOKENS",
     "COMMIT_TYPES",
