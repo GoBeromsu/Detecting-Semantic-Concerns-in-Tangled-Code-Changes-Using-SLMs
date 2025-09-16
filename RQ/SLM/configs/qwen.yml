@@ -7,7 +7,7 @@ model:
   
 # LoRA configuration - Larger parameters for bigger model
 lora:
-  rank: 16
+  rank: 32
   alpha: 32
   dropout: 0.05
 
