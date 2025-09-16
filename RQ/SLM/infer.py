@@ -36,30 +36,27 @@ from datasets import load_dataset
 load_dotenv()
 
 # Model configurations - SLM only (Phi and Qwen)
+# Now using native HuggingFace models instead of GGUF
 MODEL_CONFIGS = {
     "phi": {
-        "repo_id": "microsoft/phi-4-gguf",
-        "filename": "phi-4-bf16.gguf",
+        "model_id": "microsoft/phi-4",
+        "adapter_id": None,
         "model_name": "Phi4",
-        "chat_format": "chatml",
     },
     "phi_lora": {
-        "repo_id": "Berom0227/Semantic-Concern-SLM-Phi-gguf",
-        "filename": "Semantic-Concern-SLM-Phi-f16.gguf",
-        "model_name": "Phi4",
-        "chat_format": "chatml",
+        "model_id": "microsoft/phi-4",
+        "adapter_id": "Berom0227/Semantic-Concern-SLM-Phi-adapter",  # Following train.py naming: {hf_model_repo}-adapter
+        "model_name": "Phi4-LoRA",
     },
     "qwen_lora": {
-        "repo_id": "Berom0227/Semantic-Concern-SLM-Qwen-gguf",
-        "filename": "Semantic-Concern-SLM-Qwen-f16.gguf",
+        "model_id": "Qwen/Qwen3-14B",  # Or use the exact model from qwen.yml config
+        "adapter_id": "Berom0227/Semantic-Concern-SLM-Qwen-adapter",  # Following train.py naming
         "model_name": "Qwen3-14B-LoRA",
-        "chat_format": "chatml",
     },
     "qwen": {
-        "repo_id": "Qwen/Qwen3-14B-GGUF",
-        "filename": "Qwen3-14B-Q8_0.gguf",
+        "model_id": "Qwen/Qwen3-14B",
+        "adapter_id": None,
         "model_name": "Qwen3-14B",
-        "chat_format": "chatml",
     }
 }
 
@@ -109,15 +106,14 @@ def measure_performance(
         try:
             start_time = time.time()
             
-            predicted_types = llms.hugging_face_api_call(
-                repo_id=model_config["repo_id"],
-                filename=model_config["filename"],
+            predicted_types = llms.transformer_api_call(
+                model_id=model_config["model_id"],
+                adapter_id=model_config["adapter_id"],
                 commit=row.truncated_commit,
                 system_prompt=system_prompt,
                 temperature=temperature,
                 seed=seed,
                 use_schema=True,
-                chat_format=model_config["chat_format"],
             )
             
             end_time = time.time()
@@ -189,13 +185,13 @@ def run_inference(
     print(f"Results will be saved to: {base_model_dir}")
     
 
-    # Pre-load GGUF model for better performance (all SLM models are GGUF)
-    print(f"Pre-loading GGUF model: {model_config['filename']}")
-    llms.load_model(
-        repo_id=model_config["repo_id"],
-        filename=model_config["filename"], 
-        seed=seed,
-        chat_format=model_config["chat_format"]
+    # Pre-load Transformer model for better performance
+    print(f"Pre-loading Transformer model: {model_config['model_id']}")
+    if model_config["adapter_id"]:
+        print(f"With LoRA adapter: {model_config['adapter_id']}")
+    llms.load_transformer_model(
+        model_id=model_config["model_id"],
+        adapter_id=model_config["adapter_id"],
     )
     
     # Load dataset
@@ -267,7 +263,7 @@ def main():
         "--model",
         type=str,
         default="phi",
-        choices=["phi", "qwen", "qwen_lora"],
+        choices=["phi", "phi_lora", "qwen", "qwen_lora"],
         help="SLM model to use for inference (default: phi)"
     )
     parser.add_argument(
