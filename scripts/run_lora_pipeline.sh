@@ -69,8 +69,10 @@ echo "PHASE 3: INFERENCE"
 echo "=========================================="
 echo "Starting inference at $(date)"
 
-# Execute inference script directly (convert model type to lowercase for inference)
-MODEL_PARAM=$(echo "$MODEL_TYPE" | tr '[:upper:]' '[:lower:]')
+# Execute inference script with LoRA model (after training)
+# Convert model type to lowercase and append _lora for the trained model
+MODEL_PARAM=$(echo "${MODEL_TYPE}_lora" | tr '[:upper:]' '[:lower:]')
+echo "Using trained LoRA model: ${MODEL_PARAM}"
 bash "${SCRIPT_DIR}/run_infer_huggingface.sh" "${MODEL_PARAM}"
 INFERENCE_EXIT=$?
 
