@@ -23,8 +23,18 @@ echo "Job ID: $SLURM_JOB_ID"
 echo "Started at: $(date)"
 echo "=========================================="
 
-# Store the script directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Get the project root directory
+# If running under SLURM, use SLURM_SUBMIT_DIR; otherwise, use parent of script directory
+if [ -n "${SLURM_SUBMIT_DIR:-}" ]; then
+    PROJECT_ROOT="$SLURM_SUBMIT_DIR"
+else
+    # When running directly, get the parent directory of scripts/
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+fi
+
+cd "$PROJECT_ROOT"
+SCRIPT_DIR="scripts"
 
 # ==================== PHASE 1: TRAINING ====================
 echo ""
