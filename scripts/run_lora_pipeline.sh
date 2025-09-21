@@ -23,16 +23,7 @@ echo "Job ID: $SLURM_JOB_ID"
 echo "Started at: $(date)"
 echo "=========================================="
 
-# Get the project root directory
-# If running under SLURM, use SLURM_SUBMIT_DIR; otherwise, use current directory
-if [ -n "${SLURM_SUBMIT_DIR:-}" ]; then
-    PROJECT_ROOT="$SLURM_SUBMIT_DIR"
-else
-    # When running directly from project root, use current directory
-    PROJECT_ROOT="$(pwd)"
-fi
 
-cd "$PROJECT_ROOT"
 SCRIPT_DIR="scripts"
 
 # ==================== PHASE 1: TRAINING ====================
