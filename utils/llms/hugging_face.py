@@ -35,6 +35,7 @@ def load_model(
     filename: str,
     seed: int = RANDOM_SEED,
     chat_format: Optional[str] = None,
+    revision: str = "main",
     *,
     # Performance tuning (optional)
     n_gpu_layers: Optional[int] = -1,  # Offload all layers to GPU
@@ -52,11 +53,13 @@ def load_model(
         repo_id: Hugging Face repository ID (e.g., "microsoft/phi-4-gguf").
         filename: GGUF file name inside the repository (e.g., "phi-4-Q4_K.gguf").
         seed: Random seed for sampling; set a fixed value for reproducible outputs.
+        chat_format: Optional chat format to use.
+        revision: HuggingFace revision (branch, tag, or commit) for the model (default: main).
 
     Returns:
         A `Llama` instance configured with `n_ctx=DEFAULT_MAX_TOKENS` and the given seed.
     """
-    local_path = hf_hub_download(repo_id=repo_id, filename=filename)
+    local_path = hf_hub_download(repo_id=repo_id, filename=filename, revision=revision)
 
     # Create llama instance from local file path
     llm = Llama(
@@ -100,6 +103,8 @@ def api_call(
         system_prompt: Instructional system prompt to steer the model.
         temperature: Sampling temperature (higher = more random generation).
         seed: RNG seed used for sampling in this call for reproducibility.
+        use_schema: Whether to use JSON schema for structured output.
+        chat_format: Optional chat format to use.
 
     Returns:
         List of predicted commit types extracted from the model's JSON output.

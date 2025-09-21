@@ -53,6 +53,12 @@ parser.add_argument(
     choices=["phi", "qwen"],
     help="Model to convert (default: phi)"
 )
+parser.add_argument(
+    "--revision",
+    type=str,
+    default="main",
+    help="HuggingFace revision (branch, tag, or commit) for the LoRA adapter (default: main)"
+)
 args = parser.parse_args()
 
 # Set model-specific configuration
@@ -118,8 +124,8 @@ def create_output_dir() -> None:
 
 def merge_lora_adapter() -> bool:
     """Load LoRA adapter from HF Hub and merge with base model"""
-    logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} and merging...")
-    
+    logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} (revision: {args.revision}) and merging...")
+
     logger.info(f"Memory checkpoint")
 
     try:
@@ -136,6 +142,7 @@ def merge_lora_adapter() -> bool:
             trust_remote_code=True,
             device_map="auto",
             cache_dir=HF_CACHE_DIR,
+            revision=args.revision,
         )
         
         logger.info(f"Memory checkpoint")

@@ -161,6 +161,7 @@ def run_inference(
     temperature: float = DEFAULT_TEMPERATURE,
     seed: int = DEFAULT_SEED,
     max_tokens: int = DEFAULT_MAX_TOKENS,
+    revision: str = "main",
 ):
     """Run inference with specified model and parameters"""
     
@@ -190,12 +191,13 @@ def run_inference(
     
 
     # Pre-load GGUF model for better performance (all SLM models are GGUF)
-    print(f"Pre-loading GGUF model: {model_config['filename']}")
+    print(f"Pre-loading GGUF model: {model_config['filename']} (revision: {revision})")
     llms.load_model(
         repo_id=model_config["repo_id"],
-        filename=model_config["filename"], 
+        filename=model_config["filename"],
         seed=seed,
-        chat_format=model_config["chat_format"]
+        chat_format=model_config["chat_format"],
+        revision=revision
     )
     
     # Load dataset
@@ -308,7 +310,13 @@ def main():
         choices=["Zero-shot", "Few-shot"],
         help="Shot types to test (default: Zero-shot)"
     )
-    
+    parser.add_argument(
+        "--revision",
+        type=str,
+        default="main",
+        help="HuggingFace revision (branch, tag, or commit) for the model (default: main)"
+    )
+
     args = parser.parse_args()
     
     # Run inference
@@ -320,6 +328,7 @@ def main():
         temperature=args.temperature,
         seed=args.seed,
         max_tokens=args.max_tokens,
+        revision=args.revision,
     )
 
 
