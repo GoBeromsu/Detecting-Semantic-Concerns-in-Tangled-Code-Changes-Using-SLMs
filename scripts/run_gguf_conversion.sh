@@ -17,7 +17,10 @@ set -euo pipefail
 MODEL_TYPE=${1:-"Phi"}
 [[ "$MODEL_TYPE" =~ ^(Phi|Qwen)$ ]] || { echo "MODEL_TYPE must be Phi or Qwen"; exit 1; }
 
+REVISION=${2:-"main"}
+
 echo "MODEL_TYPE=${MODEL_TYPE}"
+echo "REVISION=${REVISION}"
 
 
 mkdir -p logs
@@ -86,9 +89,9 @@ fi
 
 echo "✅ Found converter script: $CONVERTER"
 
-# Run GGUF conversion with model type
-echo "🚀 Starting GGUF conversion for ${MODEL_TYPE} at $(date)"
-python "$CONVERTER" --model "${MODEL_TYPE,,}" | tee -a "logs/convert_output_${SLURM_JOB_ID}_${MODEL_TYPE}.log"
+# Run GGUF conversion with model type and revision
+echo "🚀 Starting GGUF conversion for ${MODEL_TYPE} (revision: ${REVISION}) at $(date)"
+python "$CONVERTER" --model "${MODEL_TYPE,,}" --revision "${REVISION}" | tee -a "logs/convert_output_${SLURM_JOB_ID}_${MODEL_TYPE}.log"
 
 conversion_exit_code=$?
 
