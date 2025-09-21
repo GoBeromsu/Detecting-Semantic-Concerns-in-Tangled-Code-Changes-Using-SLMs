@@ -41,8 +41,6 @@ if [ ! -d "$LLAMA_CPP_DIR" ]; then
 fi
 echo "[INFO] llama.cpp found."
 
-# Return to original directory
-cd "$SLURM_SUBMIT_DIR"
 
 mkdir -p logs
 
