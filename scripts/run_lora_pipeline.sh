@@ -24,13 +24,12 @@ echo "Started at: $(date)"
 echo "=========================================="
 
 # Get the project root directory
-# If running under SLURM, use SLURM_SUBMIT_DIR; otherwise, use parent of script directory
+# If running under SLURM, use SLURM_SUBMIT_DIR; otherwise, use current directory
 if [ -n "${SLURM_SUBMIT_DIR:-}" ]; then
     PROJECT_ROOT="$SLURM_SUBMIT_DIR"
 else
-    # When running directly, get the parent directory of scripts/
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+    # When running directly from project root, use current directory
+    PROJECT_ROOT="$(pwd)"
 fi
 
 cd "$PROJECT_ROOT"
