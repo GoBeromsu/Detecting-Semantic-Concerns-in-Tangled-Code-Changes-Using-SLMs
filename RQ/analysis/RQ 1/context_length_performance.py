@@ -15,18 +15,18 @@ ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
 # Default configuration
 DEFAULT_CONFIG = {
-    'models': {
-        'GPT-4.1': {
-            'path_pattern': "results/gpt/avg_result/msg1/json/{context}_zs.json"
+    "models": {
+        "GPT-4.1": {
+            "path_pattern": "results/gpt/avg_result/msg1/json/{context}_zs.json"
         },
-        'Qwen': {
-            'path_pattern': "results/Qwen/avg_result/msg1/json/{context}_zs_filtered.json"
+        "Qwen": {
+            "path_pattern": "results/Qwen/avg_result/msg1/json/{context}_zs_filtered.json"
         },
-        'Qwen (FT)': {
-            'path_pattern': "results/Qwen3-14B-LoRA/avg_result/msg1/json/{context}_zs.json"
-        }
+        "Qwen (FT)": {
+            "path_pattern": "results/Qwen3-14B-LoRA/avg_result/msg1/json/{context}_zs.json"
+        },
     },
-    'context_lengths': [1024, 2048, 4096, 8192, 12288]
+    "context_lengths": [1024, 2048, 4096, 8192, 12288],
 }
 
 
@@ -34,103 +34,107 @@ def load_metrics(json_path: Path) -> dict:
     """Load metrics from JSON file."""
     if not json_path.exists():
         raise FileNotFoundError(f"JSON file not found: {json_path}")
-    
-    with open(json_path, 'r', encoding='utf-8') as f:
+
+    with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    
-    if 'metrics_macro' not in data:
+
+    if "metrics_macro" not in data:
         raise ValueError(f"Missing 'metrics_macro' in {json_path.name}")
-    
-    return data['metrics_macro']
+
+    return data["metrics_macro"]
 
 
 def generate_context_length_comparison(config: dict) -> pd.DataFrame:
     """Generate context length performance comparison table."""
+    metrics = [
+        ("F1", "f1"),
+        ("Precision", "precision"),
+        ("Recall", "recall"),
+        ("Accuracy", "accuracy"),
+        ("HS", "hamming_loss"),
+    ]
+    model_name_map = {"GPT-4.1": "GPT41", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
     rows = []
-    metrics_order = ['f1', 'precision', 'recall', 'accuracy', 'hamming_loss']
-    metric_names = ['F1', 'Precision', 'Recall', 'Accuracy', 'HS']
-    
-    # Model name mapping for cleaner column names
-    model_name_map = {
-        'GPT-4.1': 'GPT41',
-        'Qwen': 'Qwen',
-        'Qwen (FT)': 'QwenFT'
-    }
-    
-    for context_length in config['context_lengths']:
-        row = {'ContextLength': context_length}
-        
-        for model_name, model_config in config['models'].items():
+    for context_length in config["context_lengths"]:
+        row = {"ContextLength": context_length}
+        for model_name, model_config in config["models"].items():
             # Build file path using pattern
-            file_path = PROJECT_ROOT / model_config['path_pattern'].format(context=context_length)
-
-            # Get clean model name
+            file_path = PROJECT_ROOT / model_config["path_pattern"].format(
+                context=context_length
+            )
             clean_model_name = model_name_map.get(model_name, model_name)
-
-            try:
-                # For Qwen model, determine file pattern based on context length
-                if model_name == 'Qwen':
-                    # Check which file exists for this context length
-                    base_path = PROJECT_ROOT / f"results/Qwen/avg_result/msg1/json/{context_length}"
-                    if (base_path.parent / f"{context_length}_zs_filtered.json").exists():
-                        file_path = base_path.parent / f"{context_length}_zs_filtered.json"
-                    else:
-                        file_path = base_path.parent / f"{context_length}_zs.json"
-
-                metrics = load_metrics(file_path)
-
-                # Add metrics for this model
-                for metric_key, metric_name in zip(metrics_order, metric_names):
-                    column_name = f'{clean_model_name}_{metric_name}'
-                    if metric_key == 'hamming_loss':
-                        value = metrics.get('hamming_loss', 0)
-                    else:
-                        value = metrics.get(metric_key, 0)
-
-                    row[column_name] = f"{value:.4f}"
-
-            except (FileNotFoundError, ValueError) as e:
-                print(f"⚠️  Warning: Could not load {file_path}: {e}")
-                # Fill with NaN values for missing data (will be displayed as empty in CSV)
-                for metric_name in metric_names:
-                    column_name = f'{clean_model_name}_{metric_name}'
-                    row[column_name] = None  # This will become NaN in pandas
-        
+            # Qwen 파일 경로 분기(기존 로직 유지)
+            if model_name == "Qwen":
+                base_path = (
+                    PROJECT_ROOT / f"results/Qwen/avg_result/msg1/json/{context_length}"
+                )
+                if (base_path.parent / f"{context_length}_zs_filtered.json").exists():
+                    file_path = base_path.parent / f"{context_length}_zs_filtered.json"
+                else:
+                    file_path = base_path.parent / f"{context_length}_zs.json"
+            metrics_data = load_metrics(file_path)
+            for label, key in metrics:
+                col_name = f"{clean_model_name}_{label}"
+                if key not in metrics_data:
+                    raise ValueError(
+                        f"Missing metric '{key}' for model {model_name}, context_length={context_length}"
+                    )
+                row[col_name] = round(metrics_data[key], 3)
         rows.append(row)
-    
     return pd.DataFrame(rows)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate context length performance comparison')
-    parser.add_argument('--output-dir', type=str, help='Output directory')
-    
+    parser = argparse.ArgumentParser(
+        description="Generate context length performance comparison"
+    )
+    parser.add_argument("--output-dir", type=str, help="Output directory")
+
     args = parser.parse_args()
-    
+
     # Use default configuration
     config = DEFAULT_CONFIG
     print("📋 Using default configuration for context length analysis")
-    
+
     # Set output directory
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
         from datetime import datetime
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         output_dir = ANALYSIS_OUTPUT_DIR / f"context_length_performance_{timestamp}"
-    
+
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Generate comparison
     df = generate_context_length_comparison(config)
     csv_path = output_dir / "context_length_performance.csv"
-    # Save to CSV with NaN values displayed as empty strings
-    df.to_csv(csv_path, index=False, na_rep='')
-    
-    # Print table
-    print("=== Context Length Performance Analysis ===")
-    print(df.to_string(index=False))
-    
+    df.to_csv(csv_path, index=False, float_format="%.2f")
+
+    # Dynamic header/print
+    metrics = [
+        ("F1", "f1"),
+        ("Precision", "precision"),
+        ("Recall", "recall"),
+        ("Accuracy", "accuracy"),
+        ("HS", "hamming_loss"),
+    ]
+    model_name_map = {"GPT-4.1": "GPT41", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
+    header = ["ContextLength"] + [
+        f"{model_name_map.get(m, m)}_{label}"
+        for m in config["models"].keys()
+        for label, _ in metrics
+    ]
+    print(" ".join(f"{h:<15}" for h in header))
+    print("-" * (len(header) * 15))
+    for _, row in df.iterrows():
+        print(
+            " ".join(
+                f"{row[h]:<15.2f}" if h != "ContextLength" else f"{int(row[h]):<15}"
+                for h in header
+            )
+        )
     print(f"\nResults saved to: {csv_path}")
 
 

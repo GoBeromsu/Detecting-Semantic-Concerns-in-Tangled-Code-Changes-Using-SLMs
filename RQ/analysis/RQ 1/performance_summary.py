@@ -64,13 +64,14 @@ def main():
         # Extract metrics, handle missing hamming_loss
         row = {
             'Model': model_name,
-            'F1': round(metrics.get('f1', 0), 4),
-            'Precision': round(metrics.get('precision', 0), 4),
-            'Recall': round(metrics.get('recall', 0), 4),
-            'Accuracy': round(metrics.get('accuracy', 0), 4),
-            'Hamming Loss': round(metrics.get('hamming_loss', 0), 4) if 'hamming_loss' in metrics else None
+            'F1': round(metrics.get('f1', 0), 3),
+            'Precision': round(metrics.get('precision', 0), 3),
+            'Recall': round(metrics.get('recall', 0), 3),
+            'Accuracy': round(metrics.get('accuracy', 0), 3),
+            'Hamming Loss': round(metrics.get('hamming_loss', 0), 3)
         }
         rows.append(row)
+
     
     # Create DataFrame and save CSV
     df = pd.DataFrame(rows)
@@ -78,13 +79,7 @@ def main():
     
     # Format numeric columns to 2 decimal places
     numeric_columns = ['F1', 'Precision', 'Recall', 'Accuracy', 'Hamming Loss']
-    for col in numeric_columns:
-        df[col] = df[col].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "")
-    
-    df.to_csv(csv_path, index=False)
-    
-    # Print table
-    print(f"{'Model':<20} {'F1':<8} {'Precision':<12} {'Recall':<8} {'Accuracy':<10} {'Hamming Loss':<12}")
+    df.to_csv(csv_path, index=False, float_format="%.2f")
     print("-" * 80)
     
     for _, row in df.iterrows():
