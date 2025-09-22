@@ -87,7 +87,7 @@ def generate_context_length_comparison(config: dict) -> pd.DataFrame:
                     else:
                         value = metrics.get(metric_key, 0)
 
-                    row[column_name] = f"{value:.3f}"
+                    row[column_name] = f"{value:.4f}"
 
             except (FileNotFoundError, ValueError) as e:
                 print(f"⚠️  Warning: Could not load {file_path}: {e}")

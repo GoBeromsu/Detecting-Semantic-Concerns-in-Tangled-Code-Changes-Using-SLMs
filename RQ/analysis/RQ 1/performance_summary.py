@@ -64,11 +64,11 @@ def main():
         # Extract metrics, handle missing hamming_loss
         row = {
             'Model': model_name,
-            'F1': round(metrics.get('f1', 0), 2),
-            'Precision': round(metrics.get('precision', 0), 2),
-            'Recall': round(metrics.get('recall', 0), 2),
-            'Accuracy': round(metrics.get('accuracy', 0), 2),
-            'Hamming Loss': round(metrics.get('hamming_loss', 0), 2) if 'hamming_loss' in metrics else None
+            'F1': round(metrics.get('f1', 0), 4),
+            'Precision': round(metrics.get('precision', 0), 4),
+            'Recall': round(metrics.get('recall', 0), 4),
+            'Accuracy': round(metrics.get('accuracy', 0), 4),
+            'Hamming Loss': round(metrics.get('hamming_loss', 0), 4) if 'hamming_loss' in metrics else None
         }
         rows.append(row)
     
@@ -79,7 +79,7 @@ def main():
     # Format numeric columns to 2 decimal places
     numeric_columns = ['F1', 'Precision', 'Recall', 'Accuracy', 'Hamming Loss']
     for col in numeric_columns:
-        df[col] = df[col].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")
+        df[col] = df[col].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "")
     
     df.to_csv(csv_path, index=False)
     

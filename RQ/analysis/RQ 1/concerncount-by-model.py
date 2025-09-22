@@ -75,11 +75,11 @@ def main():
                 concern_data = next((item for item in models_data[model_name] 
                                    if item['concern_count'] == concern_count), {})
                 
-                row[f'{model_name} F1'] = f"{concern_data.get('f1', 0):.3f}" if concern_data else ""
-                row[f'{model_name} Precision'] = f"{concern_data.get('precision', 0):.3f}" if concern_data else ""
-                row[f'{model_name} Recall'] = f"{concern_data.get('recall', 0):.3f}" if concern_data else ""
-                row[f'{model_name} Accuracy'] = f"{concern_data.get('accuracy', 0):.3f}" if concern_data else ""
-                row[f'{model_name} HS'] = f"{concern_data.get('hamming_loss', 0):.3f}" if concern_data and 'hamming_loss' in concern_data else ""
+                row[f'{model_name} F1'] = f"{concern_data.get('f1', 0):.4f}" if concern_data else ""
+                row[f'{model_name} Precision'] = f"{concern_data.get('precision', 0):.4f}" if concern_data else ""
+                row[f'{model_name} Recall'] = f"{concern_data.get('recall', 0):.4f}" if concern_data else ""
+                row[f'{model_name} Accuracy'] = f"{concern_data.get('accuracy', 0):.4f}" if concern_data else ""
+                row[f'{model_name} HS'] = f"{concern_data.get('hamming_loss', 0):.4f}" if concern_data and 'hamming_loss' in concern_data else ""
         
         rows.append(row)
     

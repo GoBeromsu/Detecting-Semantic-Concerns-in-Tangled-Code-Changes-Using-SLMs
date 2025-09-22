@@ -91,9 +91,9 @@ def generate_f1_comparison(model_configs: dict) -> pd.DataFrame:
         
         row = {
             'Model': model_name,
-            'Without Msg': f"{without_msg_f1:.3f}",
-            'With Msg': f"{with_msg_f1:.3f}",
-            'Delta': f"{delta_f1:+.3f}"
+            'Without Msg': f"{without_msg_f1:.4f}",
+            'With Msg': f"{with_msg_f1:.4f}",
+            'Delta': f"{delta_f1:+.4f}"
         }
         rows.append(row)
     
@@ -118,9 +118,9 @@ def generate_full_comparison(model_configs: dict) -> pd.DataFrame:
             row = {
                 'Model': model_name,
                 'Metric': metric.upper(),
-                'Without Msg': f"{without_msg:.3f}",
-                'With Msg': f"{with_msg:.3f}",
-                'Delta': f"{delta:+.3f}"
+                'Without Msg': f"{without_msg:.4f}",
+                'With Msg': f"{with_msg:.4f}",
+                'Delta': f"{delta:+.4f}"
             }
             rows.append(row)
     
