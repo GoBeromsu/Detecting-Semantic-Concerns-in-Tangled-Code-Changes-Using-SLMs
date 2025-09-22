@@ -8,26 +8,18 @@ import pandas as pd
 import json
 from pathlib import Path
 import argparse
+import yaml
 
 # Constants - Use root results directory (from project root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
-# Default configuration
-DEFAULT_CONFIG = {
-    "models": {
-        "GPT-4.1": {
-            "path_pattern": "results/gpt/avg_result/msg1/json/{context}_zs.json"
-        },
-        "Qwen": {
-            "path_pattern": "results/Qwen/avg_result/msg1/json/{context}_zs_filtered.json"
-        },
-        "Qwen (FT)": {
-            "path_pattern": "results/Qwen3-14B-LoRA/avg_result/msg1/json/{context}_zs.json"
-        },
-    },
-    "context_lengths": [1024, 2048, 4096, 8192, 12288],
-}
+
+def load_config():
+    """Load configuration from config.yaml"""
+    config_path = Path(__file__).parent / "config.yaml"
+    with open(config_path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 def load_metrics(json_path: Path) -> dict:
@@ -45,15 +37,13 @@ def load_metrics(json_path: Path) -> dict:
 
 
 def generate_context_length_comparison(config: dict) -> pd.DataFrame:
-    """Generate context length performance comparison table."""
+    """Generate context length performance comparison table (F1 and Hamming Loss only)."""
+    # Only show F1 and Hamming Loss like concerncount-by-model.py
     metrics = [
         ("F1", "f1"),
-        ("Precision", "precision"),
-        ("Recall", "recall"),
-        ("Accuracy", "accuracy"),
         ("HS", "hamming_loss"),
     ]
-    model_name_map = {"GPT-4.1": "GPT41", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
+
     rows = []
     for context_length in config["context_lengths"]:
         row = {"ContextLength": context_length}
@@ -62,7 +52,6 @@ def generate_context_length_comparison(config: dict) -> pd.DataFrame:
             file_path = PROJECT_ROOT / model_config["path_pattern"].format(
                 context=context_length
             )
-            clean_model_name = model_name_map.get(model_name, model_name)
             # Qwen 파일 경로 분기(기존 로직 유지)
             if model_name == "Qwen":
                 base_path = (
@@ -74,6 +63,8 @@ def generate_context_length_comparison(config: dict) -> pd.DataFrame:
                     file_path = base_path.parent / f"{context_length}_zs.json"
             metrics_data = load_metrics(file_path)
             for label, key in metrics:
+                # Convert model name to Overleaf-friendly format: "Qwen (FT)" -> "Qwen_FT"
+                clean_model_name = model_name.replace(" (", "_").replace(")", "").replace("-", "_").replace(".", "_").replace(" ", "_")
                 col_name = f"{clean_model_name}_{label}"
                 if key not in metrics_data:
                     raise ValueError(
@@ -86,15 +77,21 @@ def generate_context_length_comparison(config: dict) -> pd.DataFrame:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate context length performance comparison"
+        description="Generate context length performance comparison table"
     )
     parser.add_argument("--output-dir", type=str, help="Output directory")
+    parser.add_argument(
+        "--use-config",
+        action="store_true",
+        default=True,
+        help="Use config.yaml for model configuration",
+    )
 
     args = parser.parse_args()
 
-    # Use default configuration
-    config = DEFAULT_CONFIG
-    print("📋 Using default configuration for context length analysis")
+    # Load configuration
+    config = load_config()
+    script_config = config["scripts"]["context_length_performance"]
 
     # Set output directory
     if args.output_dir:
@@ -103,27 +100,23 @@ def main():
         from datetime import datetime
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        output_dir = ANALYSIS_OUTPUT_DIR / f"context_length_performance_{timestamp}"
+        # Generate descriptive output directory name
+        model_names = list(script_config["models"].keys())
+        models_summary = "_".join(model_names)[:50]
+        output_dir = ANALYSIS_OUTPUT_DIR / f"context_length_{models_summary}_{timestamp}"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Generate comparison
-    df = generate_context_length_comparison(config)
+    # Generate table comparison
+    df = generate_context_length_comparison(script_config)
     csv_path = output_dir / "context_length_performance.csv"
-    df.to_csv(csv_path, index=False, float_format="%.2f")
+    df.to_csv(csv_path, index=False, float_format="%.3f")
 
-    # Dynamic header/print
-    metrics = [
-        ("F1", "f1"),
-        ("Precision", "precision"),
-        ("Recall", "recall"),
-        ("Accuracy", "accuracy"),
-        ("HS", "hamming_loss"),
-    ]
-    model_name_map = {"GPT-4.1": "GPT41", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
+    # Print table (F1 and Hamming Loss only)
+    metrics = [("F1", "f1"), ("HS", "hamming_loss")]
     header = ["ContextLength"] + [
-        f"{model_name_map.get(m, m)}_{label}"
-        for m in config["models"].keys()
+        f"{model_name.replace(' (', '_').replace(')', '').replace('-', '_').replace('.', '_').replace(' ', '_')}_{label}"
+        for model_name in script_config["models"].keys()
         for label, _ in metrics
     ]
     print(" ".join(f"{h:<15}" for h in header))
@@ -131,10 +124,11 @@ def main():
     for _, row in df.iterrows():
         print(
             " ".join(
-                f"{row[h]:<15.2f}" if h != "ContextLength" else f"{int(row[h]):<15}"
+                f"{row[h]:<15.3f}" if h != "ContextLength" else f"{int(row[h]):<15}"
                 for h in header
             )
         )
+
     print(f"\nResults saved to: {csv_path}")
 
 

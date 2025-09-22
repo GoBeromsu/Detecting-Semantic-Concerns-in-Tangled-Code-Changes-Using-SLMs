@@ -86,7 +86,7 @@ def generate_comparison(model_configs: dict, metrics: list) -> pd.DataFrame:
         for metric in metrics:
             without_msg = round(msg0_metrics[metric], 3)
             with_msg = round(msg1_metrics[metric], 3)
-            delta = round(with_msg - without_msg, 3)
+            delta = with_msg - without_msg
 
             row = {
                 "Model": model_name,
