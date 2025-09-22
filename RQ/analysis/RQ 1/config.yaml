@@ -59,6 +59,17 @@ scripts:
       "Fine-tuned SLM":
         csv_path: "results/Qwen3-14B-LoRA/20250921192953/msg1/12288_zs.csv"
 
+  hamming_loss_boxplot:
+    script: "hamming_loss_boxplot.py"
+    description: "Generates hamming loss box plots by concern count and model"
+    models:
+      LLM:
+        csv_path: "results/gpt/20250906184004/msg1/12288_zs.csv"
+      SLM:
+        csv_path: "results/Qwen/20250921162319/msg1/12288_zs.csv"
+      "Fine-tuned SLM":
+        csv_path: "results/Qwen3-14B-LoRA/20250921192953/msg1/12288_zs.csv"
+
 # Execution order
 execution_order:
   - "msg_impact_analysis"
@@ -66,3 +77,4 @@ execution_order:
   - "concerncount_by_model"
   - "context_length_performance"
   - "model_comparison_analysis"
+  - "hamming_loss_boxplot"
