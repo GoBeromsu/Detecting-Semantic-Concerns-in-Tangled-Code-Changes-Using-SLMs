@@ -52,12 +52,12 @@ def main():
         metrics = data['metrics_macro']
         
         # Determine model name based on JSON content and path
-        if 'gpt' in str(json_path) or data.get('model') == '16384':
+        if 'gpt' in str(json_path):
             model_name = 'GPT-4.1'
-        elif 'Lora' in str(json_path) or data.get('model') == 'Phi4':
-            model_name = 'Phi-4 (Fine-tuned)'
-        elif data.get('model') == 'Phi-4' or 'zero_shot' in str(json_path):
-            model_name = 'Phi-4'
+        elif 'Qwen3-14B-LoRA' in str(json_path):
+            model_name = 'Qwen (Fine-tuned)'
+        elif 'Qwen' in str(json_path):
+            model_name = 'Qwen'
         else:
             model_name = json_path.stem  # fallback to filename
         

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Message Impact Analysis: Model Comparison
-Analyzes the impact of commit messages on model performance across GPT-4.1, Phi-4, and Phi-4(FT).
+Analyzes the impact of commit messages on model performance across GPT-4.1, Qwen, and Qwen(FT).
 """
 
 import pandas as pd
@@ -16,16 +16,16 @@ ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 # Default model configurations (fallback if no config provided)
 DEFAULT_MODEL_CONFIGS = {
     'GPT-4.1': {
-        'msg0_path': "results/gpt/avg_result/msg0/json/16384_zs.json",
-        'msg1_path': "results/gpt/avg_result/msg1/json/16384_zs.json"
+        'msg0_path': "results/gpt/avg_result/msg0/json/12288_zs.json",
+        'msg1_path': "results/gpt/avg_result/msg1/json/12288_zs.json"
     },
-    'Phi-4': {
-        'msg0_path': "results/phi/avg_result/msg0/json/16384_zs_filtered.json",
-        'msg1_path': "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
+    'Qwen': {
+        'msg0_path': "results/Qwen/avg_result/msg0/json/12288_zs_filtered.json",
+        'msg1_path': "results/Qwen/avg_result/msg1/json/12288_zs.json"
     },
-    'Phi-4 (FT)': {
-        'msg0_path': "results/phi_lora/avg_result/with_message_msg0/json/Phi4_16384.json",
-        'msg1_path': "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
+    'Qwen (FT)': {
+        'msg0_path': "results/Qwen3-14B-LoRA/avg_result/msg0/json/12288_zs.json",
+        'msg1_path': "results/Qwen3-14B-LoRA/avg_result/msg1/json/12288_zs.json"
     }
 }
 

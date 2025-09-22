@@ -89,11 +89,11 @@ def main():
     df.to_csv(csv_path, index=False)
     
     # Print table
-    print(f"{'Count':<5} {'GPT-4.1 F1':<10} {'GPT-4.1 Prec':<12} {'GPT-4.1 Rec':<11} {'GPT-4.1 Acc':<11} {'GPT-4.1 HS':<10} {'Phi-4 F1':<9} {'Phi-4 Prec':<11} {'Phi-4 Rec':<10} {'Phi-4 Acc':<10} {'Phi-4 HS':<9} {'Phi-4(FT) F1':<12} {'Phi-4(FT) Prec':<14} {'Phi-4(FT) Rec':<13} {'Phi-4(FT) Acc':<13} {'Phi-4(FT) HS':<11}")
+    print(f"{'Count':<5} {'GPT-4.1 F1':<10} {'GPT-4.1 Prec':<12} {'GPT-4.1 Rec':<11} {'GPT-4.1 Acc':<11} {'GPT-4.1 HS':<10} {'Qwen F1':<9} {'Qwen Prec':<11} {'Qwen Rec':<10} {'Qwen Acc':<10} {'Qwen HS':<9} {'Qwen(FT) F1':<12} {'Qwen(FT) Prec':<14} {'Qwen(FT) Rec':<13} {'Qwen(FT) Acc':<13} {'Qwen(FT) HS':<11}")
     print("-" * 160)
     
     for _, row in df.iterrows():
-        print(f"{row['Count']:<5} {row.get('GPT-4.1 F1', ''):<10} {row.get('GPT-4.1 Precision', ''):<12} {row.get('GPT-4.1 Recall', ''):<11} {row.get('GPT-4.1 Accuracy', ''):<11} {row.get('GPT-4.1 HS', ''):<10} {row.get('Phi-4 F1', ''):<9} {row.get('Phi-4 Precision', ''):<11} {row.get('Phi-4 Recall', ''):<10} {row.get('Phi-4 Accuracy', ''):<10} {row.get('Phi-4 HS', ''):<9} {row.get('Phi-4 (FT) F1', ''):<12} {row.get('Phi-4 (FT) Precision', ''):<14} {row.get('Phi-4 (FT) Recall', ''):<13} {row.get('Phi-4 (FT) Accuracy', ''):<13} {row.get('Phi-4 (FT) HS', ''):<11}")
+        print(f"{row['Count']:<5} {row.get('GPT-4.1 F1', ''):<10} {row.get('GPT-4.1 Precision', ''):<12} {row.get('GPT-4.1 Recall', ''):<11} {row.get('GPT-4.1 Accuracy', ''):<11} {row.get('GPT-4.1 HS', ''):<10} {row.get('Qwen F1', ''):<9} {row.get('Qwen Precision', ''):<11} {row.get('Qwen Recall', ''):<10} {row.get('Qwen Accuracy', ''):<10} {row.get('Qwen HS', ''):<9} {row.get('Qwen (FT) F1', ''):<12} {row.get('Qwen (FT) Precision', ''):<14} {row.get('Qwen (FT) Recall', ''):<13} {row.get('Qwen (FT) Accuracy', ''):<13} {row.get('Qwen (FT) HS', ''):<11}")
     
     print(f"\nResults saved to: {csv_path}")
 

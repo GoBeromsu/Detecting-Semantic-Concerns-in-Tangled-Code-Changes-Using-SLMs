@@ -8,33 +8,33 @@ scripts:
     description: "Analyzes the impact of commit messages on model performance"
     models:
       GPT-4.1:
-        msg0_path: "results/gpt/avg_result/msg0/json/16384_zs.json"
-        msg1_path: "results/gpt/avg_result/msg1/json/16384_zs.json"
-      Phi-4:
-        msg0_path: "results/phi/avg_result/msg0/json/16384_zs_filtered.json"
-        msg1_path: "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
-      "Phi-4 (FT)":
-        msg0_path: "results/phi_lora/avg_result/with_message_msg0/json/Phi4_16384.json"
-        msg1_path: "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
+        msg0_path: "results/gpt/avg_result/msg0/json/12288_zs.json"
+        msg1_path: "results/gpt/avg_result/msg1/json/12288_zs.json"
+      Qwen:
+        msg0_path: "results/Qwen/avg_result/msg0/json/12288_zs_filtered.json"
+        msg1_path: "results/Qwen/avg_result/msg1/json/12288_zs.json"
+      "Qwen (FT)":
+        msg0_path: "results/Qwen3-14B-LoRA/avg_result/msg0/json/12288_zs.json"
+        msg1_path: "results/Qwen3-14B-LoRA/avg_result/msg1/json/12288_zs.json"
 
   concerncount_by_model:
     script: "concerncount-by-model.py"
     description: "Generates concern count performance comparison"
     models:
       GPT-4.1:
-        path: "results/gpt/avg_result/msg1/json/16384_zs.json"
-      Phi-4:
-        path: "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
-      "Phi-4 (FT)":
-        path: "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
+        path: "results/gpt/avg_result/msg1/json/12288_zs.json"
+      Qwen:
+        path: "results/Qwen/avg_result/msg1/json/12288_zs.json"
+      "Qwen (FT)":
+        path: "results/Qwen3-14B-LoRA/avg_result/msg1/json/12288_zs.json"
 
   performance_summary:
     script: "performance_summary.py"
     description: "Generates performance summary comparison"
     input_files:
-      - "results/phi_lora/avg_result/with_message_msg1/json/Phi4_16384.json"
-      - "results/phi/avg_result/msg1/json/16384_zs_filtered.json"
-      - "results/gpt/avg_result/msg1/json/16384_zs.json"
+      - "results/Qwen3-14B-LoRA/avg_result/msg1/json/12288_zs.json"
+      - "results/Qwen/avg_result/msg1/json/12288_zs.json"
+      - "results/gpt/avg_result/msg1/json/12288_zs.json"
 
   context_length_performance:
     script: "context_length_performance.py"
@@ -42,11 +42,11 @@ scripts:
     models:
       GPT-4.1:
         path_pattern: "results/gpt/avg_result/msg1/json/{context}_zs.json"
-      Phi-4:
-        path_pattern: "results/phi/avg_result/msg1/json/{context}_zs_filtered.json"
-      "Phi-4 (FT)":
-        path_pattern: "results/phi_lora/avg_result/with_message_msg1/json/Phi4_{context}.json"
-    context_lengths: [1024, 2048, 4096, 8192, 16384]
+      Qwen:
+        path_pattern: "results/Qwen/avg_result/msg1/json/{context}_zs_filtered.json"
+      "Qwen (FT)":
+        path_pattern: "results/Qwen3-14B-LoRA/avg_result/msg1/json/{context}_zs.json"
+    context_lengths: [1024, 2048, 4096, 8192, 12288]
 
   model_comparison_analysis:
     script: "model_comparison_analysis.py"
@@ -55,9 +55,9 @@ scripts:
       LLM:
         csv_path: "results/gpt/20250906184004/msg1/12288_zs.csv"
       SLM:
-        csv_path: "results/phi/phi-4/msg1/16384_zs.csv"
+        csv_path: "results/Qwen/20250921162319/msg1/12288_zs.csv"
       "Fine-tuned SLM":
-        csv_path: "results/phi_lora/phi-4-Lora/with_message_msg1/Phi4_16384.csv"
+        csv_path: "results/Qwen3-14B-LoRA/20250921192953/msg1/12288_zs.csv"
 
 # Execution order
 execution_order:

@@ -19,14 +19,14 @@ DEFAULT_CONFIG = {
         'GPT-4.1': {
             'path_pattern': "results/gpt/avg_result/msg1/json/{context}_zs.json"
         },
-        'Phi-4': {
-            'path_pattern': "results/phi/avg_result/msg1/json/{context}_zs_filtered.json"
+        'Qwen': {
+            'path_pattern': "results/Qwen/avg_result/msg1/json/{context}_zs_filtered.json"
         },
-        'Phi-4 (FT)': {
-            'path_pattern': "results/phi_lora/avg_result/with_message_msg1/json/Phi4_{context}.json"
+        'Qwen (FT)': {
+            'path_pattern': "results/Qwen3-14B-LoRA/avg_result/msg1/json/{context}_zs.json"
         }
     },
-    'context_lengths': [1024, 2048, 4096, 8192, 16384]
+    'context_lengths': [1024, 2048, 4096, 8192, 12288]
 }
 
 
@@ -53,8 +53,8 @@ def generate_context_length_comparison(config: dict) -> pd.DataFrame:
     # Model name mapping for cleaner column names
     model_name_map = {
         'GPT-4.1': 'GPT41',
-        'Phi-4': 'Phi4',
-        'Phi-4 (FT)': 'Phi4FT'
+        'Qwen': 'Qwen',
+        'Qwen (FT)': 'QwenFT'
     }
     
     for context_length in config['context_lengths']:
@@ -63,13 +63,22 @@ def generate_context_length_comparison(config: dict) -> pd.DataFrame:
         for model_name, model_config in config['models'].items():
             # Build file path using pattern
             file_path = PROJECT_ROOT / model_config['path_pattern'].format(context=context_length)
-            
+
             # Get clean model name
             clean_model_name = model_name_map.get(model_name, model_name)
-            
+
             try:
+                # For Qwen model, determine file pattern based on context length
+                if model_name == 'Qwen':
+                    # Check which file exists for this context length
+                    base_path = PROJECT_ROOT / f"results/Qwen/avg_result/msg1/json/{context_length}"
+                    if (base_path.parent / f"{context_length}_zs_filtered.json").exists():
+                        file_path = base_path.parent / f"{context_length}_zs_filtered.json"
+                    else:
+                        file_path = base_path.parent / f"{context_length}_zs.json"
+
                 metrics = load_metrics(file_path)
-                
+
                 # Add metrics for this model
                 for metric_key, metric_name in zip(metrics_order, metric_names):
                     column_name = f'{clean_model_name}_{metric_name}'
@@ -77,15 +86,15 @@ def generate_context_length_comparison(config: dict) -> pd.DataFrame:
                         value = metrics.get('hamming_loss', 0)
                     else:
                         value = metrics.get(metric_key, 0)
-                    
+
                     row[column_name] = f"{value:.3f}"
-                    
+
             except (FileNotFoundError, ValueError) as e:
                 print(f"⚠️  Warning: Could not load {file_path}: {e}")
-                # Fill with empty values for missing data
+                # Fill with NaN values for missing data (will be displayed as empty in CSV)
                 for metric_name in metric_names:
                     column_name = f'{clean_model_name}_{metric_name}'
-                    row[column_name] = ""
+                    row[column_name] = None  # This will become NaN in pandas
         
         rows.append(row)
     
@@ -115,7 +124,8 @@ def main():
     # Generate comparison
     df = generate_context_length_comparison(config)
     csv_path = output_dir / "context_length_performance.csv"
-    df.to_csv(csv_path, index=False)
+    # Save to CSV with NaN values displayed as empty strings
+    df.to_csv(csv_path, index=False, na_rep='')
     
     # Print table
     print("=== Context Length Performance Analysis ===")

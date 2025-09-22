@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Model Comparison Analysis: LLM vs SLM vs Fine-tuned SLM
-Compares performance between GPT-4.1, Phi-4, and Phi-4 Fine-tuned models.
+Compares performance between GPT-4.1, Qwen, and Qwen Fine-tuned models.
 Analyzes cases where models disagree and their prediction patterns.
 """
 
