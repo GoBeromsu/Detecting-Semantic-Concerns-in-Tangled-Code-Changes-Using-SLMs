@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
 MODEL_NAME_MAP = {
-    "GPT-4.1": "GPT4_1",
+    "GPT-4.1": "GPT-4.1",
     "Qwen": "Qwen",
     "Qwen (FT)": "QwenFT"
 }

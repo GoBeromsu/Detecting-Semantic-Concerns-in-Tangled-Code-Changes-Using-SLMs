@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
 MODEL_NAME_MAP = {
-    "GPT-4.1": "GPT4_1",
+    "GPT-4.1": "GPT-4.1",
     "Qwen": "Qwen",
     "Qwen (FT)": "QwenFT"
 }
@@ -95,7 +95,7 @@ def generate_comparison(model_configs: dict) -> pd.DataFrame:
 
         without_msg = round(msg0_metrics[METRIC_KEY], 2)
         with_msg = round(msg1_metrics[METRIC_KEY], 2)
-        delta = with_msg - without_msg  # Delta from rounded values
+        delta = without_msg - with_msg  # Positive means improvement (lower HS is better)
 
         clean_name = MODEL_NAME_MAP.get(model_name, model_name)
         data[clean_name] = [without_msg, with_msg, delta]
@@ -114,7 +114,7 @@ def generate_delta_only_comparison(model_configs: dict) -> pd.DataFrame:
         clean_name = MODEL_NAME_MAP.get(model_name, model_name)
         without_msg = round(msg0_metrics[METRIC_KEY], 2)
         with_msg = round(msg1_metrics[METRIC_KEY], 2)
-        delta = with_msg - without_msg  # Delta from rounded values
+        delta = without_msg - with_msg  # Positive means improvement (lower HS is better)
 
         data[clean_name] = delta
 
