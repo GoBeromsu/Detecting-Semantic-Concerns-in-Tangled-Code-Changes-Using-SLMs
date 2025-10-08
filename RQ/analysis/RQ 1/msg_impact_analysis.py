@@ -9,11 +9,18 @@ import json
 from pathlib import Path
 import argparse
 
-# Constants - Use root results directory (from project root)
+# Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
-# Default model configurations (fallback if no config provided)
+MODEL_NAME_MAP = {
+    "GPT-4.1": "GPT4_1",
+    "Qwen": "Qwen",
+    "Qwen (FT)": "QwenFT"
+}
+
+METRIC_KEY = "hamming_loss"
+
 DEFAULT_MODEL_CONFIGS = {
     "GPT-4.1": {
         "msg0_path": "results/gpt/avg_result/msg0/json/12288_zs.json",
@@ -76,27 +83,44 @@ def load_metrics(json_path: Path) -> dict:
     return data["metrics_macro"]
 
 
-def generate_comparison(model_configs: dict, metrics: list) -> pd.DataFrame:
-    """Generate comparison table with true rounding for all metrics."""
-    rows = []
+def generate_comparison(model_configs: dict) -> pd.DataFrame:
+    """Generate comparison table for Hamming Loss with models as columns."""
+    data = {
+        "Condition": ["Without Msg", "With Msg", "Delta"]
+    }
+
     for model_name, paths in model_configs.items():
         msg0_metrics = load_metrics(paths["msg0_path"])
         msg1_metrics = load_metrics(paths["msg1_path"])
 
-        for metric in metrics:
-            without_msg = round(msg0_metrics[metric], 3)
-            with_msg = round(msg1_metrics[metric], 3)
-            delta = with_msg - without_msg
+        without_msg = round(msg0_metrics[METRIC_KEY], 2)
+        with_msg = round(msg1_metrics[METRIC_KEY], 2)
+        delta = with_msg - without_msg  # Delta from rounded values
 
-            row = {
-                "Model": model_name,
-                "Metric": metric.upper(),
-                "Without Msg": without_msg,
-                "With Msg": with_msg,
-                "Delta": delta,
-            }
-            rows.append(row)
-    return pd.DataFrame(rows)
+        clean_name = MODEL_NAME_MAP.get(model_name, model_name)
+        data[clean_name] = [without_msg, with_msg, delta]
+
+    return pd.DataFrame(data)
+
+
+def generate_delta_only_comparison(model_configs: dict) -> pd.DataFrame:
+    """Generate comparison table with only delta values."""
+    data = {"Metric": "Delta"}
+
+    for model_name, paths in model_configs.items():
+        msg0_metrics = load_metrics(paths["msg0_path"])
+        msg1_metrics = load_metrics(paths["msg1_path"])
+
+        clean_name = MODEL_NAME_MAP.get(model_name, model_name)
+        without_msg = round(msg0_metrics[METRIC_KEY], 2)
+        with_msg = round(msg1_metrics[METRIC_KEY], 2)
+        delta = with_msg - without_msg  # Delta from rounded values
+
+        data[clean_name] = delta
+
+    return pd.DataFrame([data])
+
+
 
 
 def main():
@@ -110,7 +134,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Load configuration
     if args.config:
         config = load_config_from_file(Path(args.config))
         model_configs = build_model_configs(config)
@@ -119,7 +142,6 @@ def main():
         model_configs = build_model_configs()
         print("📋 Using default model configuration")
 
-    # Set output directory
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
@@ -130,35 +152,45 @@ def main():
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Generate F1 comparison (single-metric, drop 'Metric' column)
-    f1_df = generate_comparison(model_configs, ["f1"])
-    f1_df = f1_df.drop(columns=["Metric"])
-    f1_csv_path = output_dir / "msg_impact_f1.csv"
-    f1_df.to_csv(f1_csv_path, index=False, float_format="%.2f")
+    # Generate main comparison with all conditions
+    comparison_df = generate_comparison(model_configs)
+    comparison_csv_path = output_dir / "msg_impact_comparison.csv"
+    comparison_df.to_csv(comparison_csv_path, index=False, float_format="%.2f")
 
-    # Generate full metrics comparison
-    full_df = generate_comparison(
-        model_configs, ["f1", "precision", "recall", "accuracy"]
-    )
-    full_csv_path = output_dir / "msg_impact_full.csv"
-    full_df.to_csv(full_csv_path, index=False, float_format="%.2f")
+    # Generate delta-only comparison
+    delta_df = generate_delta_only_comparison(model_configs)
+    delta_csv_path = output_dir / "msg_impact_delta.csv"
+    delta_df.to_csv(delta_csv_path, index=False, float_format="%.2f")
 
-    # Print F1 comparison table (2 decimal places)
-    print("=== F1 Score Impact Analysis ===")
-    print(f"{'Model':<15} {'Without Msg':<12} {'With Msg':<10} {'Delta':<10}")
-    print("-" * 50)
-    for _, row in f1_df.iterrows():
+    # Print main comparison table
+    print("=== Message Impact Analysis ===")
+    columns = list(comparison_df.columns)
+    print(" ".join(f"{h:<12}" for h in columns))
+    print("-" * (len(columns) * 12))
+    for _, row in comparison_df.iterrows():
         print(
-            f"{row['Model']:<15} {row['Without Msg']:.2f} {row['With Msg']:.2f} {row['Delta']:+.2f}"
+            " ".join(
+                f"{row[h]:<12.2f}" if h != "Condition" else f"{row[h]:<12}"
+                for h in columns
+            )
         )
 
-    print(f"\n=== Full Metrics Comparison (Sample) ===")
-    # Print only first 12 rows for brevity, 2 decimal places
-    print(full_df.head(12).to_string(index=False, float_format="%.2f"))
+    # Print delta table
+    print("\n=== Delta Values ===")
+    delta_columns = list(delta_df.columns)
+    print(" ".join(f"{h:<12}" for h in delta_columns))
+    print("-" * (len(delta_columns) * 12))
+    for _, row in delta_df.iterrows():
+        print(
+            " ".join(
+                f"{row[h]:+12.2f}" if h != "Metric" else f"{row[h]:<12}"
+                for h in delta_columns
+            )
+        )
 
     print(f"\nResults saved to:")
-    print(f"  F1 comparison: {f1_csv_path}")
-    print(f"  Full comparison: {full_csv_path}")
+    print(f"  Comparison: {comparison_csv_path}")
+    print(f"  Delta: {delta_csv_path}")
 
 
 if __name__ == "__main__":
