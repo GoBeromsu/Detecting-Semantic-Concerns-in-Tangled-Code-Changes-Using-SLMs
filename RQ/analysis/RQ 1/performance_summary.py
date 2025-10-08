@@ -70,7 +70,7 @@ def main():
         clean_name = MODEL_NAME_MAP.get(model_name, model_name)
         rows.append({
             'Model': clean_name,
-            'Value': round(metrics.get(METRIC_KEY, 0), 3)
+            'Value': round(metrics.get(METRIC_KEY, 0), 2)
         })
 
     # Transform to wide format with models as columns
