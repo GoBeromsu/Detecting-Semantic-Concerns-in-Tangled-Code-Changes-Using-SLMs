@@ -10,9 +10,17 @@ import yaml
 from pathlib import Path
 import argparse
 
-# Constants - Use root results directory (from project root)
+# Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
+
+MODEL_NAME_MAP = {
+    "GPT-4.1": "GPT4_1",
+    "Qwen": "Qwen",
+    "Qwen (FT)": "QwenFT"
+}
+
+METRIC_KEY = "hamming_loss"
 
 
 def load_config():
@@ -36,18 +44,15 @@ def main():
 
     args = parser.parse_args()
 
-    # Load configuration
     config = load_config()
     script_config = config["scripts"]["concerncount_by_model"]
 
-    # Set output directory
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
         from datetime import datetime
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        # Generate descriptive output directory name
         model_names = list(script_config["models"].keys())
         models_summary = "_".join(model_names)[:50]
         output_dir = (
@@ -56,7 +61,6 @@ def main():
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Process models from config and collect data
     models_data = {}
     for model_name, model_config in script_config["models"].items():
         json_path = PROJECT_ROOT / model_config["path"]
@@ -66,58 +70,39 @@ def main():
             data = json.load(f)
         if "metrics_by_concern" not in data:
             raise ValueError(f"Missing 'metrics_by_concern' in {json_path.name}")
-        models_data[model_name] = data["metrics_by_concern"]
-
-    metrics = [
-        ("F1", "f1"),
-        ("Precision", "precision"),
-        ("Recall", "recall"),
-        ("Accuracy", "accuracy"),
-        ("HS", "hamming_loss"),
-    ]
+        clean_name = MODEL_NAME_MAP.get(model_name, model_name)
+        models_data[clean_name] = data["metrics_by_concern"]
 
     rows = []
     for concern_count in [1, 2, 3, 4, 5]:
         row = {"Count": concern_count}
-        for model_name in script_config["models"].keys():
+        for clean_name, concern_list in models_data.items():
             concern_data = next(
-                (
-                    item
-                    for item in models_data[model_name]
-                    if item["concern_count"] == concern_count
-                ),
+                (item for item in concern_list if item["concern_count"] == concern_count),
                 None,
             )
             if concern_data is None:
-                raise ValueError(
-                    f"Missing concern_count={concern_count} for model {model_name}"
-                )
-            for label, key in metrics:
-                if key not in concern_data:
-                    raise ValueError(
-                        f"Missing metric '{key}' for model {model_name}, concern_count={concern_count}"
-                    )
-                row[f"{model_name} {label}"] = round(concern_data[key], 3)
+                raise ValueError(f"Missing concern_count={concern_count} for model {clean_name}")
+
+            if METRIC_KEY not in concern_data:
+                raise ValueError(f"Missing {METRIC_KEY} for model {clean_name}, concern_count={concern_count}")
+            row[clean_name] = round(concern_data[METRIC_KEY], 3)
         rows.append(row)
 
-    # Create DataFrame and save CSV (2 decimal places)
-    df = pd.DataFrame(rows)
+    df_complete = pd.DataFrame(rows)
+    columns = ["Count"] + list(models_data.keys())
+    df_hs = df_complete[columns].copy()
     csv_path = output_dir / "performance_by_concern_count.csv"
-    df.to_csv(csv_path, index=False, float_format="%.2f")
+    df_hs.to_csv(csv_path, index=False, float_format="%.2f")
 
-    # Dynamic header/print
-    header = ["Count"] + [
-        f"{model} {label}"
-        for model in script_config["models"].keys()
-        for label, _ in metrics
-    ]
-    print(" ".join(f"{h:<12}" for h in header))
-    print("-" * (len(header) * 12))
-    for _, row in df.iterrows():
+
+    print(" ".join(f"{h:<12}" for h in columns))
+    print("-" * (len(columns) * 12))
+    for _, row in df_hs.iterrows():
         print(
             " ".join(
                 f"{row[h]:<12.2f}" if h != "Count" else f"{int(row[h]):<12}"
-                for h in header
+                for h in columns
             )
         )
     print(f"\nResults saved to: {csv_path}")

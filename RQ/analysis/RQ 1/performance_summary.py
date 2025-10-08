@@ -9,9 +9,18 @@ import json
 from pathlib import Path
 import argparse
 
-# Constants - Use root results directory (from project root)
+# Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
+
+MODEL_NAME_MAP = {
+    "GPT-4.1": "GPT4_1",
+    "Qwen": "Qwen",
+    "Qwen (FT)": "QwenFT",
+    "Qwen (Fine-tuned)": "QwenFT"
+}
+
+METRIC_KEY = "hamming_loss"
 
 
 def main():
@@ -21,21 +30,18 @@ def main():
     
     args = parser.parse_args()
     
-    # Set output directory
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
         from datetime import datetime
         timestamp = datetime.now().strftime('%Y%m%d_%H%M')
         
-        # Generate descriptive output directory name following efficiency_input_tokens.py convention
         file_stems = [Path(f).stem for f in args.json_files]
         files_summary = "_".join(file_stems)[:50]
         output_dir = ANALYSIS_OUTPUT_DIR / f"pf_{files_summary}_{timestamp}"
     
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Process JSON files
     rows = []
     json_paths = [Path(f) for f in args.json_files]
     
@@ -61,35 +67,33 @@ def main():
         else:
             model_name = json_path.stem  # fallback to filename
         
-        # Extract metrics, handle missing hamming_loss
-        row = {
-            'Model': model_name,
-            'F1': round(metrics.get('f1', 0), 3),
-            'Precision': round(metrics.get('precision', 0), 3),
-            'Recall': round(metrics.get('recall', 0), 3),
-            'Accuracy': round(metrics.get('accuracy', 0), 3),
-            'Hamming Loss': round(metrics.get('hamming_loss', 0), 3)
-        }
-        rows.append(row)
+        clean_name = MODEL_NAME_MAP.get(model_name, model_name)
+        rows.append({
+            'Model': clean_name,
+            'Value': round(metrics.get(METRIC_KEY, 0), 3)
+        })
 
-    
-    # Create DataFrame and save CSV
-    df = pd.DataFrame(rows)
-    csv_path = output_dir / "performance_summary_comparison.csv"
-    
-    # Format numeric columns to 2 decimal places
-    numeric_columns = ['F1', 'Precision', 'Recall', 'Accuracy', 'Hamming Loss']
+    # Transform to wide format with models as columns
+    df_long = pd.DataFrame(rows)
+    data_dict = {'Metric': 'Hamming Loss'}
+    for row in rows:
+        data_dict[row['Model']] = row['Value']
+
+    df = pd.DataFrame([data_dict])
+    csv_path = output_dir / "performance_summary.csv"
     df.to_csv(csv_path, index=False, float_format="%.2f")
-    print("-" * 80)
-    
+
+    # Print in the same format as concerncount-by-model.py
+    columns = list(df.columns)
+    print(" ".join(f"{h:<12}" for h in columns))
+    print("-" * (len(columns) * 12))
     for _, row in df.iterrows():
-        f1_str = row['F1'] if row['F1'] else "N/A"
-        prec_str = row['Precision'] if row['Precision'] else "N/A"
-        rec_str = row['Recall'] if row['Recall'] else "N/A"
-        acc_str = row['Accuracy'] if row['Accuracy'] else "N/A"
-        ham_str = row['Hamming Loss'] if row['Hamming Loss'] else "N/A"
-        
-        print(f"{row['Model']:<20} {f1_str:<8} {prec_str:<12} {rec_str:<8} {acc_str:<10} {ham_str:<12}")
+        print(
+            " ".join(
+                f"{row[h]:<12.2f}" if h != "Metric" else f"{row[h]:<12}"
+                for h in columns
+            )
+        )
     
     print(f"\nResults saved to: {csv_path}")
 
