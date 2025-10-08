@@ -10,9 +10,17 @@ from pathlib import Path
 import argparse
 import yaml
 
-# Constants - Use root results directory (from project root)
+# Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
+
+MODEL_NAME_MAP = {
+    "GPT-4.1": "GPT4_1",
+    "Qwen": "Qwen",
+    "Qwen (FT)": "QwenFT"
+}
+
+METRIC_KEY = "hamming_loss"
 
 
 def load_config():
@@ -37,12 +45,7 @@ def load_metrics(json_path: Path) -> dict:
 
 
 def generate_context_length_comparison(config: dict) -> pd.DataFrame:
-    """Generate context length performance comparison table (F1 and Hamming Loss only)."""
-    # Only show F1 and Hamming Loss like concerncount-by-model.py
-    metrics = [
-        ("F1", "f1"),
-        ("HS", "hamming_loss"),
-    ]
+    """Generate context length performance comparison table (Hamming Loss only)."""
 
     rows = []
     for context_length in config["context_lengths"]:
@@ -62,15 +65,12 @@ def generate_context_length_comparison(config: dict) -> pd.DataFrame:
                 else:
                     file_path = base_path.parent / f"{context_length}_zs.json"
             metrics_data = load_metrics(file_path)
-            for label, key in metrics:
-                # Convert model name to Overleaf-friendly format: "Qwen (FT)" -> "Qwen_FT"
-                clean_model_name = model_name.replace(" (", "_").replace(")", "").replace("-", "_").replace(".", "_").replace(" ", "_")
-                col_name = f"{clean_model_name}_{label}"
-                if key not in metrics_data:
-                    raise ValueError(
-                        f"Missing metric '{key}' for model {model_name}, context_length={context_length}"
-                    )
-                row[col_name] = round(metrics_data[key], 3)
+            clean_model_name = MODEL_NAME_MAP.get(model_name, model_name)
+            if METRIC_KEY not in metrics_data:
+                raise ValueError(
+                    f"Missing metric '{METRIC_KEY}' for model {model_name}, context_length={context_length}"
+                )
+            row[clean_model_name] = round(metrics_data[METRIC_KEY], 3)
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -89,42 +89,32 @@ def main():
 
     args = parser.parse_args()
 
-    # Load configuration
     config = load_config()
     script_config = config["scripts"]["context_length_performance"]
 
-    # Set output directory
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
         from datetime import datetime
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        # Generate descriptive output directory name
         model_names = list(script_config["models"].keys())
         models_summary = "_".join(model_names)[:50]
         output_dir = ANALYSIS_OUTPUT_DIR / f"context_length_{models_summary}_{timestamp}"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Generate table comparison
     df = generate_context_length_comparison(script_config)
     csv_path = output_dir / "context_length_performance.csv"
-    df.to_csv(csv_path, index=False, float_format="%.3f")
+    df.to_csv(csv_path, index=False, float_format="%.2f")
 
-    # Print table (F1 and Hamming Loss only)
-    metrics = [("F1", "f1"), ("HS", "hamming_loss")]
-    header = ["ContextLength"] + [
-        f"{model_name.replace(' (', '_').replace(')', '').replace('-', '_').replace('.', '_').replace(' ', '_')}_{label}"
-        for model_name in script_config["models"].keys()
-        for label, _ in metrics
-    ]
-    print(" ".join(f"{h:<15}" for h in header))
-    print("-" * (len(header) * 15))
+    header = ["ContextLength"] + [MODEL_NAME_MAP.get(name, name) for name in script_config["models"].keys()]
+    print(" ".join(f"{h:<12}" for h in header))
+    print("-" * (len(header) * 12))
     for _, row in df.iterrows():
         print(
             " ".join(
-                f"{row[h]:<15.3f}" if h != "ContextLength" else f"{int(row[h]):<15}"
+                f"{row[h]:<12.2f}" if h != "ContextLength" else f"{int(row[h]):<12}"
                 for h in header
             )
         )
