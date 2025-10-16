@@ -5,28 +5,28 @@
 scripts:
   efficiency_commit_message:
     script: "efficiency_commit_message.py"
-    description: "Analyzes correlation between commit message presence and inference time"
+    description: "Analyzes correlation between commit message presence and inference time (controlled: token_length=12288)"
     input_files:
-      - "results/Qwen3-14B-LoRA/avg_result/msg0/qwen_aggregated.csv"
-      - "results/Qwen3-14B-LoRA/avg_result/msg1/qwen_aggregated.csv"
+      - "results/Qwen3-14B-LoRA/avg_result/msg0/12288_zs.csv"
+      - "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
 
   efficiency_concern_count:
     script: "efficiency_concern_count.py"
-    description: "Analyzes correlation between concern count and inference time"
+    description: "Analyzes correlation between concern count and inference time (controlled: msg1, token_length=12288)"
     input_files:
-      - "results/Qwen3-14B-LoRA/avg_result/msg1/qwen_aggregated.csv"
+      - "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
 
   efficiency_input_tokens:
     script: "efficiency_input_tokens.py"
-    description: "Analyzes correlation between input tokens and inference time"
+    description: "Analyzes correlation between input tokens and inference time (controlled: msg1, all token_lengths)"
     input_files:
-      - "results/Qwen3-14B-LoRA/avg_result/msg1/qwen_aggregated.csv"
+      - "results/Qwen3-14B-LoRA/avg_result/msg1/qwen3_aggregated.csv"
 
   efficiency_concern_count_input_token:
     script: "efficiency_concern_count_input_token.py"
-    description: "Multiple regression analysis of concern count and input tokens vs inference time"
+    description: "Multiple regression analysis of concern count and input tokens vs inference time (controlled: msg1, all token_lengths)"
     input_files:
-      - "results/Qwen3-14B-LoRA/avg_result/msg1/qwen_aggregated.csv"
+      - "results/Qwen3-14B-LoRA/avg_result/msg1/qwen3_aggregated.csv"
 
 # Execution order
 execution_order:
