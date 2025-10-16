@@ -14,11 +14,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
-MODEL_NAME_MAP = {
-    "GPT-4.1": "GPT-4.1",
-    "Qwen": "Qwen",
-    "Qwen (FT)": "QwenFT"
-}
+MODEL_NAME_MAP = {"GPT-4.1": "GPT-4.1", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
 
 METRIC_KEY = "hamming_loss"
 
@@ -30,18 +26,19 @@ def load_config():
         return yaml.safe_load(f)
 
 
-def load_metrics(json_path: Path) -> dict:
-    """Load metrics from JSON file."""
-    if not json_path.exists():
-        raise FileNotFoundError(f"JSON file not found: {json_path}")
+def load_metrics(csv_path: Path) -> dict:
+    """Load metrics from CSV file and calculate macro average for Hamming Loss."""
+    if not csv_path.exists():
+        raise FileNotFoundError(f"CSV file not found: {csv_path}")
 
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    df = pd.read_csv(csv_path)
 
-    if "metrics_macro" not in data:
-        raise ValueError(f"Missing 'metrics_macro' in {json_path.name}")
+    # Calculate macro average for Hamming Loss only
+    metrics_macro = {
+        "hamming_loss": float(df["hamming_loss"].mean()),
+    }
 
-    return data["metrics_macro"]
+    return metrics_macro
 
 
 def generate_context_length_comparison(config: dict) -> pd.DataFrame:
@@ -52,18 +49,10 @@ def generate_context_length_comparison(config: dict) -> pd.DataFrame:
         row = {"ContextLength": context_length}
         for model_name, model_config in config["models"].items():
             # Build file path using pattern
-            file_path = PROJECT_ROOT / model_config["path_pattern"].format(
+            file_path = PROJECT_ROOT / model_config["csv_path_pattern"].format(
                 context=context_length
             )
-            # Qwen 파일 경로 분기(기존 로직 유지)
-            if model_name == "Qwen":
-                base_path = (
-                    PROJECT_ROOT / f"results/Qwen/avg_result/msg1/json/{context_length}"
-                )
-                if (base_path.parent / f"{context_length}_zs_filtered.json").exists():
-                    file_path = base_path.parent / f"{context_length}_zs_filtered.json"
-                else:
-                    file_path = base_path.parent / f"{context_length}_zs.json"
+
             metrics_data = load_metrics(file_path)
             clean_model_name = MODEL_NAME_MAP.get(model_name, model_name)
             if METRIC_KEY not in metrics_data:
@@ -100,7 +89,9 @@ def main():
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         model_names = list(script_config["models"].keys())
         models_summary = "_".join(model_names)[:50]
-        output_dir = ANALYSIS_OUTPUT_DIR / f"context_length_{models_summary}_{timestamp}"
+        output_dir = (
+            ANALYSIS_OUTPUT_DIR / f"context_length_{models_summary}_{timestamp}"
+        )
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -108,7 +99,9 @@ def main():
     csv_path = output_dir / "context_length_performance.csv"
     df.to_csv(csv_path, index=False, float_format="%.2f")
 
-    header = ["ContextLength"] + [MODEL_NAME_MAP.get(name, name) for name in script_config["models"].keys()]
+    header = ["ContextLength"] + [
+        MODEL_NAME_MAP.get(name, name) for name in script_config["models"].keys()
+    ]
     print(" ".join(f"{h:<12}" for h in header))
     print("-" * (len(header) * 12))
     for _, row in df.iterrows():
