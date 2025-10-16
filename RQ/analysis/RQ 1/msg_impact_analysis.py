@@ -13,26 +13,22 @@ import argparse
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
-MODEL_NAME_MAP = {
-    "GPT-4.1": "GPT-4.1",
-    "Qwen": "Qwen",
-    "Qwen (FT)": "QwenFT"
-}
+MODEL_NAME_MAP = {"GPT-4.1": "GPT-4.1", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
 
 METRIC_KEY = "hamming_loss"
 
 DEFAULT_MODEL_CONFIGS = {
     "GPT-4.1": {
-        "msg0_path": "results/gpt/avg_result/msg0/json/12288_zs.json",
-        "msg1_path": "results/gpt/avg_result/msg1/json/12288_zs.json",
+        "msg0_path": "results/gpt/avg_result/msg0/12288_zs.csv",
+        "msg1_path": "results/gpt/avg_result/msg1/12288_zs.csv",
     },
     "Qwen": {
-        "msg0_path": "results/Qwen/avg_result/msg0/json/12288_zs_filtered.json",
-        "msg1_path": "results/Qwen/avg_result/msg1/json/12288_zs.json",
+        "msg0_path": "results/Qwen/avg_result/msg0/12288_zs.csv",
+        "msg1_path": "results/Qwen/avg_result/msg1/12288_zs.csv",
     },
     "Qwen (FT)": {
-        "msg0_path": "results/Qwen3-14B-LoRA/avg_result/msg0/json/12288_zs.json",
-        "msg1_path": "results/Qwen3-14B-LoRA/avg_result/msg1/json/12288_zs.json",
+        "msg0_path": "results/Qwen3-14B-LoRA/avg_result/msg0/12288_zs.csv",
+        "msg1_path": "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv",
     },
 }
 
@@ -69,25 +65,24 @@ def build_model_configs(config: dict = None) -> dict:
     return model_configs
 
 
-def load_metrics(json_path: Path) -> dict:
-    """Load metrics from JSON file."""
-    if not json_path.exists():
-        raise FileNotFoundError(f"JSON file not found: {json_path}")
+def load_metrics(csv_path: Path) -> dict:
+    """Load metrics from CSV file and calculate macro average for Hamming Loss."""
+    if not csv_path.exists():
+        raise FileNotFoundError(f"CSV file not found: {csv_path}")
 
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    df = pd.read_csv(csv_path)
 
-    if "metrics_macro" not in data:
-        raise ValueError(f"Missing 'metrics_macro' in {json_path.name}")
+    # Calculate macro average for Hamming Loss only
+    metrics_macro = {
+        "hamming_loss": float(df["hamming_loss"].mean()),
+    }
 
-    return data["metrics_macro"]
+    return metrics_macro
 
 
 def generate_comparison(model_configs: dict) -> pd.DataFrame:
     """Generate comparison table for Hamming Loss with models as columns."""
-    data = {
-        "Condition": ["Without Msg", "With Msg", "Delta"]
-    }
+    data = {"Condition": ["Without Msg", "With Msg", "Delta"]}
 
     for model_name, paths in model_configs.items():
         msg0_metrics = load_metrics(paths["msg0_path"])
@@ -95,7 +90,9 @@ def generate_comparison(model_configs: dict) -> pd.DataFrame:
 
         without_msg = round(msg0_metrics[METRIC_KEY], 2)
         with_msg = round(msg1_metrics[METRIC_KEY], 2)
-        delta = without_msg - with_msg  # Positive means improvement (lower HS is better)
+        delta = (
+            without_msg - with_msg
+        )  # Positive means improvement (lower HS is better)
 
         clean_name = MODEL_NAME_MAP.get(model_name, model_name)
         data[clean_name] = [without_msg, with_msg, delta]
@@ -114,13 +111,13 @@ def generate_delta_only_comparison(model_configs: dict) -> pd.DataFrame:
         clean_name = MODEL_NAME_MAP.get(model_name, model_name)
         without_msg = round(msg0_metrics[METRIC_KEY], 2)
         with_msg = round(msg1_metrics[METRIC_KEY], 2)
-        delta = without_msg - with_msg  # Positive means improvement (lower HS is better)
+        delta = (
+            without_msg - with_msg
+        )  # Positive means improvement (lower HS is better)
 
         data[clean_name] = delta
 
     return pd.DataFrame([data])
-
-
 
 
 def main():

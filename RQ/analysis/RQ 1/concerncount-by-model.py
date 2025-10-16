@@ -14,11 +14,7 @@ import argparse
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
 
-MODEL_NAME_MAP = {
-    "GPT-4.1": "GPT-4.1",
-    "Qwen": "Qwen",
-    "Qwen (FT)": "QwenFT"
-}
+MODEL_NAME_MAP = {"GPT-4.1": "GPT-4.1", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
 
 METRIC_KEY = "hamming_loss"
 
@@ -63,29 +59,47 @@ def main():
 
     models_data = {}
     for model_name, model_config in script_config["models"].items():
-        json_path = PROJECT_ROOT / model_config["path"]
-        if not json_path.exists():
-            raise FileNotFoundError(f"JSON file not found: {json_path}")
-        with open(json_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if "metrics_by_concern" not in data:
-            raise ValueError(f"Missing 'metrics_by_concern' in {json_path.name}")
+        csv_path = PROJECT_ROOT / model_config["path"]
+        if not csv_path.exists():
+            raise FileNotFoundError(f"CSV file not found: {csv_path}")
+
+        df = pd.read_csv(csv_path)
+
+        # Calculate macro average for Hamming Loss by concern count
+        metrics_by_concern = []
+        for concern_count in sorted(df["concern_count"].unique()):
+            subset = df[df["concern_count"] == concern_count]
+            metrics_by_concern.append(
+                {
+                    "concern_count": int(concern_count),
+                    "hamming_loss": float(subset["hamming_loss"].mean()),
+                }
+            )
+
         clean_name = MODEL_NAME_MAP.get(model_name, model_name)
-        models_data[clean_name] = data["metrics_by_concern"]
+        models_data[clean_name] = metrics_by_concern
 
     rows = []
     for concern_count in [1, 2, 3, 4, 5]:
         row = {"Count": concern_count}
         for clean_name, concern_list in models_data.items():
             concern_data = next(
-                (item for item in concern_list if item["concern_count"] == concern_count),
+                (
+                    item
+                    for item in concern_list
+                    if item["concern_count"] == concern_count
+                ),
                 None,
             )
             if concern_data is None:
-                raise ValueError(f"Missing concern_count={concern_count} for model {clean_name}")
+                raise ValueError(
+                    f"Missing concern_count={concern_count} for model {clean_name}"
+                )
 
             if METRIC_KEY not in concern_data:
-                raise ValueError(f"Missing {METRIC_KEY} for model {clean_name}, concern_count={concern_count}")
+                raise ValueError(
+                    f"Missing {METRIC_KEY} for model {clean_name}, concern_count={concern_count}"
+                )
             row[clean_name] = round(concern_data[METRIC_KEY], 3)
         rows.append(row)
 
@@ -94,7 +108,6 @@ def main():
     df_hs = df_complete[columns].copy()
     csv_path = output_dir / "performance_by_concern_count.csv"
     df_hs.to_csv(csv_path, index=False, float_format="%.2f")
-
 
     print(" ".join(f"{h:<12}" for h in columns))
     print("-" * (len(columns) * 12))

@@ -8,47 +8,44 @@ scripts:
     description: "Analyzes the impact of commit messages on model performance"
     models:
       GPT-4.1:
-        msg0_path: "results/gpt/avg_result/msg0/json/12288_zs.json"
-        msg1_path: "results/gpt/avg_result/msg1/json/12288_zs.json"
+        msg0_path: "results/gpt/avg_result/msg0/12288_zs.csv"
+        msg1_path: "results/gpt/avg_result/msg1/12288_zs.csv"
       Qwen:
-        msg0_path: "results/Qwen/avg_result/msg0/json/12288_zs_filtered.json"
-        msg1_path: "results/Qwen/avg_result/msg1/json/12288_zs.json"
+        msg0_path: "results/Qwen/avg_result/msg0/12288_zs.csv"
+        msg1_path: "results/Qwen/avg_result/msg1/12288_zs.csv"
       "Qwen (FT)":
-        msg0_path: "results/Qwen3-14B-LoRA/avg_result/msg0/json/12288_zs.json"
-        msg1_path: "results/Qwen3-14B-LoRA/avg_result/msg1/json/12288_zs.json"
+        msg0_path: "results/Qwen3-14B-LoRA/avg_result/msg0/12288_zs.csv"
+        msg1_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
 
   concerncount_by_model:
     script: "concerncount-by-model.py"
     description: "Generates concern count performance comparison"
     models:
       GPT-4.1:
-        path: "results/gpt/avg_result/msg1/json/12288_zs.json"
+        path: "results/gpt/avg_result/msg1/12288_zs.csv"
       Qwen:
-        path: "results/Qwen/avg_result/msg1/json/12288_zs.json"
+        path: "results/Qwen/avg_result/msg1/12288_zs.csv"
       "Qwen (FT)":
-        path: "results/Qwen3-14B-LoRA/avg_result/msg1/json/12288_zs.json"
+        path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
 
   performance_summary:
     script: "performance_summary.py"
     description: "Generates performance summary comparison"
     input_files:
-      - "results/Qwen3-14B-LoRA/avg_result/msg1/json/12288_zs.json"
-      - "results/Qwen/avg_result/msg1/json/12288_zs.json"
-      - "results/gpt/avg_result/msg1/json/12288_zs.json"
+      - "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+      - "results/Qwen/avg_result/msg1/12288_zs.csv"
+      - "results/gpt/avg_result/msg1/12288_zs.csv"
 
   context_length_performance:
     script: "context_length_performance.py"
     description: "Generates context length performance comparison across models"
     models:
       GPT-4.1:
-        path_pattern: "results/gpt/avg_result/msg1/json/{context}_zs.json"
-        csv_path_pattern: "results/gpt/20250906184004/msg1/{context}_zs.csv"
+        csv_path_pattern: "results/gpt/avg_result/msg1/{context}_zs.csv"
       Qwen:
-        path_pattern: "results/Qwen/avg_result/msg1/json/{context}_zs_filtered.json"
-        csv_path_pattern: "results/Qwen/20250921162319/msg1/{context}_zs.csv"
+        csv_path_pattern: "results/Qwen/avg_result/msg1/{context}_zs.csv"
       "Qwen (FT)":
-        path_pattern: "results/Qwen3-14B-LoRA/avg_result/msg1/json/{context}_zs.json"
-        csv_path_pattern: "results/Qwen3-14B-LoRA/20250921192953/msg1/{context}_zs.csv"
+        csv_path_pattern: "results/Qwen3-14B-LoRA/avg_result/msg1/{context}_zs.csv"
     context_lengths: [1024, 2048, 4096, 8192, 12288]
 
   model_comparison_analysis:
@@ -56,33 +53,33 @@ scripts:
     description: "Compares individual predictions between LLM, SLM, and Fine-tuned SLM models"
     models:
       LLM:
-        csv_path: "results/gpt/20250906184004/msg1/12288_zs.csv"
+        csv_path: "results/gpt/avg_result/msg1/12288_zs.csv"
       SLM:
-        csv_path: "results/Qwen/20250921162319/msg1/12288_zs.csv"
+        csv_path: "results/Qwen/avg_result/msg1/12288_zs.csv"
       "Fine-tuned SLM":
-        csv_path: "results/Qwen3-14B-LoRA/20250921192953/msg1/12288_zs.csv"
+        csv_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
 
   hamming_loss_boxplot:
     script: "hamming_loss_boxplot.py"
     description: "Generates hamming loss box plots by concern count and model"
     models:
       LLM:
-        csv_path: "results/gpt/20250906184004/msg1/12288_zs.csv"
+        csv_path: "results/gpt/avg_result/msg1/12288_zs.csv"
       SLM:
-        csv_path: "results/Qwen/20250921162319/msg1/12288_zs.csv"
+        csv_path: "results/Qwen/avg_result/msg1/12288_zs.csv"
       "Fine-tuned SLM":
-        csv_path: "results/Qwen3-14B-LoRA/20250921192953/msg1/12288_zs.csv"
+        csv_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
 
   context_length_boxplot:
     script: "context_length_boxplot.py"
     description: "Generates context length box plots by context length and model"
     models:
       LLM:
-        csv_path_pattern: "results/gpt/20250906184004/msg1/{context}_zs.csv"
+        csv_path_pattern: "results/gpt/avg_result/msg1/{context}_zs.csv"
       SLM:
-        csv_path_pattern: "results/Qwen/20250921162319/msg1/{context}_zs.csv"
+        csv_path_pattern: "results/Qwen/avg_result/msg1/{context}_zs.csv"
       "Fine-tuned SLM":
-        csv_path_pattern: "results/Qwen3-14B-LoRA/20250921192953/msg1/{context}_zs.csv"
+        csv_path_pattern: "results/Qwen3-14B-LoRA/avg_result/msg1/{context}_zs.csv"
     context_lengths: [1024, 2048, 4096, 8192, 12288]
 
 # Execution order
