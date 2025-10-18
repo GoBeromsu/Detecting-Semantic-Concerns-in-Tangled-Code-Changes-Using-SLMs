@@ -63,8 +63,12 @@ def setup_plot_style():
     )
 
 
-def detect_outliers_iqr(data: pd.Series) -> List[int]:
-    """Detect outliers using the IQR method."""
+def detect_outliers_iqr(data: pd.Series) -> tuple:
+    """Detect outliers using the IQR method.
+
+    Returns:
+        Tuple of (outlier_mask, outlier_info_dict)
+    """
     Q1 = data.quantile(0.25)
     Q3 = data.quantile(0.75)
     IQR = Q3 - Q1
@@ -73,16 +77,22 @@ def detect_outliers_iqr(data: pd.Series) -> List[int]:
     upper_bound = Q3 + OUTLIER_THRESHOLD_IQR * IQR
 
     outlier_mask = (data < lower_bound) | (data > upper_bound)
-    return data[outlier_mask].index.tolist()
+    outlier_values = data[outlier_mask].tolist()
+
+    outlier_info = {
+        "count": int(outlier_mask.sum()),
+        "values": outlier_values,
+        "removed": False,  # We detect but don't remove
+    }
+
+    return outlier_mask, outlier_info
 
 
-def load_csv_data(
-    csv_paths: List[Path], remove_outliers: bool = True
-) -> Tuple[pd.DataFrame, dict]:
+def load_csv_data(csv_paths: List[Path]) -> tuple:
     """Load raw data from CSV files for detailed analysis.
 
     Returns:
-        Tuple of (cleaned_dataframe, outlier_info)
+        Tuple of (dataframe, outlier_info)
     """
     all_data = []
 
@@ -103,28 +113,12 @@ def load_csv_data(
 
     combined_df = pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
 
-    # Detect outliers in inference_time
-    outlier_indices = detect_outliers_iqr(combined_df["inference_time"])
-    outlier_info = {
-        "indices": outlier_indices,
-        "count": len(outlier_indices),
-        "values": (
-            combined_df.loc[outlier_indices, "inference_time"].tolist()
-            if outlier_indices
-            else []
-        ),
-        "removed": remove_outliers and len(outlier_indices) > 0,
-    }
+    # Detect outliers (but don't remove them)
+    _, outlier_info = detect_outliers_iqr(combined_df["inference_time"])
 
-    # Remove outliers if requested
-    if remove_outliers and outlier_indices:
-        cleaned_df = combined_df.drop(outlier_indices).reset_index(drop=True)
-        print(f"Removed {len(outlier_indices)} outliers from analysis")
-        print(f"Outlier values: {[f'{v:.2f}s' for v in outlier_info['values']]}")
-    else:
-        cleaned_df = combined_df
+    print(f"Detected {outlier_info['count']} outliers (shown in boxplot, not removed)")
 
-    return cleaned_df, outlier_info
+    return combined_df, outlier_info
 
 
 def calculate_group_comparison(df: pd.DataFrame) -> Dict[str, Any]:
@@ -268,33 +262,25 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
         positions=positions,
         patch_artist=True,
         widths=0.4,  # Narrower boxes to show regression line
-        showfliers=False,
+        showfliers=True,
+        whis=1.5,
         boxprops=dict(alpha=PLOT_STYLE["alpha"]),
         medianprops=dict(color=COLORS["success"], linewidth=PLOT_STYLE["line_width"]),
         whiskerprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
         capprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
+        flierprops=dict(
+            marker="o",
+            markerfacecolor=COLORS["primary"],
+            markersize=4,
+            alpha=0.7,
+            markeredgecolor="none",
+        ),
     )
 
     # Color the boxes
     for patch, color in zip(box_plot["boxes"], colors):
         patch.set_facecolor(color)
 
-    # Add regression line
-    regression_results = perform_linear_regression(df)
-    x_range = np.array([0, 1])
-    y_pred_line = (
-        regression_results["slope"] * x_range + regression_results["intercept"]
-    )
-    ax.plot(
-        x_range,
-        y_pred_line,
-        color=COLORS["secondary"],
-        linewidth=PLOT_STYLE["line_width"],
-        alpha=0.9,
-        linestyle="--",
-        label=f'Trend (R² = {regression_results["r_squared"]:.3f})',
-        zorder=10,
-    )
 
     # Set custom x-axis labels and ticks
     ax.set_xticks(positions)
@@ -332,7 +318,6 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
 
         stats_text = (
             f"Point-biserial r = {correlation:.3f} {significance}\n"
-            f'R² = {regression_results["r_squared"]:.3f}\n'
             f'Cohen\'s d = {effect_size["cohens_d"]:.3f}\n'
             f"n = {len(df)}"
         )
@@ -368,14 +353,6 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
             facecolor=COLORS["with_message"],
             alpha=PLOT_STYLE["alpha"],
             label="With Message",
-        ),
-        Line2D(
-            [0],
-            [0],
-            color=COLORS["secondary"],
-            linewidth=PLOT_STYLE["line_width"],
-            linestyle="--",
-            label=f'Trend (R²={regression_results["r_squared"]:.3f})',
         ),
         Line2D(
             [0],
@@ -519,9 +496,9 @@ def generate_summary_stats(df: pd.DataFrame, outlier_info: dict) -> dict:
         "correlation": correlation,
         "p_value": p_value,
         "significant": p_value < P_VALUE_THRESHOLD,
-        "group_statistics": group_stats,
         "outliers_detected": outlier_info["count"],
         "outliers_removed": outlier_info["removed"],
+        "group_statistics": group_stats,
         "regression": regression_results,
     }
 
@@ -670,14 +647,11 @@ def save_summary_json(
                 else []
             ),
             "impact": {
-                "removed_from_analysis": bool(outlier_info["removed"]),
+                "removed_from_analysis": False,
+                "shown_in_boxplot": True,
                 "percentage_of_data": (
                     round(
-                        (
-                            outlier_info["count"]
-                            / (stats_dict["sample_size"] + outlier_info["count"])
-                        )
-                        * 100,
+                        (outlier_info["count"] / stats_dict["sample_size"]) * 100,
                         1,
                     )
                     if outlier_info["count"] > 0
@@ -700,11 +674,6 @@ def main():
     )
     parser.add_argument("csv_files", nargs="+", help="CSV files to analyze")
     parser.add_argument("--output-dir", type=str, help="Output directory")
-    parser.add_argument(
-        "--keep-outliers",
-        action="store_true",
-        help="Keep outliers in analysis (default: remove outliers)",
-    )
 
     args = parser.parse_args()
 
@@ -736,10 +705,7 @@ def main():
         # Generate descriptive output directory name
         file_stems = [Path(f).stem for f in args.csv_files]
         files_summary = "_".join(file_stems)[:50]
-        outlier_suffix = "_with_outliers" if args.keep_outliers else "_clean"
-        output_dir = (
-            ANALYSIS_OUTPUT_DIR / f"cm_{files_summary}{outlier_suffix}_{timestamp}"
-        )
+        output_dir = ANALYSIS_OUTPUT_DIR / f"cm_{files_summary}_{timestamp}"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -751,23 +717,9 @@ def main():
     csv_paths = [Path(f) for f in args.csv_files]
 
     try:
-        # Load data with outlier handling
-        remove_outliers = not args.keep_outliers
-        df, outlier_info = load_csv_data(csv_paths, remove_outliers=remove_outliers)
+        # Load data
+        df, outlier_info = load_csv_data(csv_paths)
         print(f"Loaded {len(df)} data points from CSV files")
-
-        if outlier_info["count"] > 0:
-            print(f"Detected {outlier_info['count']} outliers in inference time")
-            print(f"Outlier detection method: IQR (Interquartile Range)")
-            print(
-                f"Outlier threshold: Q1 - {OUTLIER_THRESHOLD_IQR}×IQR and Q3 + {OUTLIER_THRESHOLD_IQR}×IQR"
-            )
-            if outlier_info["removed"]:
-                print(f"Outliers removed from analysis")
-            else:
-                print(f"Outliers kept in analysis (use --keep-outliers flag)")
-        else:
-            print("No outliers detected in inference time")
 
         # Generate statistics
         stats = generate_summary_stats(df, outlier_info)

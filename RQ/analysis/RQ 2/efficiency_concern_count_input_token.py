@@ -62,26 +62,35 @@ def setup_plot_style():
     )
 
 
-def detect_outliers_iqr(data: pd.Series) -> List[int]:
-    """Detect outliers using the IQR method."""
+def detect_outliers_iqr(data: pd.Series) -> tuple:
+    """Detect outliers using the IQR method.
+
+    Returns:
+        Tuple of (outlier_mask, outlier_info_dict)
+    """
     Q1 = data.quantile(0.25)
     Q3 = data.quantile(0.75)
     IQR = Q3 - Q1
-
     lower_bound = Q1 - OUTLIER_THRESHOLD_IQR * IQR
     upper_bound = Q3 + OUTLIER_THRESHOLD_IQR * IQR
 
     outlier_mask = (data < lower_bound) | (data > upper_bound)
-    return data[outlier_mask].index.tolist()
+    outlier_values = data[outlier_mask].tolist()
+
+    outlier_info = {
+        "count": int(outlier_mask.sum()),
+        "values": outlier_values,
+        "removed": False,  # We detect but don't remove
+    }
+
+    return outlier_mask, outlier_info
 
 
-def load_csv_data(
-    csv_paths: List[Path], remove_outliers: bool = True
-) -> Tuple[pd.DataFrame, dict]:
+def load_csv_data(csv_paths: List[Path]) -> tuple:
     """Load raw data from CSV files for multiple regression analysis.
 
     Returns:
-        Tuple of (cleaned_dataframe, outlier_info)
+        Tuple of (dataframe, outlier_info)
     """
     all_data = []
 
@@ -126,28 +135,12 @@ def load_csv_data(
         combined_df["log_tokens"] * combined_df["concern_count"]
     )
 
-    # Detect outliers in log_time
-    outlier_indices = detect_outliers_iqr(combined_df["log_time"])
-    outlier_info = {
-        "indices": outlier_indices,
-        "count": len(outlier_indices),
-        "values": (
-            combined_df.loc[outlier_indices, "inference_time"].tolist()
-            if outlier_indices
-            else []
-        ),
-        "removed": remove_outliers and len(outlier_indices) > 0,
-    }
+    # Detect outliers (but don't remove them)
+    _, outlier_info = detect_outliers_iqr(combined_df["log_time"])
 
-    # Remove outliers if requested
-    if remove_outliers and outlier_indices:
-        cleaned_df = combined_df.drop(outlier_indices).reset_index(drop=True)
-        print(f"Removed {len(outlier_indices)} outliers from analysis")
-        print(f"Outlier values: {[f'{v:.2f}s' for v in outlier_info['values']]}")
-    else:
-        cleaned_df = combined_df
+    print(f"Detected {outlier_info['count']} outliers (shown in boxplot, not removed)")
 
-    return cleaned_df, outlier_info
+    return combined_df, outlier_info
 
 
 def perform_multiple_regression(df: pd.DataFrame) -> Dict[str, Any]:
@@ -246,7 +239,7 @@ def create_boxplot_by_concern_grouped_by_token(
                 positions=positions,
                 widths=width * 0.8,
                 patch_artist=True,
-                showfliers=False,
+                showfliers=True,
                 whis=1.5,
                 boxprops=dict(
                     facecolor=token_colors[i % len(token_colors)],
@@ -257,6 +250,13 @@ def create_boxplot_by_concern_grouped_by_token(
                 ),
                 whiskerprops=dict(color=COLORS["text"], linewidth=1),
                 capprops=dict(color=COLORS["text"], linewidth=1),
+                flierprops=dict(
+                    marker="o",
+                    markerfacecolor=token_colors[i % len(token_colors)],
+                    markersize=4,
+                    alpha=0.7,
+                    markeredgecolor="none",
+                ),
             )
 
     # Set labels and title
@@ -284,7 +284,7 @@ def create_boxplot_by_concern_grouped_by_token(
         )
         for i, token_len in enumerate(unique_tokens)
     ]
-    ax.legend(handles=legend_elements, loc="upper left", framealpha=0.9, fontsize=9)
+    ax.legend(handles=legend_elements, loc="upper left", framealpha=0.9, fontsize=11)
 
     # Add model information
     r2 = regression_results["model_metrics"]["r_squared"]
@@ -384,7 +384,7 @@ def create_boxplot_by_token_grouped_by_concern(
                 positions=positions,
                 widths=width * 0.8,
                 patch_artist=True,
-                showfliers=False,
+                showfliers=True,
                 whis=1.5,
                 boxprops=dict(
                     facecolor=concern_colors[i % len(concern_colors)],
@@ -395,6 +395,13 @@ def create_boxplot_by_token_grouped_by_concern(
                 ),
                 whiskerprops=dict(color=COLORS["text"], linewidth=1),
                 capprops=dict(color=COLORS["text"], linewidth=1),
+                flierprops=dict(
+                    marker="o",
+                    markerfacecolor=concern_colors[i % len(concern_colors)],
+                    markersize=4,
+                    alpha=0.7,
+                    markeredgecolor="none",
+                ),
             )
 
     # Set labels and title
@@ -422,7 +429,7 @@ def create_boxplot_by_token_grouped_by_concern(
         )
         for i, concern_count in enumerate(unique_concerns)
     ]
-    ax.legend(handles=legend_elements, loc="upper left", framealpha=0.9, fontsize=9)
+    ax.legend(handles=legend_elements, loc="upper left", framealpha=0.9, fontsize=11)
 
     # Add model information
     r2 = regression_results["model_metrics"]["r_squared"]
@@ -470,7 +477,7 @@ def create_boxplot_by_token_grouped_by_concern(
 
 
 def generate_summary_stats(
-    df: pd.DataFrame, regression_results: Dict[str, Any], outlier_info: dict
+    df: pd.DataFrame, regression_results: Dict[str, Any]
 ) -> dict:
     """Generate comprehensive summary statistics for the multiple regression analysis."""
 
@@ -485,8 +492,6 @@ def generate_summary_stats(
 
     stats_dict = {
         "sample_size": len(df),
-        "outliers_detected": outlier_info["count"],
-        "outliers_removed": outlier_info["removed"],
         "descriptive_stats": {
             "context_len": {
                 "mean": df["context_len"].mean(),
@@ -535,8 +540,6 @@ def save_summary_json(
         },
         "data_summary": {
             "total_samples": int(stats_dict["sample_size"]),
-            "outliers_detected": int(stats_dict["outliers_detected"]),
-            "outliers_removed": bool(stats_dict["outliers_removed"]),
         },
         "regression_model": {
             "coefficients": {
@@ -637,16 +640,11 @@ def save_summary_json(
                 else []
             ),
             "impact": {
-                "removed_from_analysis": bool(outlier_info["removed"]),
+                "removed_from_analysis": False,
+                "shown_in_boxplot": True,
                 "percentage_of_data": (
                     round(
-                        (
-                            int(outlier_info["count"])
-                            / (
-                                int(stats_dict["sample_size"])
-                                + int(outlier_info["count"])
-                            )
-                        )
+                        (int(outlier_info["count"]) / int(stats_dict["sample_size"]))
                         * 100,
                         1,
                     )
@@ -670,11 +668,6 @@ def main():
     )
     parser.add_argument("csv_files", nargs="+", help="CSV files to analyze")
     parser.add_argument("--output-dir", type=str, help="Output directory")
-    parser.add_argument(
-        "--keep-outliers",
-        action="store_true",
-        help="Keep outliers in analysis (default: remove outliers)",
-    )
 
     args = parser.parse_args()
 
@@ -706,10 +699,7 @@ def main():
         # Generate descriptive output directory name
         file_stems = [Path(f).stem for f in args.csv_files]
         files_summary = "_".join(file_stems)[:50]
-        outlier_suffix = "_with_outliers" if args.keep_outliers else "_clean"
-        output_dir = (
-            ANALYSIS_OUTPUT_DIR / f"cc_it_{files_summary}{outlier_suffix}_{timestamp}"
-        )
+        output_dir = ANALYSIS_OUTPUT_DIR / f"cc_it_{files_summary}_{timestamp}"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -726,26 +716,16 @@ def main():
     csv_paths = [Path(f) for f in args.csv_files]
 
     try:
-        # Load data with outlier handling
-        remove_outliers = not args.keep_outliers
-        df, outlier_info = load_csv_data(csv_paths, remove_outliers=remove_outliers)
+        # Load data
+        df, outlier_info = load_csv_data(csv_paths)
         print(f"Loaded {len(df)} data points from CSV files")
-
-        if outlier_info["count"] > 0:
-            print(f"Detected {outlier_info['count']} outliers in log(inference_time)")
-            if outlier_info["removed"]:
-                print(f"Outliers removed from analysis")
-            else:
-                print(f"Outliers kept in analysis (use --keep-outliers flag)")
-        else:
-            print("No outliers detected in log(inference_time)")
 
         # Perform multiple regression analysis
         print(f"\nPerforming multiple regression analysis...")
         regression_results = perform_multiple_regression(df)
 
         # Generate statistics
-        stats = generate_summary_stats(df, regression_results, outlier_info)
+        stats = generate_summary_stats(df, regression_results)
 
         # Print results
         print(f"\nMultiple Regression Results:")
