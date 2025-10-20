@@ -139,7 +139,7 @@ If you use this dataset in your research, please cite:
 ```bibtex
 @dataset{tangled_commits_dataset,
   title={Detecting Semantic Concerns in Tangled Code Changes Using Small Language Models},
-  author={Beromsu},
+  author={Beromsu Koh},
   year={2025},
   publisher={HuggingFace},
   url={https://huggingface.co/datasets/Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs},
