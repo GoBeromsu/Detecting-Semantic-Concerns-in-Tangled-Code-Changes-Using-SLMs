@@ -1,7 +1,7 @@
 [project]
-name = "untangling-multi-concern-commits-using-slm"
+name = "detecting-multiple-semantic-concerns-in-tangled-code-commits-using-small-language-models"
 version = "0.1.0"
-description = "Concern is All You Need: Semantic Untangling with Small Language Models"
+description = "Detecting Multiple Semantic Concerns in Tangled Code Commits using Small Language Models"
 readme = "README.md"
 authors = [
     { name = "gobeumsu", email = "gobeumsu@gmail.com" }

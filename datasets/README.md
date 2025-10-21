@@ -15,7 +15,7 @@ size_categories:
   - 1K<n<10K
 ---
 
-# Untangling Multi-Concern Commits with Small Language Models
+# Detecting Multiple Semantic Concerns in Tangled Code Commits using Small Language Models
 
 This dataset contains commit data for training and evaluating models on software engineering tasks, specifically focusing on identifying and separating concerns in multi-concern commits.
 
@@ -138,7 +138,7 @@ If you use this dataset in your research, please cite:
 
 ```bibtex
 @dataset{tangled_commits_dataset,
-  title={Detecting Semantic Concerns in Tangled Code Changes Using Small Language Models},
+  title={Detecting Multiple Semantic Concerns in Tangled Code Commits using Small Language Models},
   author={Beromsu Koh},
   year={2025},
   publisher={HuggingFace},
@@ -148,6 +148,7 @@ If you use this dataset in your research, please cite:
 ```
 
 ## Scripts
+
 - **`sample_atomic_commites.py`**: Samples atomic (single-concern) commits from the CCS dataset
 
   - Implements sampling pipeline with filtering and normalization

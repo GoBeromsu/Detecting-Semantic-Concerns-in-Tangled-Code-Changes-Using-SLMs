@@ -1,4 +1,4 @@
-# Detecting Semantic Concerns in Tangled Code Changes Using Small Language Models
+# Detecting Multiple Semantic Concerns in Tangled Code Commits using Small Language Models
 
 **Author:** Beomsu Koh  
 **Institution:** University of Sheffield  
@@ -71,7 +71,6 @@ HPC deployment scripts for University of Sheffield's Stanage cluster:
 - Training job submission
 - Inference execution
 - GGUF model conversion
-
 
 ## License
 

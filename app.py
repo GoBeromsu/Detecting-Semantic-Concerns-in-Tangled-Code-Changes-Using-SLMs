@@ -302,7 +302,7 @@ def show_csv_input() -> None:
 
 def main() -> None:
     """Main application entry point for concern classification evaluation."""
-    st.title("Concern is All You Need")
+    st.title("Detecting Multiple Semantic Concerns in Tangled Code Commits using Small Language Models")
     load_dotenv()
 
     # Setup in sidebar
@@ -346,7 +346,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     st.set_page_config(
-        page_title="Concern is All You Need",
+        page_title="Detecting Multiple Semantic Concerns in Tangled Code Commits using Small Language Models",
         page_icon="🌩️",
         layout="wide",
     )

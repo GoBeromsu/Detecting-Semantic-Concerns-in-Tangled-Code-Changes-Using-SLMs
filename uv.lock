@@ -409,6 +409,80 @@ wheels = [
 ]
 
 [[package]]
+name = "detecting-multiple-semantic-concerns-in-tangled-code-commits-using-small-language-models"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "accelerate" },
+    { name = "aiohttp" },
+    { name = "datasets" },
+    { name = "huggingface-hub" },
+    { name = "lmstudio" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "openai" },
+    { name = "pandas" },
+    { name = "peft" },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "scikit-learn" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scipy", version = "1.16.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tiktoken" },
+    { name = "tqdm" },
+    { name = "transformers" },
+    { name = "trl" },
+    { name = "wandb" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "llama-cpp-python" },
+    { name = "matplotlib" },
+    { name = "pytest" },
+    { name = "seaborn" },
+    { name = "streamlit" },
+    { name = "torch" },
+]
+hpc = [
+    { name = "hf-transfer" },
+    { name = "sentencepiece" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "accelerate", specifier = ">=0.25.0" },
+    { name = "aiohttp", specifier = ">=3.8.0" },
+    { name = "datasets", specifier = ">=2.15.0" },
+    { name = "hf-transfer", marker = "extra == 'hpc'", specifier = ">=0.1.6" },
+    { name = "huggingface-hub", specifier = ">=0.25.0" },
+    { name = "llama-cpp-python", marker = "extra == 'dev'", specifier = ">=0.2.79" },
+    { name = "lmstudio" },
+    { name = "matplotlib", marker = "extra == 'dev'" },
+    { name = "numpy" },
+    { name = "openai", specifier = ">=1.0.0" },
+    { name = "pandas", specifier = ">=2.1.0" },
+    { name = "peft", specifier = ">=0.10.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "pyyaml" },
+    { name = "requests", specifier = ">=2.31.0" },
+    { name = "scikit-learn", specifier = ">=1.7.2" },
+    { name = "scipy", specifier = ">=1.15.3" },
+    { name = "seaborn", marker = "extra == 'dev'" },
+    { name = "sentencepiece", marker = "extra == 'hpc'", specifier = ">=0.1.99" },
+    { name = "streamlit", marker = "extra == 'dev'", specifier = ">=1.28.0" },
+    { name = "tiktoken", specifier = ">=0.4.0" },
+    { name = "torch", marker = "extra == 'dev'" },
+    { name = "tqdm", specifier = ">=4.66.0" },
+    { name = "transformers", specifier = ">=4.55.0" },
+    { name = "trl", specifier = ">=0.8.0" },
+    { name = "wandb", specifier = ">=0.16.0" },
+]
+provides-extras = ["dev", "hpc"]
+
+[[package]]
 name = "dill"
 version = "0.3.8"
 source = { registry = "https://pypi.org/simple" }
@@ -3088,80 +3162,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/95/32/1a225d6164441be76
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/23/c7abc0ca0a1526a0774eca151daeb8de62ec457e77262b66b359c3c7679e/tzdata-2025.2-py2.py3-none-any.whl", hash = "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8", size = 347839, upload-time = "2025-03-23T13:54:41.845Z" },
 ]
-
-[[package]]
-name = "untangling-multi-concern-commits-using-slm"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "accelerate" },
-    { name = "aiohttp" },
-    { name = "datasets" },
-    { name = "huggingface-hub" },
-    { name = "lmstudio" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "openai" },
-    { name = "pandas" },
-    { name = "peft" },
-    { name = "python-dotenv" },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "scikit-learn" },
-    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "scipy", version = "1.16.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "tiktoken" },
-    { name = "tqdm" },
-    { name = "transformers" },
-    { name = "trl" },
-    { name = "wandb" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "llama-cpp-python" },
-    { name = "matplotlib" },
-    { name = "pytest" },
-    { name = "seaborn" },
-    { name = "streamlit" },
-    { name = "torch" },
-]
-hpc = [
-    { name = "hf-transfer" },
-    { name = "sentencepiece" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "accelerate", specifier = ">=0.25.0" },
-    { name = "aiohttp", specifier = ">=3.8.0" },
-    { name = "datasets", specifier = ">=2.15.0" },
-    { name = "hf-transfer", marker = "extra == 'hpc'", specifier = ">=0.1.6" },
-    { name = "huggingface-hub", specifier = ">=0.25.0" },
-    { name = "llama-cpp-python", marker = "extra == 'dev'", specifier = ">=0.2.79" },
-    { name = "lmstudio" },
-    { name = "matplotlib", marker = "extra == 'dev'" },
-    { name = "numpy" },
-    { name = "openai", specifier = ">=1.0.0" },
-    { name = "pandas", specifier = ">=2.1.0" },
-    { name = "peft", specifier = ">=0.10.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "pyyaml" },
-    { name = "requests", specifier = ">=2.31.0" },
-    { name = "scikit-learn", specifier = ">=1.7.2" },
-    { name = "scipy", specifier = ">=1.15.3" },
-    { name = "seaborn", marker = "extra == 'dev'" },
-    { name = "sentencepiece", marker = "extra == 'hpc'", specifier = ">=0.1.99" },
-    { name = "streamlit", marker = "extra == 'dev'", specifier = ">=1.28.0" },
-    { name = "tiktoken", specifier = ">=0.4.0" },
-    { name = "torch", marker = "extra == 'dev'" },
-    { name = "tqdm", specifier = ">=4.66.0" },
-    { name = "transformers", specifier = ">=4.55.0" },
-    { name = "trl", specifier = ">=0.8.0" },
-    { name = "wandb", specifier = ">=0.16.0" },
-]
-provides-extras = ["dev", "hpc"]
 
 [[package]]
 name = "urllib3"
