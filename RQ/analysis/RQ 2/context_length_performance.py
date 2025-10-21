@@ -12,7 +12,7 @@ import yaml
 
 # Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
+ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ2"
 
 MODEL_NAME_MAP = {"GPT-4.1": "GPT-4.1", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
 
@@ -84,14 +84,7 @@ def main():
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
-        from datetime import datetime
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        model_names = list(script_config["models"].keys())
-        models_summary = "_".join(model_names)[:50]
-        output_dir = (
-            ANALYSIS_OUTPUT_DIR / f"context_length_{models_summary}_{timestamp}"
-        )
+        output_dir = ANALYSIS_OUTPUT_DIR / "pf_context_length"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 

@@ -219,11 +219,7 @@ def main():
     else:
         from datetime import datetime
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-
-        file_stems = [Path(f).stem for f in args.csv_files]
-        files_summary = "_".join(file_stems)[:50]
-        output_dir = ANALYSIS_OUTPUT_DIR / f"pf_{files_summary}_{timestamp}"
+        output_dir = ANALYSIS_OUTPUT_DIR / "pf_summary"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 

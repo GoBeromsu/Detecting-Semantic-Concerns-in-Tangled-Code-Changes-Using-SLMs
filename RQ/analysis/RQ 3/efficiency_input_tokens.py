@@ -17,7 +17,7 @@ import argparse
 
 # Constants - Use root results directory (from project root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ2"
+ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ3"
 P_VALUE_THRESHOLD = 0.05
 OUTLIER_THRESHOLD_IQR = 1.5  # IQR multiplier for outlier detection
 
@@ -616,10 +616,7 @@ def main():
                     f"Missing required columns in {csv_path.name}: {missing}"
                 )
 
-        # Generate descriptive output directory name
-        file_stems = [Path(f).stem for f in args.csv_files]
-        files_summary = "_".join(file_stems)[:50]
-        output_dir = ANALYSIS_OUTPUT_DIR / f"it_{files_summary}_{timestamp}"
+        output_dir = ANALYSIS_OUTPUT_DIR / "ef_input_tokens"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 

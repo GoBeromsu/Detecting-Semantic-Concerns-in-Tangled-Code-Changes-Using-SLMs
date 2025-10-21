@@ -15,7 +15,7 @@ from datetime import datetime
 
 # Constants - Use root results directory (from project root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
+ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ2"
 
 
 def load_config():
@@ -318,16 +318,7 @@ def main():
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-
-        # Generate descriptive output directory name
-        model_names = list(script_config["models"].keys())
-        models_summary = "_".join(
-            [name.replace(" ", "").replace("-", "") for name in model_names]
-        )[:50]
-        output_dir = (
-            ANALYSIS_OUTPUT_DIR / f"model_comparison_{models_summary}_{timestamp}"
-        )
+        output_dir = ANALYSIS_OUTPUT_DIR / "pf_model_comparison"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 

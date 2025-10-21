@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-RQ2 Analysis Runner
-Simple script to run all RQ2 analysis scripts with YAML configuration.
+RQ3 Analysis Runner
+Simple script to run all RQ3 efficiency analysis scripts with YAML configuration.
 """
 
 import yaml
@@ -37,8 +37,8 @@ def main():
     config = load_config()
     project_root = (script_dir / "../../../").resolve()
 
-    print("🎯 Running RQ2 Analysis Scripts")
-    print("=" * 40)
+    print("🎯 Running RQ3 Efficiency Analysis Scripts")
+    print("=" * 45)
 
     # Get execution order
     execution_order = config.get("execution_order", list(config["scripts"].keys()))

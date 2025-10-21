@@ -13,7 +13,7 @@ import numpy as np
 
 # Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
+ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ2"
 
 MODEL_NAME_MAP = {"GPT-4.1": "GPT-4.1", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
 
@@ -369,10 +369,7 @@ def main():
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
-        from datetime import datetime
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        output_dir = ANALYSIS_OUTPUT_DIR / f"msg_impact_{timestamp}"
+        output_dir = ANALYSIS_OUTPUT_DIR / "pf_msg_impact"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
