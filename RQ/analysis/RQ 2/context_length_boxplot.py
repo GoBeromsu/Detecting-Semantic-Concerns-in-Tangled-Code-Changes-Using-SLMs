@@ -41,12 +41,12 @@ def setup_plot_style():
     plt.style.use("default")
     plt.rcParams.update(
         {
-            "font.size": 11,
-            "axes.titlesize": 14,
-            "axes.labelsize": 12,
-            "xtick.labelsize": 10,
-            "ytick.labelsize": 10,
-            "legend.fontsize": 10,
+            "font.size": 15,
+            "axes.titlesize": 18,
+            "axes.labelsize": 16,
+            "xtick.labelsize": 14,
+            "ytick.labelsize": 14,
+            "legend.fontsize": 14,
             "figure.facecolor": "white",
             "axes.facecolor": "white",
             "axes.spines.top": False,
@@ -195,7 +195,7 @@ def create_context_length_boxplot(
 
     # Set labels and title
     metric_label = "Hamming Loss" if metric == "hamming_loss" else "F1 Score"
-    ax.set_xlabel("Context Length (tokens)", fontweight="bold", color=COLORS["text"])
+    ax.set_xlabel("Input Token Length", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel(metric_label, fontweight="bold", color=COLORS["text"])
     ax.set_title(
         f"{metric_label} Distribution by Context Length and Model",

@@ -46,12 +46,12 @@ def setup_plot_style():
     plt.style.use("default")
     plt.rcParams.update(
         {
-            "font.size": 11,
-            "axes.titlesize": 14,
-            "axes.labelsize": 12,
-            "xtick.labelsize": 10,
-            "ytick.labelsize": 10,
-            "legend.fontsize": 10,
+            "font.size": 15,
+            "axes.titlesize": 18,
+            "axes.labelsize": 16,
+            "xtick.labelsize": 14,
+            "ytick.labelsize": 14,
+            "legend.fontsize": 11,
             "figure.facecolor": "white",
             "axes.facecolor": "white",
             "axes.spines.top": False,
@@ -233,7 +233,7 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
         0.98,
         stats_text,
         transform=ax.transAxes,
-        fontsize=11,
+        fontsize=10,
         verticalalignment="top",
         fontweight="bold",
         bbox=dict(
