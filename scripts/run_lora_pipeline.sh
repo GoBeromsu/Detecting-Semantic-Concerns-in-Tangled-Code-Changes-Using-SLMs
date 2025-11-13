@@ -15,7 +15,7 @@
 set -euo pipefail
 
 MODEL_TYPE=${1:-"Phi"}
-[[ "$MODEL_TYPE" =~ ^(Phi|Qwen)$ ]] || { echo "MODEL_TYPE must be Phi or Qwen"; exit 1; }
+[[ "$MODEL_TYPE" =~ ^(Phi|Qwen|GPT_OSS)$ ]] || { echo "MODEL_TYPE must be Phi, Qwen, or GPT_OSS"; exit 1; }
 
 echo "=========================================="
 echo "FULL PIPELINE: ${MODEL_TYPE}"
@@ -71,6 +71,7 @@ echo "Starting inference at $(date)"
 
 # Execute inference script with LoRA model (after training)
 # Convert model type to lowercase and append _lora for the trained model
+# Phi -> phi_lora, Qwen -> qwen_lora, GPT_OSS -> gpt_oss_lora
 MODEL_PARAM=$(echo "${MODEL_TYPE}_lora" | tr '[:upper:]' '[:lower:]')
 echo "Using trained LoRA model: ${MODEL_PARAM}"
 bash "${SCRIPT_DIR}/run_infer_huggingface.sh" "${MODEL_PARAM}"

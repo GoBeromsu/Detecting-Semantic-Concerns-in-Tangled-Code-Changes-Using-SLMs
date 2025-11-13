@@ -15,7 +15,7 @@
 set -euo pipefail
 
 MODEL_TYPE=${1:-"Phi"}
-[[ "$MODEL_TYPE" =~ ^(Phi|Qwen)$ ]] || { echo "MODEL_TYPE must be Phi or Qwen"; exit 1; }
+[[ "$MODEL_TYPE" =~ ^(Phi|Qwen|GPT_OSS)$ ]] || { echo "MODEL_TYPE must be Phi, Qwen, or GPT_OSS"; exit 1; }
 
 echo "MODEL_TYPE=${MODEL_TYPE}"
 echo "Starting training job: $SLURM_JOB_ID"
@@ -74,6 +74,8 @@ if [[ "$MODEL_TYPE" == "Phi" ]]; then
     python -u RQ/SLM/train.py --config RQ/SLM/configs/phi.yml
 elif [[ "$MODEL_TYPE" == "Qwen" ]]; then
     python -u RQ/SLM/train.py --config RQ/SLM/configs/qwen.yml
+elif [[ "$MODEL_TYPE" == "GPT_OSS" ]]; then
+    python -u RQ/SLM/train.py --config RQ/SLM/configs/gpt_oss.yml
 else
     echo "Unsupported MODEL_TYPE: $MODEL_TYPE"
     exit 1

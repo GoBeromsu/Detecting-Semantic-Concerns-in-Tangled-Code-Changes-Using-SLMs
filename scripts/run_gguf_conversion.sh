@@ -15,7 +15,7 @@
 set -euo pipefail
 
 MODEL_TYPE=${1:-"Phi"}
-[[ "$MODEL_TYPE" =~ ^(Phi|Qwen)$ ]] || { echo "MODEL_TYPE must be Phi or Qwen"; exit 1; }
+[[ "$MODEL_TYPE" =~ ^(Phi|Qwen|GPT_OSS)$ ]] || { echo "MODEL_TYPE must be Phi, Qwen, or GPT_OSS"; exit 1; }
 
 REVISION=${2:-"main"}
 

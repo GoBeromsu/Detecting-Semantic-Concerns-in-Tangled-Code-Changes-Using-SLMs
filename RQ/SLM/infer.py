@@ -4,7 +4,7 @@ Unified Inference Script for Fine-tuned SLM Models
 
 Usage:
     python infer.py --model phi
-    python infer.py --model qwen  
+    python infer.py --model qwen
     python infer.py  # Default: phi
 """
 
@@ -60,10 +60,22 @@ MODEL_CONFIGS = {
         "filename": "Qwen3-14B-Pure-bf16.gguf",
         "model_name": "Qwen3-14B",
         "chat_format": "chatml",
-    }
+    },
+    "gpt_oss": {
+        "repo_id": "ggml-org/gpt-oss-20b-GGUF",
+        "filename": "gpt-oss-20b-F16.gguf",
+        "model_name": "GPT-OSS-20B",
+        "chat_format": "chatml",
+    },
+    "gpt_oss_lora": {
+        "repo_id": "Berom0227/Semantic-Concern-SLM-GPT-OSS-gguf",
+        "filename": "Semantic-Concern-SLM-GPT-OSS-f16.gguf",
+        "model_name": "GPT-OSS-20B-LoRA",
+        "chat_format": "chatml",
+    },
 }
 
-# Experiment configuration  
+# Experiment configuration
 RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "results"
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
 
@@ -101,14 +113,14 @@ def measure_performance(
     seed: int = DEFAULT_SEED,
 ) -> None:
     """Measure model performance on dataset"""
-    
+
     for row in truncated_dataset.itertuples():
         actual_types: List[str] = json.loads(row.types)
         shas: List[str] = json.loads(row.shas)
-        
+
         try:
             start_time = time.time()
-            
+
             predicted_types = llms.hugging_face_api_call(
                 repo_id=model_config["repo_id"],
                 filename=model_config["filename"],
@@ -119,36 +131,41 @@ def measure_performance(
                 use_schema=True,
                 chat_format=model_config["chat_format"],
             )
-            
+
             end_time = time.time()
             inference_time = end_time - start_time
-            
+
         except Exception as e:
             print(f"[{row.Index}] Error: {e}")
             predicted_types = []
             inference_time = 0.0
-        
+
         # Calculate metrics
         metrics = eval_utils.calculate_metrics(predicted_types, actual_types)
-        
+
         # Save results
-        result_df = pd.DataFrame([{
-            "predicted_types": json.dumps(predicted_types),
-            "actual_types": row.types,
-            "inference_time": inference_time,
-            "shas": shas,
-            "precision": metrics["precision"],
-            "recall": metrics["recall"],
-            "f1": metrics["f1"],
-            "exact_match": metrics["exact_match"],
-            "hamming_loss": metrics["hamming_loss"],
-            "context_len": context_len,
-            "with_message": with_message,
-            "concern_count": len(actual_types),
-        }], columns=constant.DEFAULT_DF_COLUMNS)
-        
+        result_df = pd.DataFrame(
+            [
+                {
+                    "predicted_types": json.dumps(predicted_types),
+                    "actual_types": row.types,
+                    "inference_time": inference_time,
+                    "shas": shas,
+                    "precision": metrics["precision"],
+                    "recall": metrics["recall"],
+                    "f1": metrics["f1"],
+                    "exact_match": metrics["exact_match"],
+                    "hamming_loss": metrics["hamming_loss"],
+                    "context_len": context_len,
+                    "with_message": with_message,
+                    "concern_count": len(actual_types),
+                }
+            ],
+            columns=constant.DEFAULT_DF_COLUMNS,
+        )
+
         result_df.to_csv(csv_path, mode="a", header=False, index=False)
-        
+
         if row.Index % 10 == 0:
             print(f"[{row.Index}] Results appended to {csv_path}")
 
@@ -164,31 +181,32 @@ def run_inference(
     revision: str = "main",
 ):
     """Run inference with specified model and parameters"""
-    
+
     # Get model configuration
     if model_name not in MODEL_CONFIGS:
-        raise ValueError(f"Unknown model: {model_name}. Choose from {list(MODEL_CONFIGS.keys())}")
-    
+        raise ValueError(
+            f"Unknown model: {model_name}. Choose from {list(MODEL_CONFIGS.keys())}"
+        )
+
     model_config = MODEL_CONFIGS[model_name]
-    
+
     # Set default values
     if context_windows is None:
         context_windows = DEFAULT_CONTEXT_WINDOWS
     if shot_types is None:
         shot_types = DEFAULT_SHOT_TYPES
-    
+
     # Get compute device (for information only)
     device = get_compute_device()
-    
+
     # Create results directory - match Phi structure
     model_display_name = model_config["model_name"]
     base_model_dir = RESULTS_ROOT / model_display_name / START_TIME_STR
     print(f"Creating base results directory: {base_model_dir}")
     base_model_dir.mkdir(parents=True, exist_ok=True)
-    
+
     print(f"Starting inference for {model_display_name}")
     print(f"Results will be saved to: {base_model_dir}")
-    
 
     # Pre-load GGUF model for better performance (all SLM models are GGUF)
     print(f"Pre-loading GGUF model: {model_config['filename']} (revision: {revision})")
@@ -197,49 +215,53 @@ def run_inference(
         filename=model_config["filename"],
         seed=seed,
         chat_format=model_config["chat_format"],
-        revision=revision
+        revision=revision,
     )
-    
+
     # Load dataset
     dataset = load_dataset(
         "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs",
-        split="test"
+        split="test",
     )
     dataset_df = pd.DataFrame(dataset)
-    
+
     # Run experiments for different configurations (Zero-shot only, match Phi structure)
-    for shot_type, context_len, include_msg in product(shot_types, context_windows, (True, False)):
+    for shot_type, context_len, include_msg in product(
+        shot_types, context_windows, (True, False)
+    ):
         print(f"\n{'='*60}")
-        print(f"Configuration: {shot_type}, Context: {context_len}, Message: {include_msg}")
+        print(
+            f"Configuration: {shot_type}, Context: {context_len}, Message: {include_msg}"
+        )
         print(f"{'='*60}")
-        
+
         # Get system prompt
         system_prompt = prompt.get_prompt_by_type(
             shot_type=shot_type, include_message=include_msg
         )
-        
+
         # Create folder structure based on message inclusion (match Phi structure)
         msg_flag = "msg1" if include_msg else "msg0"
         model_dir = base_model_dir / msg_flag
         model_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Prepare output path with Phi-style naming (Zero-shot only)
         csv_filename = f"{context_len}_zs.csv"
         csv_path = model_dir / csv_filename
-        
+
         # Initialize CSV with headers
         if not csv_path.exists():
             pd.DataFrame(columns=constant.DEFAULT_DF_COLUMNS).to_csv(
                 csv_path, index=False
             )
-        
+
         # Prepare dataset with truncation
         truncated_dataset = rq_main.add_truncated_commits(
             dataset_df,
             context_window=context_len,
             include_message=include_msg,
         )
-        
+
         # Run inference
         measure_performance(
             model_config=model_config,
@@ -251,9 +273,9 @@ def run_inference(
             temperature=temperature,
             seed=seed,
         )
-        
+
         print(f"✅ Completed: {csv_filename}")
-    
+
     print(f"\n{'='*60}")
     print(f"🎉 All experiments completed!")
     print(f"📊 Results saved to: {base_model_dir}")
@@ -262,45 +284,41 @@ def run_inference(
 
 def main():
     """Main entry point"""
-    parser = argparse.ArgumentParser(
-        description="Run inference on fine-tuned models"
-    )
+    parser = argparse.ArgumentParser(description="Run inference on fine-tuned models")
     parser.add_argument(
         "--model",
         type=str,
         default="phi",
-        choices=["phi", "qwen", "qwen_lora"],
-        help="SLM model to use for inference (default: phi)"
+        choices=["phi", "qwen", "qwen_lora", "gpt_oss", "gpt_oss_lora"],
+        help="SLM model to use for inference (default: phi)",
     )
     parser.add_argument(
         "--context-windows",
         type=int,
         nargs="+",
         default=None,
-        help="Context window sizes to test (default: 12288 8192 4096 2048 1024)"
+        help="Context window sizes to test (default: 12288 8192 4096 2048 1024)",
     )
     parser.add_argument(
-        "--no-message",
-        action="store_true",
-        help="Exclude commit message from input"
+        "--no-message", action="store_true", help="Exclude commit message from input"
     )
     parser.add_argument(
         "--temperature",
         type=float,
         default=DEFAULT_TEMPERATURE,
-        help=f"Sampling temperature (default: {DEFAULT_TEMPERATURE})"
+        help=f"Sampling temperature (default: {DEFAULT_TEMPERATURE})",
     )
     parser.add_argument(
         "--seed",
         type=int,
         default=DEFAULT_SEED,
-        help=f"Random seed (default: {DEFAULT_SEED})"
+        help=f"Random seed (default: {DEFAULT_SEED})",
     )
     parser.add_argument(
         "--max-tokens",
         type=int,
         default=DEFAULT_MAX_TOKENS,
-        help=f"Maximum tokens for generation (default: {DEFAULT_MAX_TOKENS})"
+        help=f"Maximum tokens for generation (default: {DEFAULT_MAX_TOKENS})",
     )
     parser.add_argument(
         "--shot-types",
@@ -308,17 +326,17 @@ def main():
         nargs="+",
         default=None,
         choices=["Zero-shot", "Few-shot"],
-        help="Shot types to test (default: Zero-shot)"
+        help="Shot types to test (default: Zero-shot)",
     )
     parser.add_argument(
         "--revision",
         type=str,
         default="main",
-        help="HuggingFace revision (branch, tag, or commit) for the model (default: main)"
+        help="HuggingFace revision (branch, tag, or commit) for the model (default: main)",
     )
 
     args = parser.parse_args()
-    
+
     # Run inference
     run_inference(
         model_name=args.model,

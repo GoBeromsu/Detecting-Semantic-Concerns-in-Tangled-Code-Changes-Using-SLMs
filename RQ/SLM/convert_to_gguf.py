@@ -39,25 +39,27 @@ MODEL_CONFIGS = {
     "qwen": {
         "base_model_id": "Qwen/Qwen3-14B",
         "model_name": "Semantic-Concern-SLM-Qwen",
-    }
+    },
+    "gpt_oss": {
+        "base_model_id": "openai/gpt-oss-20b",
+        "model_name": "Semantic-Concern-SLM-GPT-OSS",
+    },
 }
 
 # Get model selection from command line
-parser = argparse.ArgumentParser(
-    description="Convert fine-tuned models to GGUF format"
-)
+parser = argparse.ArgumentParser(description="Convert fine-tuned models to GGUF format")
 parser.add_argument(
     "--model",
     type=str,
     default="phi",  # Default to phi model
-    choices=["phi", "qwen"],
-    help="Model to convert (default: phi)"
+    choices=["phi", "qwen", "gpt_oss"],
+    help="Model to convert (default: phi)",
 )
 parser.add_argument(
     "--revision",
     type=str,
     default="main",
-    help="HuggingFace revision (branch, tag, or commit) for the LoRA adapter (default: main)"
+    help="HuggingFace revision (branch, tag, or commit) for the LoRA adapter (default: main)",
 )
 args = parser.parse_args()
 
@@ -76,14 +78,15 @@ WORK_DIR = os.getenv("TMPDIR", "./tmp_gguf_conversion")
 MERGED_MODEL_DIR = f"{WORK_DIR}/merged_model"
 GGUF_OUTPUT_DIR = f"{WORK_DIR}/gguf_output"
 
-# Dependencies - environment dependent  
+# Dependencies - environment dependent
 LLAMA_CPP_DIR = os.getenv("LLAMA_CPP_DIR", os.path.expanduser("~/llama.cpp"))
 
 # HF Cache delegation to environment variables
 HF_CACHE_DIR = os.getenv("TRANSFORMERS_CACHE", None)
 
 # Quantization options
-QUANT_TYPES = ["q4_K_M","q8_0"]
+QUANT_TYPES = ["q4_K_M", "q8_0"]
+
 
 def check_dependencies() -> bool:
     """Check if required tools are available"""
@@ -124,17 +127,19 @@ def create_output_dir() -> None:
 
 def merge_lora_adapter() -> bool:
     """Load LoRA adapter from HF Hub and merge with base model"""
-    logger.info(f"Loading LoRA adapter from {HF_ADAPTER_REPO} (revision: {args.revision}) and merging...")
+    logger.info(
+        f"Loading LoRA adapter from {HF_ADAPTER_REPO} (revision: {args.revision}) and merging..."
+    )
 
     logger.info(f"Memory checkpoint")
 
     try:
         gc.collect()
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
-        
-        # bfloat16: 2x memory reduction vs float32, native H100 support  
+
+        # bfloat16: 2x memory reduction vs float32, native H100 support
         compute_dtype = torch.bfloat16
-        
+
         model = AutoPeftModelForCausalLM.from_pretrained(
             HF_ADAPTER_REPO,
             low_cpu_mem_usage=True,
@@ -144,36 +149,36 @@ def merge_lora_adapter() -> bool:
             cache_dir=HF_CACHE_DIR,
             revision=args.revision,
         )
-        
+
         logger.info(f"Memory checkpoint")
 
         logger.info("Starting LoRA merge...")
         merged_model = model.merge_and_unload()
         logger.info(f"Memory checkpoint")
-        
+
         del model
         gc.collect()
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
-        
+
         logger.info("Loading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(
             BASE_MODEL_ID, trust_remote_code=True, cache_dir=HF_CACHE_DIR
         )
-        
+
         logger.info("Saving merged model...")
         merged_model.save_pretrained(
-            MERGED_MODEL_DIR, 
-            trust_remote_code=True, 
+            MERGED_MODEL_DIR,
+            trust_remote_code=True,
             safe_serialization=True,
-            max_shard_size="2GB"
+            max_shard_size="2GB",
         )
         tokenizer.save_pretrained(MERGED_MODEL_DIR)
-        
+
         del merged_model, tokenizer
         gc.collect()
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
         logger.info(f"Memory checkpoint")
-        
+
         logger.info("✅ LoRA adapter merged successfully")
         return True
 
@@ -244,7 +249,13 @@ def upload_to_huggingface() -> bool:
 
     try:
         # Create repository if it doesn't exist
-        create_repo(HF_REPO_NAME, repo_type="model", private=False, exist_ok=True,token=HF_HUB_TOKEN)
+        create_repo(
+            HF_REPO_NAME,
+            repo_type="model",
+            private=False,
+            exist_ok=True,
+            token=HF_HUB_TOKEN,
+        )
         logger.info(f"✅ Repository {HF_REPO_NAME} ready")
 
         # Upload entire GGUF directory
