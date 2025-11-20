@@ -9,6 +9,8 @@ models/llama.cpp
 results/
 CLAUDE.md
 wandb/
+
+.claude/
 # C extensions
 *.so
 
