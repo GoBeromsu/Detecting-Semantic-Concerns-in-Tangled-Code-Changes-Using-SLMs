@@ -8,11 +8,8 @@ Uses tiktoken to calculate token lengths from diff content.
 import pandas as pd
 import json
 from pathlib import Path
-import argparse
 import matplotlib.pyplot as plt
-import numpy as np
 import tiktoken
-from typing import Dict, List, Tuple, Any
 
 # Constants - Use project root directory
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -62,86 +59,97 @@ def setup_plot_style():
     )
 
 
-def calculate_token_length(text: str, encoding) -> int:
+def calculate_row_tokens(
+    commit_msg: str, diff_text: str, encoding: tiktoken.Encoding
+) -> int:
     """
-    Calculate token length using tiktoken encoding.
+    Calculate total token length for commit message and diffs.
 
     Args:
-        text: The text to tokenize
-        encoding: The tiktoken encoding object
+        commit_msg: Commit message text (may be empty)
+        diff_text: Diff content (may be JSON array or plain text)
+        encoding: Tiktoken encoding instance
 
     Returns:
-        Number of tokens in the text
+        Total token count
     """
-    try:
-        # Parse the diff if it's in JSON format
-        if text.startswith('[') and text.endswith(']'):
-            diffs = json.loads(text)
-            # Join all diffs with newlines
-            text = '\n'.join(diffs) if isinstance(diffs, list) else text
-    except (json.JSONDecodeError, TypeError):
-        pass  # Use text as-is if not valid JSON
+    total_tokens = 0
 
-    return len(encoding.encode(text))
+    # Calculate tokens for commit message
+    if commit_msg:
+        total_tokens += len(encoding.encode(commit_msg))
+
+    # Calculate tokens for diff
+    try:
+        # Parse JSON list of diffs
+        if diff_text.startswith("[") and diff_text.endswith("]"):
+            diffs = json.loads(diff_text)
+            if isinstance(diffs, list):
+                # Sum tokens for each diff individually
+                for diff in diffs:
+                    total_tokens += len(encoding.encode(diff))
+            else:
+                total_tokens += len(encoding.encode(diff_text))
+        else:
+            total_tokens += len(encoding.encode(diff_text))
+    except (json.JSONDecodeError, TypeError):
+        total_tokens += len(encoding.encode(diff_text))
+
+    return total_tokens
 
 
 def load_and_process_data(csv_path: Path) -> pd.DataFrame:
     """
     Load CSV data and calculate token lengths for diff + commit message.
 
-    Args:
-        csv_path: Path to the CSV file
-
-    Returns:
-        DataFrame with added token_length column
+    Raises:
+        ValueError: If the dataset is empty or missing required columns
     """
     df = pd.read_csv(csv_path)
 
-    # Initialize tiktoken encoding
+    # Validate data at load time
+    if df.empty:
+        raise ValueError(f"Dataset is empty: {csv_path}")
+
+    required_columns = ["diff", "commit_message", "concern_count"]
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns: {missing_columns}")
+
+    # Initialize tiktoken encoding once
     encoding = tiktoken.get_encoding(ENCODING_MODEL)
 
-    # Calculate token lengths for diff + commit message
-    def calculate_combined_length(row):
-        diff_text = row['diff']
-        commit_msg = row['commit_message'] if pd.notna(row['commit_message']) else ''
-
-        # Combine diff and commit message
-        combined_text = f"{commit_msg}\n\n{diff_text}" if commit_msg else diff_text
-
-        return calculate_token_length(combined_text, encoding)
-
-    df['token_length'] = df.apply(calculate_combined_length, axis=1)
+    # Calculate token lengths
+    df["token_length"] = df.apply(
+        lambda row: calculate_row_tokens(
+            row["commit_message"] if pd.notna(row["commit_message"]) else "",
+            row["diff"],
+            encoding,
+        ),
+        axis=1,
+    )
 
     return df
 
 
 def create_token_length_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
-    """
-    Create clean box plot for token length distribution by concern count.
-
-    Args:
-        df: DataFrame with concern_count and token_length columns
-        output_dir: Directory to save the plot
-
-    Returns:
-        Path to the saved plot
-    """
+    """Create box plot for token length distribution by concern count."""
     setup_plot_style()
 
     # Get unique concern counts and sort them
-    concern_counts = sorted(df['concern_count'].unique())
+    concern_counts = sorted(df["concern_count"].unique())
 
     # Prepare data for box plot
     plot_data = []
     for concern_count in concern_counts:
-        concern_data = df[df['concern_count'] == concern_count]['token_length'].tolist()
+        concern_data = df[df["concern_count"] == concern_count]["token_length"].tolist()
         plot_data.append(concern_data)
 
     # Create figure
-    fig, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
+    _, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
 
     # Create box plot following standard boxplot definition
-    bp = ax.boxplot(
+    ax.boxplot(
         plot_data,
         positions=concern_counts,
         widths=0.6,
@@ -152,18 +160,9 @@ def create_token_length_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
             facecolor=COLORS["primary"],
             alpha=PLOT_STYLE["alpha"],
         ),
-        medianprops=dict(
-            color=COLORS["success"],
-            linewidth=PLOT_STYLE["line_width"]
-        ),
-        whiskerprops=dict(
-            color=COLORS["text"],
-            linewidth=PLOT_STYLE["line_width"]
-        ),
-        capprops=dict(
-            color=COLORS["text"],
-            linewidth=PLOT_STYLE["line_width"]
-        ),
+        medianprops=dict(color=COLORS["success"], linewidth=PLOT_STYLE["line_width"]),
+        whiskerprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
+        capprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
         flierprops=dict(
             marker="o",
             markerfacecolor=COLORS["primary"],
@@ -183,7 +182,7 @@ def create_token_length_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
         pad=20,
     )
 
-    # Set x-axis ticks
+    # Set x-axis ticks and labels
     ax.set_xticks(concern_counts)
     ax.set_xticklabels(concern_counts)
 
@@ -196,10 +195,7 @@ def create_token_length_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
     # Save plot
     plot_path = output_dir / "boxplot_concern_count_token_length.png"
     plt.savefig(
-        plot_path,
-        dpi=PLOT_STYLE["dpi"],
-        bbox_inches="tight",
-        facecolor="white"
+        plot_path, dpi=PLOT_STYLE["dpi"], bbox_inches="tight", facecolor="white"
     )
     plt.close()
 
@@ -207,39 +203,21 @@ def create_token_length_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate token length box plot from tangled dataset"
-    )
-    parser.add_argument(
-        "--csv-path",
-        type=str,
-        help="Path to CSV file (default: tangled_ccs_dataset_test.csv)"
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        help="Output directory for plots"
-    )
+    """Generate token length box plot from tangled dataset."""
+    # Setup: Prepare output directory
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    args = parser.parse_args()
+    # Input: Load and process data
+    print("Loading and processing data...")
+    df = load_and_process_data(DATASET_PATH)
 
-    # Set paths
-    csv_path = Path(args.csv_path) if args.csv_path else DATASET_PATH
-    output_dir = Path(args.output_dir) if args.output_dir else OUTPUT_DIR
+    # Process: Generate visualization
+    print("\nGenerating Token Length box plot...")
+    plot_path = create_token_length_boxplot(df, OUTPUT_DIR)
 
-    # Ensure output directory exists
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Load and process data
-    df = load_and_process_data(csv_path)
-
-    # Generate box plot
-    plot_path = create_token_length_boxplot(df, output_dir)
-
-    if plot_path:
-        print(f"Box plot saved to: {plot_path}")
-    else:
-        print("Failed to generate box plot")
+    # Output: Report results
+    print(f"Box plot saved to: {plot_path}")
+    print(f"\nResults saved to: {OUTPUT_DIR}")
 
 
 if __name__ == "__main__":
