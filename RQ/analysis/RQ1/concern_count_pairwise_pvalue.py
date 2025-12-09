@@ -134,17 +134,19 @@ def save_results(results: dict, output_dir: Path):
     with open(output_dir / "concern_count_pairwise_pvalues.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    # CSV (p-value + effect size in separate columns, ICSE/FSE convention)
+    # CSV with p(r) format for compact display
     concern_counts = results["summary"]["concern_counts"]
     pairs = list(results["by_concern_count"][concern_counts[0]].keys())
 
     rows = []
     for cc in concern_counts:
-        row = {"concern_count": cc}
+        row = {"Concern Count": cc}
         for pair in pairs:
             data = results["by_concern_count"][cc].get(pair, {})
-            row[f"{pair} (p)"] = data.get("p_formatted", "--")
-            row[f"{pair} (r)"] = f"{data.get('effect_size', 0):.2f}" if data else "--"
+            if data:
+                row[pair] = f"{data['p_formatted']} ({data['effect_size']:.2f})"
+            else:
+                row[pair] = "--"
         rows.append(row)
 
     pd.DataFrame(rows).to_csv(output_dir / "concern_count_pairwise_pvalues.csv", index=False)
