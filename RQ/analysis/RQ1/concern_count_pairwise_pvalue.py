@@ -175,7 +175,7 @@ def main():
     parser.add_argument("--output-dir", type=str, help="Output directory")
     args = parser.parse_args()
 
-    output_dir = Path(args.output_dir) if args.output_dir else ANALYSIS_OUTPUT_DIR / "pf_pairwise_comparison"
+    output_dir = Path(args.output_dir) if args.output_dir else ANALYSIS_OUTPUT_DIR / "pf_concern_count_pairwise"
 
     # Input
     print("Loading data...")
