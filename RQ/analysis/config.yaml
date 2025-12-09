@@ -75,6 +75,17 @@ rq1:
         "Fine-tuned SLM":
           csv_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
 
+    concern_count_pairwise_pvalue:
+      file: "concern_count_pairwise_pvalue.py"
+      description: "Generates pairwise p-value tables for hamming loss across models by concern count"
+      models:
+        LLM:
+          csv_path: "results/gpt/avg_result/msg1/12288_zs.csv"
+        SLM:
+          csv_path: "results/Qwen/avg_result/msg1/12288_zs.csv"
+        "Fine-tuned SLM":
+          csv_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+
 # =============================================================================
 # RQ2: Impact of Commit Message Inclusion
 # =============================================================================
