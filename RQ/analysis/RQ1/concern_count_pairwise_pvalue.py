@@ -131,7 +131,7 @@ def save_results(results: dict, output_dir: Path):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # JSON
-    with open(output_dir / "pairwise_pvalues.json", "w", encoding="utf-8") as f:
+    with open(output_dir / "concern_count_pairwise_pvalues.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
     # CSV (p-value + effect size in separate columns, ICSE/FSE convention)
@@ -147,7 +147,7 @@ def save_results(results: dict, output_dir: Path):
             row[f"{pair} (r)"] = f"{data.get('effect_size', 0):.2f}" if data else "--"
         rows.append(row)
 
-    pd.DataFrame(rows).to_csv(output_dir / "pairwise_pvalues.csv", index=False)
+    pd.DataFrame(rows).to_csv(output_dir / "concern_count_pairwise_pvalues.csv", index=False)
 
 
 def print_summary(results: dict):
