@@ -1,0 +1,167 @@
+# Unified RQ Analysis Configuration
+# Single Source of Truth - All scripts follow this configuration
+# =============================================================================
+
+# Common settings
+common:
+  project_root: "../.."  # Relative to this config file
+  results_base: "results"
+  output_base: "results/analysis"
+  context_lengths: [1024, 2048, 4096, 8192, 12288]
+  default_context: 12288
+
+# Model definitions with path templates
+models:
+  GPT-4.1:
+    base_path: "results/gpt/avg_result"
+    csv_pattern: "msg{msg}/{context}_zs.csv"
+  Qwen:
+    base_path: "results/Qwen/avg_result"
+    csv_pattern: "msg{msg}/{context}_zs.csv"
+  QwenFT:
+    base_path: "results/Qwen3-14B-LoRA/avg_result"
+    csv_pattern: "msg{msg}/{context}_zs.csv"
+    aggregated_csv: "msg1/qwen3_aggregated.csv"
+
+# =============================================================================
+# RQ1: Impact of Concern Count
+# =============================================================================
+rq1:
+  name: "Impact of Concern Count"
+  description: "Evaluates model performance as semantic complexity increases"
+
+  scripts:
+    performance_summary:
+      file: "performance_summary.py"
+      description: "Generates performance summary comparison across models"
+      models:
+        GPT-4.1:
+          csv_path: "results/gpt/avg_result/msg1/12288_zs.csv"
+        Qwen:
+          csv_path: "results/Qwen/avg_result/msg1/12288_zs.csv"
+        "Qwen (FT)":
+          csv_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+
+    concern_count_boxplot:
+      file: "concern_count_boxplot.py"
+      description: "Generates concern count box plots by concern count and model"
+      models:
+        LLM:
+          csv_path: "results/gpt/avg_result/msg1/12288_zs.csv"
+        SLM:
+          csv_path: "results/Qwen/avg_result/msg1/12288_zs.csv"
+        "Fine-tuned SLM":
+          csv_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+
+    concerncount_by_model:
+      file: "concerncount-by-model.py"
+      description: "Generates concern count performance comparison by model"
+      models:
+        GPT-4.1:
+          path: "results/gpt/avg_result/msg1/12288_zs.csv"
+        Qwen:
+          path: "results/Qwen/avg_result/msg1/12288_zs.csv"
+        "Qwen (FT)":
+          path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+
+    model_comparison_analysis:
+      file: "model_comparison_analysis.py"
+      description: "Compares individual predictions between LLM, SLM, and Fine-tuned SLM models"
+      models:
+        LLM:
+          csv_path: "results/gpt/avg_result/msg1/12288_zs.csv"
+        SLM:
+          csv_path: "results/Qwen/avg_result/msg1/12288_zs.csv"
+        "Fine-tuned SLM":
+          csv_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+
+# =============================================================================
+# RQ2: Impact of Commit Message Inclusion
+# =============================================================================
+rq2:
+  name: "Impact of Commit Message"
+  description: "Investigates whether commit messages provide additional semantic cues"
+
+  scripts:
+    msg_impact_analysis:
+      file: "msg_impact_analysis.py"
+      description: "Analyzes the impact of commit messages on model performance"
+      models:
+        GPT-4.1:
+          msg0_path: "results/gpt/avg_result/msg0/12288_zs.csv"
+          msg1_path: "results/gpt/avg_result/msg1/12288_zs.csv"
+        Qwen:
+          msg0_path: "results/Qwen/avg_result/msg0/12288_zs.csv"
+          msg1_path: "results/Qwen/avg_result/msg1/12288_zs.csv"
+        "Qwen (FT)":
+          msg0_path: "results/Qwen3-14B-LoRA/avg_result/msg0/12288_zs.csv"
+          msg1_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+
+# =============================================================================
+# RQ3: Robustness Under Token-Budget-Constrained Diff Truncation
+# =============================================================================
+rq3:
+  name: "Token-Budget Robustness"
+  description: "Examines model reliability when token budget is reduced"
+
+  scripts:
+    context_length_performance:
+      file: "context_length_performance.py"
+      description: "Generates context length performance comparison across models"
+      context_lengths: [1024, 2048, 4096, 8192, 12288]
+      models:
+        GPT-4.1:
+          csv_path_pattern: "results/gpt/avg_result/msg1/{context}_zs.csv"
+        Qwen:
+          csv_path_pattern: "results/Qwen/avg_result/msg1/{context}_zs.csv"
+        "Qwen (FT)":
+          csv_path_pattern: "results/Qwen3-14B-LoRA/avg_result/msg1/{context}_zs.csv"
+
+    context_length_boxplot:
+      file: "context_length_boxplot.py"
+      description: "Generates context length box plots by context length and model"
+      context_lengths: [1024, 2048, 4096, 8192, 12288]
+      models:
+        LLM:
+          csv_path_pattern: "results/gpt/avg_result/msg1/{context}_zs.csv"
+        SLM:
+          csv_path_pattern: "results/Qwen/avg_result/msg1/{context}_zs.csv"
+        "Fine-tuned SLM":
+          csv_path_pattern: "results/Qwen3-14B-LoRA/avg_result/msg1/{context}_zs.csv"
+
+# =============================================================================
+# RQ4: Inference Efficiency
+# =============================================================================
+rq4:
+  name: "Inference Efficiency"
+  description: "Analyzes how factors influence inference latency"
+
+  scripts:
+    efficiency_commit_message:
+      file: "efficiency_commit_message.py"
+      description: "Analyzes correlation between commit message presence and inference time"
+      csv_files:
+        - "results/Qwen3-14B-LoRA/avg_result/msg0/12288_zs.csv"
+        - "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+      required_columns: ["with_message", "inference_time"]
+
+    efficiency_concern_count:
+      file: "efficiency_concern_count.py"
+      description: "Analyzes correlation between concern count and inference time"
+      csv_files:
+        - "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+      required_columns: ["concern_count", "inference_time"]
+
+    efficiency_input_tokens:
+      file: "efficiency_input_tokens.py"
+      description: "Analyzes correlation between input tokens and inference time"
+      csv_files:
+        - "results/Qwen3-14B-LoRA/avg_result/msg1/qwen3_aggregated.csv"
+      required_columns: ["context_len", "inference_time"]
+
+    efficiency_concern_count_input_token:
+      file: "efficiency_concern_count_input_token.py"
+      description: "Multiple regression analysis of concern count and input tokens vs inference time"
+      csv_files:
+        - "results/Qwen3-14B-LoRA/avg_result/msg1/qwen3_aggregated.csv"
+      required_columns: ["context_len", "inference_time", "concern_count"]
