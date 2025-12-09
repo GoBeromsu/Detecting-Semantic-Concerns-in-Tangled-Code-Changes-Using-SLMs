@@ -14,7 +14,8 @@ from typing import Dict
 
 # Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ1"
+RQ_NAME = Path(__file__).parent.name
+ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / RQ_NAME
 
 MODEL_NAME_MAP = {
     "GPT-4.1": "GPT-4.1",
