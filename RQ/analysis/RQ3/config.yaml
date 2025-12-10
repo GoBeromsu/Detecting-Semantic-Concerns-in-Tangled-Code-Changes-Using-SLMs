@@ -1,0 +1,39 @@
+# RQ3: Robustness Under Token-Budget-Constrained Diff Truncation
+# =============================================================================
+
+scripts:
+  context_length_performance:
+    file: "context_length_performance.py"
+    description: "Generates context length performance comparison across models"
+    context_lengths: [1024, 2048, 4096, 8192, 12288]
+    models:
+      GPT-4.1:
+        csv_path_pattern: "results/gpt/avg_result/msg1/{context}_zs.csv"
+      Qwen:
+        csv_path_pattern: "results/Qwen/avg_result/msg1/{context}_zs.csv"
+      "Qwen (FT)":
+        csv_path_pattern: "results/Qwen3-14B-LoRA/avg_result/msg1/{context}_zs.csv"
+
+  context_length_boxplot:
+    file: "context_length_boxplot.py"
+    description: "Generates context length box plots by context length and model"
+    context_lengths: [1024, 2048, 4096, 8192, 12288]
+    models:
+      LLM:
+        csv_path_pattern: "results/gpt/avg_result/msg1/{context}_zs.csv"
+      SLM:
+        csv_path_pattern: "results/Qwen/avg_result/msg1/{context}_zs.csv"
+      "Fine-tuned SLM":
+        csv_path_pattern: "results/Qwen3-14B-LoRA/avg_result/msg1/{context}_zs.csv"
+
+  context_length_pairwise_pvalue:
+    file: "context_length_pairwise_pvalue.py"
+    description: "Generates pairwise p-value tables for hamming loss across models by context length"
+    context_lengths: [1024, 2048, 4096, 8192, 12288]
+    models:
+      LLM:
+        csv_path_pattern: "results/gpt/avg_result/msg1/{context}_zs.csv"
+      SLM:
+        csv_path_pattern: "results/Qwen/avg_result/msg1/{context}_zs.csv"
+      "Fine-tuned SLM":
+        csv_path_pattern: "results/Qwen3-14B-LoRA/avg_result/msg1/{context}_zs.csv"

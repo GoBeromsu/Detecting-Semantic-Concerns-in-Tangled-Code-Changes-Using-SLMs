@@ -108,6 +108,20 @@ rq2:
           msg0_path: "results/Qwen3-14B-LoRA/avg_result/msg0/12288_zs.csv"
           msg1_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
 
+    msg_impact_pairwise_pvalue:
+      file: "msg_impact_pairwise_pvalue.py"
+      description: "Generates pairwise p-value tables for message impact (msg0 vs msg1)"
+      models:
+        GPT-4.1:
+          msg0_path: "results/gpt/avg_result/msg0/12288_zs.csv"
+          msg1_path: "results/gpt/avg_result/msg1/12288_zs.csv"
+        Qwen:
+          msg0_path: "results/Qwen/avg_result/msg0/12288_zs.csv"
+          msg1_path: "results/Qwen/avg_result/msg1/12288_zs.csv"
+        "Qwen (FT)":
+          msg0_path: "results/Qwen3-14B-LoRA/avg_result/msg0/12288_zs.csv"
+          msg1_path: "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+
 # =============================================================================
 # RQ3: Robustness Under Token-Budget-Constrained Diff Truncation
 # =============================================================================
