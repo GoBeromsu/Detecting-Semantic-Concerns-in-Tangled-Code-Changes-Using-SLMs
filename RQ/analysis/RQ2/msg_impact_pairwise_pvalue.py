@@ -157,6 +157,27 @@ def save_results(results: dict, output_dir: Path):
 
     pd.DataFrame([row]).to_csv(output_dir / "msg_impact_pairwise_pvalues.csv", index=False)
 
+    # Appendix CSV: detailed statistics (p-value, effect size, win counts, means)
+    # Convention: p (scientific 2 decimals), r (2 decimals), mean (3 decimals), pct (1 decimal)
+    appendix_rows = []
+    for model_name in model_names:
+        data = results["by_model"].get(model_name, {})
+        if data:
+            appendix_rows.append({
+                "Model": model_name,
+                "p": f"{data['p_value']:.2e}",
+                "r": f"{data['effect_size']:.2f}",
+                "n": data["n"],
+                "msg0_mean": f"{data['msg0_mean']:.3f}",
+                "msg1_mean": f"{data['msg1_mean']:.3f}",
+                "msg0_wins": data["msg0_wins"],
+                "msg1_wins": data["msg1_wins"],
+                "msg0_pct": f"{data['msg0_win_pct']:.1f}",
+                "msg1_pct": f"{data['msg1_win_pct']:.1f}"
+            })
+
+    pd.DataFrame(appendix_rows).to_csv(output_dir / "msg_impact_pairwise_appendix.csv", index=False)
+
 
 def print_summary(results: dict):
     """Print summary to console."""

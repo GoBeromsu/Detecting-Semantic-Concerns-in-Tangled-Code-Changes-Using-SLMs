@@ -174,6 +174,27 @@ def save_results(results: dict, output_dir: Path):
 
     pd.DataFrame(rows).to_csv(output_dir / "context_length_pairwise_pvalues.csv", index=False)
 
+    # Appendix CSV: detailed statistics (p-value, effect size, win counts)
+    # Fixed column structure for clean output
+    # Convention: p (scientific 2 decimals), r (2 decimals), pct (1 decimal)
+    appendix_rows = []
+    for cl in context_lengths:
+        for pair in results["by_context_length"][cl].keys():
+            data = results["by_context_length"][cl][pair]
+            appendix_rows.append({
+                "Context": cl,
+                "Comparison": pair,
+                "p": f"{data['p_value']:.2e}",
+                "r": f"{data['effect_size']:.2f}",
+                "n": data["n"],
+                "a_wins": data["a_wins"],
+                "b_wins": data["b_wins"],
+                "a_pct": f"{data['a_win_pct']:.1f}",
+                "b_pct": f"{data['b_win_pct']:.1f}"
+            })
+
+    pd.DataFrame(appendix_rows).to_csv(output_dir / "context_length_pairwise_appendix.csv", index=False)
+
 
 def print_summary(results: dict):
     """Print summary to console."""

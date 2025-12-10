@@ -155,6 +155,27 @@ def save_results(results: dict, output_dir: Path):
 
     pd.DataFrame(rows).to_csv(output_dir / "concern_count_pairwise_pvalues.csv", index=False)
 
+    # Appendix CSV: detailed statistics (p-value, effect size, win counts)
+    # Fixed column structure for clean output
+    # Convention: p_value (scientific 2 decimals), r (2 decimals), pct (1 decimal)
+    appendix_rows = []
+    for cc in concern_counts:
+        for pair in results["by_concern_count"][cc].keys():
+            data = results["by_concern_count"][cc][pair]
+            appendix_rows.append({
+                "Concerns": cc,
+                "Comparison": pair,
+                "p": f"{data['p_value']:.2e}",
+                "r": f"{data['effect_size']:.2f}",
+                "n": data["n"],
+                "a_wins": data["a_wins"],
+                "b_wins": data["b_wins"],
+                "a_pct": f"{data['a_win_pct']:.1f}",
+                "b_pct": f"{data['b_win_pct']:.1f}"
+            })
+
+    pd.DataFrame(appendix_rows).to_csv(output_dir / "concern_count_pairwise_appendix.csv", index=False)
+
 
 def print_summary(results: dict):
     """Print summary to console."""
