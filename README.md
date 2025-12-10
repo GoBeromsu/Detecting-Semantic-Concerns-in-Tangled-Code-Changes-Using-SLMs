@@ -1,8 +1,8 @@
 # Detecting Multiple Semantic Concerns in Tangled Code Commits using Small Language Models
 
-**Author:** Beomsu Koh  
-**Institution:** University of Sheffield  
-**Project Type:** MSc Computer Science Dissertation  
+**Author:** Beomsu Koh
+**Institution:** University of Sheffield
+**Project Type:** MSc Computer Science Dissertation
 **Dataset:** [Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs](https://huggingface.co/datasets/Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs)
 
 ## Overview
@@ -11,186 +11,131 @@ This repository contains the complete implementation and analysis for detecting 
 
 ## Project Structure
 
-### 📊 Directory Tree
-
 ```text
-├── datasets/              # Dataset creation and processing
-│   ├── data/             # Raw and processed datasets
+├── datasets/                    # Dataset creation and processing
+│   ├── data/                   # Raw and processed datasets
 │   │   ├── CCS Dataset.csv
 │   │   ├── sampled_ccs_dataset.csv
 │   │   ├── tangled_ccs_dataset_train.csv
 │   │   └── tangled_ccs_dataset_test.csv
-│   └── scripts/          # Dataset generation scripts
+│   └── scripts/                # Dataset generation scripts
 │       ├── sample_atomic_commites.py
 │       ├── generate_tangled_commites.py
+│       ├── analyze_token_distribution.py
+│       ├── concern_token_boxplot.py
 │       └── upload_to_huggingface.py
 │
-├── RQ/                    # Research Questions - Models and Analysis
-│   ├── GPT/              # GPT-4.1 inference
-│   │   └── infer.py
-│   ├── SLM/              # Small Language Models (Qwen3-14B)
-│   │   ├── configs/      # Model and training configurations
-│   │   ├── train.py      # LoRA fine-tuning script
-│   │   ├── infer.py      # Inference script
-│   │   └── convert_to_gguf.py
-│   ├── analysis/         # Analysis scripts for all RQs
-│   │   ├── RQ 1/         # Overall Performance Analysis
-│   │   │   ├── config.yaml
-│   │   │   ├── performance_summary.py
-│   │   │   └── run.py
-│   │   ├── RQ 2/         # Performance Analysis (detailed)
-│   │   │   ├── config.yaml
-│   │   │   ├── msg_impact_analysis.py
-│   │   │   ├── concerncount-by-model.py
-│   │   │   ├── context_length_performance.py
-│   │   │   ├── model_comparison_analysis.py
-│   │   │   ├── concern_count_boxplot.py
-│   │   │   ├── context_length_boxplot.py
-│   │   │   └── run.py
-│   │   └── RQ 3/         # Efficiency Analysis
-│   │       ├── config.yaml
-│   │       ├── efficiency_commit_message.py
-│   │       ├── efficiency_concern_count.py
-│   │       ├── efficiency_input_tokens.py
-│   │       ├── efficiency_concern_count_input_token.py
-│   │       └── run.py
-│   └── main.py           # Main entry point
+├── RQ/                          # Research Questions - Models and Analysis
+│   ├── GPT/                    # GPT-4.1 inference pipeline
+│   ├── SLM/                    # Small Language Models (Qwen3-14B)
+│   │   ├── configs/            # Model and training configurations
+│   │   ├── train.py            # LoRA fine-tuning script
+│   │   ├── infer.py            # Inference script
+│   │   └── convert_to_gguf.py  # GGUF conversion for deployment
+│   ├── analysis/               # Unified analysis scripts
+│   │   ├── config.yaml         # Single source of truth for all RQs
+│   │   ├── run.py              # Main analysis runner
+│   │   ├── RQ1/                # Impact of Concern Count
+│   │   ├── RQ2/                # Impact of Commit Message
+│   │   ├── RQ3/                # Token-Budget Robustness
+│   │   └── RQ4/                # Inference Efficiency
+│   └── main.py
 │
-├── results/              # Generated outputs (organized by RQ)
-│   ├── analysis/
-│   │   ├── RQ1/         # pf_* (performance) folders
-│   │   ├── RQ2/         # pf_* (performance) folders
-│   │   └── RQ3/         # ef_* (efficiency) folders
-│   ├── gpt/             # GPT-4.1 inference results
-│   ├── Qwen/            # Qwen3-14B inference results
-│   └── Qwen3-14B-LoRA/  # Fine-tuned model results
+├── results/                     # Generated outputs
+│   ├── analysis/               # Analysis results by RQ
+│   │   ├── RQ1/
+│   │   ├── RQ2/
+│   │   ├── RQ3/
+│   │   └── RQ4/
+│   ├── gpt/                    # GPT-4.1 inference results
+│   ├── Qwen/                   # Qwen3-14B inference results
+│   └── Qwen3-14B-LoRA/         # Fine-tuned model results
 │
-├── visual_eval/          # Interactive Streamlit dashboard
-│   ├── app.py
+├── visual_eval/                 # Interactive Streamlit dashboard
 │   ├── components.py
 │   ├── dataset.py
-│   └── session.py
+│   ├── session.py
+│   └── setup.py
 │
-├── scripts/              # HPC deployment (University of Sheffield)
+├── scripts/                     # HPC deployment scripts
 │   ├── setup_env.sh
 │   ├── run_training.sh
+│   ├── run_lora_pipeline.sh
 │   ├── run_infer_huggingface.sh
 │   └── run_gguf_conversion.sh
 │
-└── utils/                # Shared utilities
-    ├── eval.py           # Evaluation metrics
-    ├── prompt.py         # Prompt templates
-    ├── model.py          # Model definitions
-    └── llms/             # LLM API connectors
-        ├── openai.py
-        ├── hugging_face.py
-        └── lmstudio.py
+├── utils/                       # Shared utilities
+│   ├── eval.py                 # Evaluation metrics
+│   ├── prompt.py               # Prompt templates
+│   ├── model.py                # Data models
+│   └── llms/                   # LLM API connectors
+│       ├── openai.py
+│       ├── hugging_face.py
+│       ├── lmstudio.py
+│       └── constant.py
+│
+├── __test__/                    # Test suite
+│   ├── test_api.py
+│   └── test_eval.py
+│
+└── app.py                       # Main Streamlit application
 ```
 
-### 🗂️ Key Components
+## Research Questions
 
-#### `datasets/`
+### RQ1: Impact of Concern Count
 
-Dataset creation pipeline for HuggingFace:
+Evaluates model performance as semantic complexity increases:
 
-- **`sample_atomic_commites.py`**: Sample single-concern commits from CCS Dataset
-- **`generate_tangled_commites.py`**: Create multi-concern commits by combining atomic commits
-- **`upload_to_huggingface.py`**: Upload processed dataset to HuggingFace Hub
+- `performance_summary.py`: Performance comparison across models (GPT-4.1, Qwen, Fine-tuned Qwen)
+- `concern_count_boxplot.py`: Box plot visualization by concern count
+- `concerncount-by-model.py`: Performance comparison by model
+- `model_comparison_analysis.py`: Head-to-head model comparison with failure analysis
+- `concern_count_pairwise_pvalue.py`: Statistical significance testing
 
-**Dataset Format:**
+### RQ2: Impact of Commit Message Inclusion
 
-- Train: `tangled_ccs_dataset_train.csv` (70% split)
-- Test: `tangled_ccs_dataset_test.csv` (30% split)
+Investigates whether commit messages provide additional semantic cues:
 
-#### `RQ/` (Research Questions)
+- `msg_impact_analysis.py`: Analyzes performance with/without commit messages
+- `msg_impact_pairwise_pvalue.py`: Pairwise statistical comparison
 
-##### **RQ1: Overall Performance Analysis**
+### RQ3: Token-Budget Robustness
 
-Evaluates model performance across different configurations:
+Examines model reliability when token budget is reduced (1024-12288 tokens):
 
-- **`pf_summary/`**: Comprehensive performance comparison (GPT-4.1, Qwen, Fine-tuned Qwen)
+- `context_length_performance.py`: Performance across context lengths
+- `context_length_boxplot.py`: Box plot visualization by context length
+- `context_length_pairwise_pvalue.py`: Statistical significance testing
 
-##### **RQ2: Performance Analysis (Detailed)**
+### RQ4: Inference Efficiency
 
-In-depth analysis of factors affecting model performance:
+Analyzes how factors influence inference latency:
 
-- **`pf_msg_impact/`**: Impact of commit messages on performance
-- **`pf_concern_count/`**: Performance by number of concerns (1-5)
-- **`pf_context_length/`**: Effect of context window size (1024-12288 tokens)
-- **`pf_model_comparison/`**: Head-to-head model comparison with failure analysis
-- **`pf_concern_count_boxplot/`**: Box plot visualization by concern count
-- **`pf_context_length_boxplot/`**: Box plot visualization by context length
+- `efficiency_commit_message.py`: Correlation with commit message presence
+- `efficiency_concern_count.py`: Correlation with concern count
+- `efficiency_input_tokens.py`: Correlation with input tokens
+- `efficiency_concern_count_input_token.py`: Multiple regression analysis
 
-##### **RQ3: Efficiency Analysis**
+## Key Components
 
-Computational efficiency and inference time analysis:
+### Models
 
-- **`ef_commit_message/`**: Correlation between commit message presence and inference time
-- **`ef_concern_count/`**: Correlation between concern count and inference time
-- **`ef_input_tokens/`**: Correlation between input tokens and inference time
-- **`ef_concern_count_input_tokens/`**: Multiple regression analysis (concern count + input tokens)
+- **GPT-4.1**: OpenAI API baseline (zero-shot)
+- **Qwen3-14B**: Base SLM for comparison
+- **Qwen3-14B-LoRA**: Fine-tuned SLM with LoRA (rank=64, alpha=128)
 
-##### **Model Implementation**
+### Dataset
 
-- **`GPT/`**: OpenAI GPT-4.1 inference pipeline (zero-shot)
-- **`SLM/`**: Qwen3-14B training and inference
-  - LoRA fine-tuning with configurable hyperparameters
-  - DeepSpeed integration for efficient training
-  - GGUF conversion for deployment
+- **Train**: `tangled_ccs_dataset_train.csv` (70% split)
+- **Test**: `tangled_ccs_dataset_test.csv` (30% split)
+- Based on Conventional Commits Specification (CCS)
 
-#### `results/` Output Structure
-
-##### **Naming Convention**
-
-```
-{factor_abbr}_{analysis_target}
-```
-
-**Factor Abbreviations:**
-
-- `pf` = performance (RQ1, RQ2)
-- `ef` = efficiency (RQ3)
-
-**Benefits:**
-
-- Alphabetical sorting automatically groups by factor
-- Same script outputs to the same folder (overwrite mode)
-- Clear, predictable naming pattern
-
-##### **Analysis Outputs**
-
-Each analysis folder contains:
-
-- CSV files with raw results
-- PNG visualizations (box plots, scatter plots, regression lines)
-- JSON summaries with statistical analysis
-
-#### `visual_eval/`
-
-Interactive Streamlit dashboard for:
-
-- Real-time model evaluation on custom inputs
-- Results visualization across all RQs
-- Dataset exploration and statistics
-- Model performance comparison
-
-#### `scripts/`
-
-HPC deployment scripts for University of Sheffield's Stanage cluster:
-
-- **`setup_env.sh`**: Conda environment setup
-- **`run_training.sh`**: Submit LoRA fine-tuning jobs
-- **`run_infer_huggingface.sh`**: Execute inference on trained models
-- **`run_gguf_conversion.sh`**: Convert models to GGUF format for llama.cpp
-
-#### `utils/`
-
-Shared utilities across the project:
+### Utilities
 
 - **`eval.py`**: Evaluation metrics (Hamming Loss, F1, Precision, Recall)
 - **`prompt.py`**: Prompt templates for zero-shot and few-shot learning
-- **`model.py`**: Data models and type definitions
-- **`llms/`**: Unified API connectors for different LLM providers
+- **`llms/`**: Unified API connectors for OpenAI, HuggingFace, and LM Studio
 
 ## License
 
