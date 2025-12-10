@@ -111,7 +111,7 @@ def perform_pairwise_tests(csv_data: dict) -> dict:
 
             results["by_concern_count"][cc][f"{model_a} vs {model_b}"] = {
                 "p_value": float(p_value),
-                "p_formatted": "<0.001" if p_value < 0.001 else f"{p_value:.3f}",
+                "p_formatted": "0.001" if p_value < 0.001 else f"{p_value:.3f}",
                 "effect_size": float(effect_size),
                 "significant": bool(p_value < P_VALUE_THRESHOLD),
                 "a_wins": a_wins, "b_wins": b_wins, "n": n,
@@ -134,19 +134,23 @@ def save_results(results: dict, output_dir: Path):
     with open(output_dir / "concern_count_pairwise_pvalues.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    # CSV with p(r) format for compact display
+    # CSV with p-values only: numeric, no special characters
+    # p < 0.001 shown as 0.001 (caption should note this)
     concern_counts = results["summary"]["concern_counts"]
-    pairs = list(results["by_concern_count"][concern_counts[0]].keys())
+
+    # Column name mapping for CSV
+    pair_to_col = {
+        "LLM vs SLM": "p_LLM_SLM",
+        "LLM vs Fine-tuned SLM": "p_LLM_FT_SLM",
+        "SLM vs Fine-tuned SLM": "p_SLM_FT_SLM"
+    }
 
     rows = []
     for cc in concern_counts:
-        row = {"Concern Count": cc}
-        for pair in pairs:
+        row = {"Concerns": cc}
+        for pair, col in pair_to_col.items():
             data = results["by_concern_count"][cc].get(pair, {})
-            if data:
-                row[pair] = f"{data['p_formatted']} ({data['effect_size']:.2f})"
-            else:
-                row[pair] = "--"
+            row[col] = data["p_formatted"] if data else ""
         rows.append(row)
 
     pd.DataFrame(rows).to_csv(output_dir / "concern_count_pairwise_pvalues.csv", index=False)
