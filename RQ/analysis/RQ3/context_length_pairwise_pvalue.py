@@ -139,61 +139,44 @@ def perform_pairwise_tests(csv_data: dict, context_lengths: list) -> dict:
 # =============================================================================
 
 def save_results(results: dict, output_dir: Path):
-    """Save results as JSON and CSV."""
+    """Save results as JSON and LaTeX-friendly CSV only."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # JSON
     with open(output_dir / "context_length_pairwise_pvalues.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    # CSV with p-values only: numeric, no special characters
-    # p < 0.001 shown as 0.001 (caption should note this)
+    # -------------------------------------------------------------------------
+    # LaTeX-friendly CSV for pgfplotstabletypeset (one row per context length)
+    # Columns: context, r_X, p_X for each comparison pair
+    # -------------------------------------------------------------------------
     context_lengths = results["summary"]["context_lengths"]
 
     if not context_lengths or not results["by_context_length"].get(context_lengths[0]):
         print("No data to save")
         return
 
-    pairs = list(results["by_context_length"][context_lengths[0]].keys())
+    def fmt_p(p: float) -> str:
+        """Format p-value: 0.001 floor or 3 decimal places."""
+        return "0.001" if p < 0.001 else f"{p:.3f}"
 
-    # Column name mapping for CSV
-    pair_to_col = {
-        "LLM vs SLM": "p_LLM_SLM",
-        "LLM vs Fine-tuned SLM": "p_LLM_FT_SLM",
-        "SLM vs Fine-tuned SLM": "p_SLM_FT_SLM"
+    pair_short = {
+        "LLM vs SLM": "LLM_SLM",
+        "LLM vs Fine-tuned SLM": "LLM_FT",
+        "SLM vs Fine-tuned SLM": "SLM_FT"
     }
 
-    rows = []
+    latex_rows = []
     for cl in context_lengths:
-        row = {"Context": cl}
-        for pair in pairs:
-            data = results["by_context_length"][cl].get(pair, {})
-            col = pair_to_col.get(pair, f"p_{pair.replace(' vs ', '_vs_')}")
-            row[col] = data["p_formatted"] if data else ""
-        rows.append(row)
+        cl_data = results["by_context_length"][cl]
+        row = {"context": cl}
+        for pair, short in pair_short.items():
+            data = cl_data.get(pair, {})
+            row[f"r_{short}"] = f"{data['effect_size']:+.2f}" if data else ""
+            row[f"p_{short}"] = fmt_p(data["p_value"]) if data else ""
+        latex_rows.append(row)
 
-    pd.DataFrame(rows).to_csv(output_dir / "context_length_pairwise_pvalues.csv", index=False)
-
-    # Appendix CSV: detailed statistics (p-value, effect size, win counts)
-    # Fixed column structure for clean output
-    # Convention: p (scientific 2 decimals), r (2 decimals), pct (1 decimal)
-    appendix_rows = []
-    for cl in context_lengths:
-        for pair in results["by_context_length"][cl].keys():
-            data = results["by_context_length"][cl][pair]
-            appendix_rows.append({
-                "Context": cl,
-                "Comparison": pair,
-                "p": f"{data['p_value']:.2e}",
-                "r": f"{data['effect_size']:.2f}",
-                "n": data["n"],
-                "a_wins": data["a_wins"],
-                "b_wins": data["b_wins"],
-                "a_pct": f"{data['a_win_pct']:.1f}",
-                "b_pct": f"{data['b_win_pct']:.1f}"
-            })
-
-    pd.DataFrame(appendix_rows).to_csv(output_dir / "context_length_pairwise_appendix.csv", index=False)
+    pd.DataFrame(latex_rows).to_csv(output_dir / "context_length_pairwise_latex.csv", index=False)
 
 
 def print_summary(results: dict):

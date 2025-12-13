@@ -131,52 +131,34 @@ def perform_pairwise_tests(csv_data: dict) -> dict:
 # =============================================================================
 
 def save_results(results: dict, output_dir: Path):
-    """Save results as JSON and CSV."""
+    """Save results as JSON and LaTeX-friendly CSV only."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # JSON
     with open(output_dir / "msg_impact_pairwise_pvalues.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    # CSV with p-values only: numeric, no special characters
-    # p < 0.001 shown as 0.001 (caption should note this)
+    # -------------------------------------------------------------------------
+    # LaTeX-friendly CSV for pgfplotstabletypeset (one row per model)
+    # Columns: model, r, p
+    # -------------------------------------------------------------------------
     model_names = results["summary"]["models"]
 
-    # Column name mapping for CSV
-    model_to_col = {
-        "GPT-4.1": "p_GPT",
-        "Qwen": "p_Qwen",
-        "Qwen (FT)": "p_QwenFT"
-    }
+    def fmt_p(p: float) -> str:
+        """Format p-value: 0.001 floor or 3 decimal places."""
+        return "0.001" if p < 0.001 else f"{p:.3f}"
 
-    row = {"Comparison": "msg0 vs msg1"}
-    for model_name in model_names:
-        data = results["by_model"].get(model_name, {})
-        col = model_to_col.get(model_name, f"p_{model_name}")
-        row[col] = data["p_formatted"] if data else ""
-
-    pd.DataFrame([row]).to_csv(output_dir / "msg_impact_pairwise_pvalues.csv", index=False)
-
-    # Appendix CSV: detailed statistics (p-value, effect size, win counts, means)
-    # Convention: p (scientific 2 decimals), r (2 decimals), mean (3 decimals), pct (1 decimal)
-    appendix_rows = []
+    latex_rows = []
     for model_name in model_names:
         data = results["by_model"].get(model_name, {})
         if data:
-            appendix_rows.append({
-                "Model": model_name,
-                "p": f"{data['p_value']:.2e}",
-                "r": f"{data['effect_size']:.2f}",
-                "n": data["n"],
-                "msg0_mean": f"{data['msg0_mean']:.3f}",
-                "msg1_mean": f"{data['msg1_mean']:.3f}",
-                "msg0_wins": data["msg0_wins"],
-                "msg1_wins": data["msg1_wins"],
-                "msg0_pct": f"{data['msg0_win_pct']:.1f}",
-                "msg1_pct": f"{data['msg1_win_pct']:.1f}"
+            latex_rows.append({
+                "model": model_name,
+                "r": f"{data['effect_size']:+.2f}",
+                "p": fmt_p(data["p_value"])
             })
 
-    pd.DataFrame(appendix_rows).to_csv(output_dir / "msg_impact_pairwise_appendix.csv", index=False)
+    pd.DataFrame(latex_rows).to_csv(output_dir / "msg_impact_pairwise_latex.csv", index=False)
 
 
 def print_summary(results: dict):
