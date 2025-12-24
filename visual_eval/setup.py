@@ -2,11 +2,25 @@
 
 import os
 import streamlit as st
+from dotenv import load_dotenv
+from openai import OpenAI
 from utils.llms.lmstudio import get_models
 from utils.llms.constant import DEFAULT_OPENAI_MODEL
 from .session import (
     set_api_provider,
 )
+
+load_dotenv()
+
+
+def validate_openai_key(api_key: str) -> tuple[bool, str]:
+    """Validate OpenAI API key by making a simple API call."""
+    try:
+        client = OpenAI(api_key=api_key)
+        client.models.list()
+        return True, ""
+    except Exception as e:
+        return False, str(e)
 
 
 def setup_openai_api() -> bool:
@@ -17,8 +31,15 @@ def setup_openai_api() -> bool:
         True if setup successful, False otherwise
     """
     api_key = os.getenv("OPENAI_API_KEY")
-    if api_key is None:
+    if not api_key:
         st.error("❌ No OpenAI API Key found. Please set OPENAI_API_KEY in .env file")
+        return False
+
+    with st.spinner("Validating API key..."):
+        is_valid, error_msg = validate_openai_key(api_key)
+
+    if not is_valid:
+        st.error(f"❌ Invalid OpenAI API Key: {error_msg}")
         return False
 
     set_api_provider("openai", DEFAULT_OPENAI_MODEL)

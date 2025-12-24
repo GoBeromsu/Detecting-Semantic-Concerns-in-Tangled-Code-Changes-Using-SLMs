@@ -227,12 +227,9 @@ def show_direct_input() -> None:
         st.divider()
         st.header("📊 Analysis Results")
         with st.spinner("Analyzing code diff..."):
-            model_name = get_model_name()
-            provider = get_api_provider()
-            print(f"Model name: {model_name}")
             predicted_concern_types = llms.api_call(
-                provider=provider,
-                model_name=model_name,
+                provider=get_api_provider(),
+                model_name=get_model_name(),
                 commit=diff,
                 system_prompt=system_prompt,
                 api_key=OPENAI_KEY,
@@ -300,16 +297,17 @@ def show_csv_input() -> None:
 def main() -> None:
     """Main application entry point for concern classification evaluation."""
     st.title("Detecting Multiple Semantic Concerns in Tangled Code Commits")
-    load_dotenv()
 
     # Setup in sidebar
     with st.sidebar:
-        setup_success = render_api_setup_sidebar()
-        if not setup_success:
-            st.stop()
+        api_ready = render_api_setup_sidebar()
 
     # Main content
     st.header("📝 Concern Classification Analysis")
+
+    if not api_ready:
+        st.warning("⚠️ Please configure API in the sidebar first.")
+        return
 
     # Global prompt configuration
     with st.container():
