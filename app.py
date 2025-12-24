@@ -193,9 +193,6 @@ def execute_batch_concern_evaluation(df: pd.DataFrame, system_prompt: str) -> No
         render_evaluation_metrics(metrics, len(df))
         render_results_table(evaluation_results_df)
 
-        # Store and download results
-        # set_evaluation_results(evaluation_results_df) #TODO : dost it need?
-
         if not evaluation_results_df.empty:
             download_df = evaluation_results_df.drop(
                 columns=["Case_Precision", "Case_Recall", "Case_F1"]

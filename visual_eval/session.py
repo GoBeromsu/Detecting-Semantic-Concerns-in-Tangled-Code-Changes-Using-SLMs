@@ -1,8 +1,7 @@
 """Session state management utilities for consistent state handling."""
 
 import streamlit as st
-import pandas as pd
-from typing import Optional, List, Literal
+from typing import Optional, Literal
 
 # Session state keys
 API_PROVIDER_KEY = "selected_api"
@@ -26,8 +25,3 @@ def set_api_provider(provider: ApiProvider, model_name: Optional[str] = None) ->
 def get_model_name() -> str:
     """Get currently selected model name."""
     return st.session_state.get(MODEL_NAME_KEY, "")
-
-
-def set_evaluation_results(results_df: pd.DataFrame) -> None:
-    """Store final evaluation results in session."""
-    st.session_state[EVALUATION_RESULTS_KEY] = results_df
