@@ -11,21 +11,15 @@ DIFF_COLUMN: str = "diff"
 TYPES_COLUMN: str = "types"
 SHAS_COLUMN: str = "shas"
 
-DATASET_SEARCH_PATTERNS = [
-    "datasets/**/*.csv",
-    "../datasets/**/*.csv",
-]
+DATASET_PATH = "datasets/data"
 
 REQUIRED_COLUMNS = [DIFF_COLUMN, TYPES_COLUMN, SHAS_COLUMN]
 
 
 def find_dataset_files() -> List[str]:
-    """Find all available CSV dataset files using search patterns."""
-    available_files = []
-    for search_pattern in DATASET_SEARCH_PATTERNS:
-        matched_files = glob.glob(search_pattern, recursive=True)
-        available_files.extend(matched_files)
-    return sorted(available_files)
+    """Find all available CSV dataset files in the dataset directory."""
+    pattern = os.path.join(DATASET_PATH, "*.csv")
+    return sorted(glob.glob(pattern))
 
 
 def validate_dataset_columns(df: pd.DataFrame) -> List[str]:
