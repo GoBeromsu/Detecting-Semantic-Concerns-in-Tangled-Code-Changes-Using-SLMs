@@ -1,4 +1,9 @@
-"""Unified Hugging Face API utilities for all experiments."""
+"""
+Hugging Face API utilities for HPC inference (RQ/SLM).
+
+Used by: RQ/SLM/infer.py for fine-tuned model inference on Stanage cluster.
+NOT used by: visual_eval dashboard (uses OpenAI + LM Studio instead).
+"""
 
 from typing import List, Tuple, Optional
 from huggingface_hub import scan_cache_dir, hf_hub_download
