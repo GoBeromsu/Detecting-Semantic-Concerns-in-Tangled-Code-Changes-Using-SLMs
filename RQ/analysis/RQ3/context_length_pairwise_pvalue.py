@@ -2,16 +2,16 @@
 """
 Context Length Pairwise P-Value Table Generator
 
-Statistical Test Choice:
-- Wilcoxon Signed-Rank Test (paired, non-parametric) is used because:
-  1. Each commit is evaluated by all models at each context length, creating naturally paired samples
-  2. Hamming loss distributions are often non-normal and bounded [0, 1]
-  3. Commit-level pairing controls for per-commit difficulty variance
+Statistical Test Choice (following Arcuri & Briand 2014):
+- Mann-Whitney U Test (independent, non-parametric) is used because:
+  1. Standard test for comparing two groups in SE research
+  2. Pairs naturally with Vargha-Delaney Â₁₂ effect size
+  3. Hamming loss distributions are often non-normal and bounded [0, 1]
 
-Effect Size Interpretation:
-- Vargha-Delaney Â₁₂ = (R₁/m - (m+1)/2) / n (rank-based formula)
-- Â₁₂ > 0.5: model_a tends to have higher HS (worse performance)
-- Â₁₂ < 0.5: model_a tends to have lower HS (better performance)
+Effect Size Interpretation (Vargha & Delaney 2000):
+- Vargha-Delaney Â₁₂ = P(X > Y) + 0.5 * P(X = Y)
+- Â₁₂ > 0.5: model_a tends to have higher HL (worse performance)
+- Â₁₂ < 0.5: model_a tends to have lower HL (better performance)
 - Â₁₂ = 0.5: no difference
 - |Â₁₂ - 0.5|: < 0.06 negligible, 0.06-0.14 small, 0.14-0.21 medium, >= 0.21 large
 """
@@ -39,11 +39,11 @@ P_VALUE_THRESHOLD = 0.05
 
 def load_data():
     """Load configuration and CSV data for all models at each context length."""
-    config_path = Path(__file__).parent / "config.yaml"
+    config_path = Path(__file__).parent.parent / "config.yaml"
     with open(config_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
-    script_config = config["scripts"]["context_length_pairwise_pvalue"]
+    script_config = config["rq3"]["scripts"]["context_length_pairwise_pvalue"]
     context_lengths = script_config["context_lengths"]
     csv_data = {}
 
@@ -67,7 +67,7 @@ def load_data():
 # =============================================================================
 
 def perform_pairwise_tests(csv_data: dict, context_lengths: list) -> dict:
-    """Perform Wilcoxon Signed-Rank tests for all model pairs at each context length."""
+    """Perform Mann-Whitney U tests for all model pairs at each context length."""
     # Get model names from first available context
     model_names = []
     for cl in context_lengths:
@@ -76,8 +76,8 @@ def perform_pairwise_tests(csv_data: dict, context_lengths: list) -> dict:
             break
 
     results = {"by_context_length": {}, "summary": {
-        "test_method": "Wilcoxon Signed-Rank Test (two-sided, paired)",
-        "effect_size_metric": "Vargha-Delaney A",
+        "test_method": "Mann-Whitney U Test (two-sided, independent)",
+        "effect_size_metric": "Vargha-Delaney A12",
         "significance_threshold": P_VALUE_THRESHOLD,
         "models": model_names,
         "context_lengths": context_lengths
@@ -177,7 +177,7 @@ def main():
         return
 
     # Process
-    print("Performing Wilcoxon Signed-Rank tests...")
+    print("Performing Mann-Whitney U tests...")
     results = perform_pairwise_tests(csv_data, context_lengths)
 
     # Output

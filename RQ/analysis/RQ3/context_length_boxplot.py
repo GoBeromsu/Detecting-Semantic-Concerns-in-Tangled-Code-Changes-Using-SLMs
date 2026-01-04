@@ -21,7 +21,7 @@ ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ2"
 
 def load_config():
     """Load configuration from config.yaml"""
-    config_path = Path(__file__).parent / "config.yaml"
+    config_path = Path(__file__).parent.parent / "config.yaml"
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -31,7 +31,7 @@ def load_individual_csv_data_by_context(config):
     csv_data = {}
 
     # Get CSV paths from config
-    script_config = config["scripts"]["context_length_boxplot"]
+    script_config = config["rq3"]["scripts"]["context_length_boxplot"]
     context_lengths = script_config["context_lengths"]
 
     for context_length in context_lengths:
@@ -216,7 +216,7 @@ def main():
 
     # Load configuration
     config = load_config()
-    script_config = config["scripts"]["context_length_boxplot"]
+    script_config = config["rq3"]["scripts"]["context_length_boxplot"]
 
     # Set output directory
     if args.output_dir:

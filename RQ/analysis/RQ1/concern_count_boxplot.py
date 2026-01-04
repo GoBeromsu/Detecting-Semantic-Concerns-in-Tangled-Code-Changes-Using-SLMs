@@ -97,7 +97,7 @@ def perform_statistical_tests(csv_data: Dict[str, pd.DataFrame]) -> Dict[str, An
 
 def load_config():
     """Load configuration from config.yaml"""
-    config_path = Path(__file__).parent / "config.yaml"
+    config_path = Path(__file__).parent.parent / "config.yaml"
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -107,7 +107,7 @@ def load_individual_csv_data(config):
     csv_data = {}
 
     # Use concern_count_boxplot config to get CSV paths
-    csv_config = config["scripts"]["concern_count_boxplot"]
+    csv_config = config["rq1"]["scripts"]["concern_count_boxplot"]
 
     for model_name, model_config in csv_config["models"].items():
         csv_path = PROJECT_ROOT / model_config["csv_path"]
@@ -295,7 +295,7 @@ def main():
 
     # Load configuration
     config = load_config()
-    script_config = config["scripts"]["concern_count_boxplot"]
+    script_config = config["rq1"]["scripts"]["concern_count_boxplot"]
 
     # Set output directory
     if args.output_dir:

@@ -21,7 +21,7 @@ METRIC_KEY = "hamming_loss"
 
 def load_config():
     """Load configuration from config.yaml"""
-    config_path = Path(__file__).parent / "config.yaml"
+    config_path = Path(__file__).parent.parent / "config.yaml"
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -79,7 +79,7 @@ def main():
     args = parser.parse_args()
 
     config = load_config()
-    script_config = config["scripts"]["context_length_performance"]
+    script_config = config["rq3"]["scripts"]["context_length_performance"]
 
     if args.output_dir:
         output_dir = Path(args.output_dir)
