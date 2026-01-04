@@ -2,16 +2,16 @@
 """
 Message Impact Pairwise P-Value Table Generator
 
-Statistical Test Choice:
-- Wilcoxon Signed-Rank Test (paired, non-parametric) is used because:
-  1. Each commit is evaluated with/without message, creating naturally paired samples
-  2. Hamming loss distributions are often non-normal and bounded [0, 1]
-  3. Commit-level pairing controls for per-commit difficulty variance
+Statistical Test Choice (following Arcuri & Briand 2014):
+- Mann-Whitney U Test (independent, non-parametric) is used because:
+  1. Standard test for comparing two groups in SE research
+  2. Pairs naturally with Vargha-Delaney Â₁₂ effect size
+  3. Hamming loss distributions are often non-normal and bounded [0, 1]
 
-Effect Size Interpretation:
-- Vargha-Delaney Â₁₂ = (R₁/m - (m+1)/2) / n (rank-based formula)
-- Â₁₂ > 0.5: msg0 (without message) tends to have higher HS (worse) → with message is better
-- Â₁₂ < 0.5: msg0 (without message) tends to have lower HS (better) → without message is better
+Effect Size Interpretation (Vargha & Delaney 2000):
+- Vargha-Delaney Â₁₂ = P(X > Y) + 0.5 * P(X = Y)
+- Â₁₂ > 0.5: msg0 (without message) tends to have higher HL (worse) → with message is better
+- Â₁₂ < 0.5: msg0 (without message) tends to have lower HL (better) → without message is better
 - Â₁₂ = 0.5: no difference
 - |Â₁₂ - 0.5|: < 0.06 negligible, 0.06-0.14 small, 0.14-0.21 medium, >= 0.21 large
 """
@@ -67,12 +67,12 @@ def load_data():
 # =============================================================================
 
 def perform_pairwise_tests(csv_data: dict) -> dict:
-    """Perform Wilcoxon Signed-Rank tests for msg0 vs msg1 for each model."""
+    """Perform Mann-Whitney U tests for msg0 vs msg1 for each model."""
     model_names = list(csv_data.keys())
 
     results = {"by_model": {}, "summary": {
-        "test_method": "Wilcoxon Signed-Rank Test (two-sided, paired)",
-        "effect_size_metric": "Vargha-Delaney A",
+        "test_method": "Mann-Whitney U Test (two-sided, independent)",
+        "effect_size_metric": "Vargha-Delaney A12",
         "significance_threshold": P_VALUE_THRESHOLD,
         "models": model_names,
         "comparison": "Without Message vs With Message"
@@ -153,7 +153,7 @@ def main():
         return
 
     # Process
-    print("Performing Wilcoxon Signed-Rank tests...")
+    print("Performing Mann-Whitney U tests...")
     results = perform_pairwise_tests(csv_data)
 
     # Output

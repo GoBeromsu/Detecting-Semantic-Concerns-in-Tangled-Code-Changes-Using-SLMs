@@ -2,16 +2,22 @@
 Statistical utility functions for RQ analysis.
 
 Provides:
-- vargha_delaney_a: Effect size calculation for Hamming Loss
-- wilcoxon_signed_rank: Paired non-parametric significance test
+- vargha_delaney_a: Effect size calculation (Vargha-Delaney Â₁₂)
+- mann_whitney_u: Independent non-parametric significance test
 - detect_outliers_iqr: Outlier detection using IQR method
 - compute_pairwise_stats: Wrapper that computes stats + formatted values
+
+Statistical Test Choice (following Arcuri & Briand 2014):
+- Mann-Whitney U Test is used for pairwise model comparisons because:
+  1. It is the standard non-parametric test for independent samples in SE research
+  2. Pairs naturally with Vargha-Delaney Â₁₂ effect size
+  3. Makes no distributional assumptions about Hamming Loss
 """
 
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
-from scipy.stats import rankdata, wilcoxon
+from scipy.stats import rankdata, mannwhitneyu
 
 # Default threshold for outlier detection
 OUTLIER_THRESHOLD_IQR = 1.5
@@ -72,14 +78,14 @@ def vargha_delaney_a(model_a: ArrayLike, model_b: ArrayLike) -> float:
     return float((r1 / n_a - (n_a + 1) / 2) / n_b)
 
 
-def wilcoxon_signed_rank(model_a: ArrayLike, model_b: ArrayLike) -> float:
+def mann_whitney_u(model_a: ArrayLike, model_b: ArrayLike) -> float:
     """
-    Perform Wilcoxon signed-rank test for paired Hamming Loss samples.
+    Perform Mann-Whitney U test for independent Hamming Loss samples.
 
-    Non-parametric test for paired samples. Used because:
-    1. Each commit is evaluated by both models (naturally paired)
-    2. Hamming Loss is bounded [0, 1] and often non-normal
-    3. Controls for per-commit difficulty variance
+    Non-parametric test for independent samples. Used because:
+    1. Standard test for comparing two groups in SE research (Arcuri & Briand 2014)
+    2. Pairs naturally with Vargha-Delaney Â₁₂ effect size
+    3. Makes no distributional assumptions about Hamming Loss
 
     Args:
         model_a: Hamming Loss values from first model
@@ -89,29 +95,23 @@ def wilcoxon_signed_rank(model_a: ArrayLike, model_b: ArrayLike) -> float:
         Two-sided p-value. Small p-value (< 0.05) indicates
         significant difference between models.
 
-    Raises:
-        ValueError: If sample sizes don't match
-
     Example:
         >>> model_a_hl = [0.1, 0.2, 0.15, 0.3]
         >>> model_b_hl = [0.2, 0.25, 0.2, 0.35]
-        >>> p = wilcoxon_signed_rank(model_a_hl, model_b_hl)
+        >>> p = mann_whitney_u(model_a_hl, model_b_hl)
         >>> print(f"p = {p:.3f}")
     """
     model_a = np.asarray(model_a)
     model_b = np.asarray(model_b)
 
-    if len(model_a) != len(model_b):
-        raise ValueError(f"Sample size mismatch: {len(model_a)} vs {len(model_b)}")
-
-    if len(model_a) == 0:
+    if len(model_a) == 0 or len(model_b) == 0:
         return 1.0
 
     try:
-        result = wilcoxon(model_a, model_b, alternative='two-sided')
+        result = mannwhitneyu(model_a, model_b, alternative='two-sided')
         return float(result.pvalue)
     except ValueError:
-        # All differences are zero
+        # All values are identical
         return 1.0
 
 
@@ -165,6 +165,9 @@ def compute_pairwise_stats(model_a: ArrayLike, model_b: ArrayLike, sig_threshold
     """
     Compute pairwise statistics with LaTeX-formatted values.
 
+    Uses Mann-Whitney U test for significance and Vargha-Delaney Â₁₂ for effect size,
+    following SE research best practices (Arcuri & Briand 2014).
+
     Args:
         model_a: Hamming Loss values from first model
         model_b: Hamming Loss values from second model
@@ -173,14 +176,14 @@ def compute_pairwise_stats(model_a: ArrayLike, model_b: ArrayLike, sig_threshold
     Returns:
         Dictionary containing:
             - p_value: LaTeX-formatted p-value (str)
-            - effect_size: Formatted effect size (str)
+            - effect_size: Formatted Vargha-Delaney Â₁₂ (str)
             - significant: Whether p < sig_threshold (bool)
 
     Example:
         >>> stats = compute_pairwise_stats(model_a_hl, model_b_hl)
         >>> print(stats["p_value"])  # '$<$ 0.001'
     """
-    p_value = wilcoxon_signed_rank(model_a, model_b)
+    p_value = mann_whitney_u(model_a, model_b)
     effect_size = vargha_delaney_a(model_a, model_b)
 
     return {
