@@ -5,6 +5,7 @@ Provides:
 - vargha_delaney_a: Effect size calculation for Hamming Loss
 - wilcoxon_signed_rank: Paired non-parametric significance test
 - detect_outliers_iqr: Outlier detection using IQR method
+- compute_pairwise_stats: Wrapper that computes stats + formatted values
 """
 
 import numpy as np
@@ -154,3 +155,36 @@ def detect_outliers_iqr(
     }
 
     return outlier_mask, outlier_info
+
+# Formatting constants
+P_VALUE_THRESHOLD = 0.001
+DECIMAL_PLACES = 3
+
+
+def compute_pairwise_stats(model_a: ArrayLike, model_b: ArrayLike, sig_threshold: float = 0.05) -> dict:
+    """
+    Compute pairwise statistics with LaTeX-formatted values.
+
+    Args:
+        model_a: Hamming Loss values from first model
+        model_b: Hamming Loss values from second model
+        sig_threshold: Significance threshold (default: 0.05)
+
+    Returns:
+        Dictionary containing:
+            - p_value: LaTeX-formatted p-value (str)
+            - effect_size: Formatted effect size (str)
+            - significant: Whether p < sig_threshold (bool)
+
+    Example:
+        >>> stats = compute_pairwise_stats(model_a_hl, model_b_hl)
+        >>> print(stats["p_value"])  # '$<$ 0.001'
+    """
+    p_value = wilcoxon_signed_rank(model_a, model_b)
+    effect_size = vargha_delaney_a(model_a, model_b)
+
+    return {
+        "p_value": f"$<$ {P_VALUE_THRESHOLD}" if p_value < P_VALUE_THRESHOLD else f"{p_value:.{DECIMAL_PLACES}f}",
+        "effect_size": f"{effect_size:.{DECIMAL_PLACES}f}",
+        "significant": bool(p_value < sig_threshold)
+    }

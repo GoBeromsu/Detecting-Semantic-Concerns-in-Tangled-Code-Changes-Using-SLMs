@@ -23,7 +23,7 @@ from pathlib import Path
 import argparse
 import numpy as np
 
-from ..stats_utils import vargha_delaney_a, wilcoxon_signed_rank
+from ..stats_utils import compute_pairwise_stats
 
 # Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
@@ -85,26 +85,7 @@ def perform_pairwise_tests(csv_data: dict) -> dict:
         if len(data_msg0) == 0:
             continue
 
-        # Statistical tests
-        p_value = wilcoxon_signed_rank(data_msg0, data_msg1)
-        effect_size = vargha_delaney_a(data_msg0, data_msg1)
-
-        # Sign-support
-        msg1_wins = int(np.sum(data_msg1 < data_msg0))  # msg1 better (lower HS)
-        msg0_wins = int(np.sum(data_msg0 < data_msg1))  # msg0 better (lower HS)
-        n = len(data_msg0)
-
-        results["by_model"][model_name] = {
-            "p_value": float(p_value),
-            "p_formatted": "0.001" if p_value < 0.001 else f"{p_value:.3f}",
-            "effect_size": float(effect_size),
-            "significant": bool(p_value < P_VALUE_THRESHOLD),
-            "msg0_wins": msg0_wins, "msg1_wins": msg1_wins, "n": n,
-            "msg0_win_pct": float(msg0_wins / n * 100),
-            "msg1_win_pct": float(msg1_wins / n * 100),
-            "msg0_mean": float(data_msg0.mean()),
-            "msg1_mean": float(data_msg1.mean())
-        }
+        results["by_model"][model_name] = compute_pairwise_stats(data_msg0, data_msg1)
 
     return results
 
@@ -127,18 +108,14 @@ def save_results(results: dict, output_dir: Path):
     # -------------------------------------------------------------------------
     model_names = results["summary"]["models"]
 
-    def fmt_p(p: float) -> str:
-        """Format p-value: 0.001 floor or 3 decimal places."""
-        return "0.001" if p < 0.001 else f"{p:.3f}"
-
     latex_rows = []
     for model_name in model_names:
         data = results["by_model"].get(model_name, {})
         if data:
             latex_rows.append({
                 "model": model_name,
-                "A": f"{data['effect_size']:.2f}",
-                "p": fmt_p(data["p_value"])
+                "A": data.get('effect_size', ''),
+                "p": data.get('p_value', '')
             })
 
     pd.DataFrame(latex_rows).to_csv(output_dir / "msg_impact_pairwise_latex.csv", index=False)
@@ -148,17 +125,11 @@ def print_summary(results: dict):
     """Print summary to console."""
     print(f"\nTest: {results['summary']['test_method']}")
     print(f"Comparison: {results['summary']['comparison']}")
-    print("Note: A > 0.5 means 'With Message' has lower HS (better).")
-    print("-" * 80)
+    print("-" * 60)
 
     for model_name, data in results["by_model"].items():
         sig = "*" if data["significant"] else ""
-        winner = "With Msg" if data["effect_size"] > 0.5 else "Without Msg"
-        print(f"\n{model_name}:")
-        print(f"  p={data['p_formatted']}{sig}, A={data['effect_size']:.2f}")
-        print(f"  Without Msg: mean={data['msg0_mean']:.3f}, wins={data['msg0_win_pct']:.1f}%")
-        print(f"  With Msg: mean={data['msg1_mean']:.3f}, wins={data['msg1_win_pct']:.1f}%")
-        print(f"  Better: {winner}")
+        print(f"  {model_name}: p={data['p_value']}{sig}, A={data['effect_size']}")
 
 
 # =============================================================================

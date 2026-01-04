@@ -24,7 +24,7 @@ import argparse
 from itertools import combinations
 import numpy as np
 
-from ..stats_utils import vargha_delaney_a, wilcoxon_signed_rank
+from ..stats_utils import compute_pairwise_stats
 
 # Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
@@ -96,23 +96,7 @@ def perform_pairwise_tests(csv_data: dict, context_lengths: list) -> dict:
             if len(data_a) == 0:
                 continue
 
-            # Statistical tests
-            p_value = wilcoxon_signed_rank(data_a, data_b)
-            effect_size = vargha_delaney_a(data_a, data_b)
-
-            # Sign-support
-            a_wins, b_wins = int(np.sum(data_a < data_b)), int(np.sum(data_b < data_a))
-            n = len(data_a)
-
-            results["by_context_length"][cl][f"{model_a} vs {model_b}"] = {
-                "p_value": float(p_value),
-                "p_formatted": "0.001" if p_value < 0.001 else f"{p_value:.3f}",
-                "effect_size": float(effect_size),
-                "significant": bool(p_value < P_VALUE_THRESHOLD),
-                "a_wins": a_wins, "b_wins": b_wins, "n": n,
-                "a_win_pct": float(a_wins / n * 100),
-                "b_win_pct": float(b_wins / n * 100)
-            }
+            results["by_context_length"][cl][f"{model_a} vs {model_b}"] = compute_pairwise_stats(data_a, data_b)
 
     return results
 
@@ -139,10 +123,6 @@ def save_results(results: dict, output_dir: Path):
         print("No data to save")
         return
 
-    def fmt_p(p: float) -> str:
-        """Format p-value: 0.001 floor or 3 decimal places."""
-        return "0.001" if p < 0.001 else f"{p:.3f}"
-
     pair_short = {
         "LLM vs SLM": "LLM_SLM",
         "LLM vs Fine-tuned SLM": "LLM_FT",
@@ -155,8 +135,8 @@ def save_results(results: dict, output_dir: Path):
         row = {"context": cl}
         for pair, short in pair_short.items():
             data = cl_data.get(pair, {})
-            row[f"A_{short}"] = f"{data['effect_size']:.2f}" if data else ""
-            row[f"p_{short}"] = fmt_p(data["p_value"]) if data else ""
+            row[f"A_{short}"] = data.get('effect_size', '')
+            row[f"p_{short}"] = data.get('p_value', '')
         latex_rows.append(row)
 
     pd.DataFrame(latex_rows).to_csv(output_dir / "context_length_pairwise_latex.csv", index=False)
@@ -166,16 +146,13 @@ def print_summary(results: dict):
     """Print summary to console."""
     print(f"\nTest: {results['summary']['test_method']}")
     print(f"Models: {', '.join(results['summary']['models'])}")
-    print("Note: lower HS is better; A < 0.5 favours the first model in the pair.")
-    print("-" * 80)
+    print("-" * 60)
 
     for cl in results["summary"]["context_lengths"]:
         print(f"\nContext Length {cl}:")
         for pair, data in results["by_context_length"][cl].items():
             sig = "*" if data["significant"] else ""
-            model_a, model_b = pair.split(" vs ")
-            winner = f"{model_a} {data['a_win_pct']:.1f}%" if data["a_wins"] > data["b_wins"] else f"{model_b} {data['b_win_pct']:.1f}%"
-            print(f"  {pair}: p={data['p_formatted']}{sig}, A={data['effect_size']:.2f}, {winner}")
+            print(f"  {pair}: p={data['p_value']}{sig}, A={data['effect_size']}")
 
 
 # =============================================================================
