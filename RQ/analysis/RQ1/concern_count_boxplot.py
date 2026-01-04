@@ -13,64 +13,13 @@ import numpy as np
 from scipy import stats
 from typing import Dict, List, Tuple, Any
 
+from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style
+
 # Constants - Use root results directory (from project root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 RQ_NAME = Path(__file__).parent.name
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / RQ_NAME
 P_VALUE_THRESHOLD = 0.05
-OUTLIER_THRESHOLD_IQR = 1.5  # IQR multiplier for outlier detection
-
-# Design constants for consistent styling (from RQ2 analysis)
-COLORS = {
-    "primary": "#2E86AB",
-    "secondary": "#A23B72",
-    "accent": "#F18F01",
-    "success": "#C73E1D",
-    "background": "#F5F5F5",
-    "text": "#2C3E50",
-}
-
-PLOT_STYLE = {
-    "figure_size": (10, 6),
-    "dpi": 300,
-    "line_width": 2,
-    "marker_size": 60,
-    "alpha": 0.7,
-    "grid_alpha": 0.3,
-}
-
-
-def setup_plot_style():
-    """Setup consistent plot styling."""
-    plt.style.use("default")
-    plt.rcParams.update(
-        {
-            "font.size": 15,
-            "axes.titlesize": 18,
-            "axes.labelsize": 16,
-            "xtick.labelsize": 14,
-            "ytick.labelsize": 14,
-            "legend.fontsize": 14,
-            "figure.facecolor": "white",
-            "axes.facecolor": "white",
-            "axes.spines.top": False,
-            "axes.spines.right": False,
-            "axes.grid": True,
-        }
-    )
-
-
-def detect_outliers_iqr(data: pd.Series) -> List[int]:
-    """Detect outliers using the IQR method."""
-    Q1 = data.quantile(0.25)
-    Q3 = data.quantile(0.75)
-    IQR = Q3 - Q1
-
-    lower_bound = Q1 - OUTLIER_THRESHOLD_IQR * IQR
-    upper_bound = Q3 + OUTLIER_THRESHOLD_IQR * IQR
-
-    outlier_mask = (data < lower_bound) | (data > upper_bound)
-    return data[outlier_mask].index.tolist()
 
 
 def perform_statistical_tests(csv_data: Dict[str, pd.DataFrame]) -> Dict[str, Any]:

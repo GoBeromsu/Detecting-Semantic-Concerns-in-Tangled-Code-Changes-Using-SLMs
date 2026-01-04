@@ -14,76 +14,19 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score, mean_squared_error
 import argparse
 
+from ..plot_utils import COLORS as BASE_COLORS, PLOT_STYLE as BASE_PLOT_STYLE, setup_plot_style
+from ..stats_utils import detect_outliers_iqr
+
 # Constants - Use root results directory (from project root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ3"
-OUTLIER_THRESHOLD_IQR = 1.5  # IQR multiplier for outlier detection
 LOG_EPSILON = 1e-6  # Small value to avoid log(0)
 
-# Design constants for consistent styling
-COLORS = {
-    "primary": "#2E86AB",
-    "secondary": "#A23B72",
-    "accent": "#F18F01",
-    "success": "#C73E1D",
-    "background": "#F5F5F5",
-    "text": "#2C3E50",
-    "interaction": "#6A4C93",
-    "concern": "#FF6B35",
-}
+# Extended colors for this script
+COLORS = {**BASE_COLORS, "interaction": "#6A4C93", "concern": "#FF6B35"}
 
-PLOT_STYLE = {
-    "figure_size": (12, 8),
-    "dpi": 300,
-    "line_width": 2,
-    "marker_size": 60,
-    "alpha": 0.7,
-    "grid_alpha": 0.3,
-}
-
-
-def setup_plot_style():
-    """Setup consistent plot styling."""
-    plt.style.use("default")
-    plt.rcParams.update(
-        {
-            "font.size": 15,
-            "axes.titlesize": 18,
-            "axes.labelsize": 16,
-            "xtick.labelsize": 14,
-            "ytick.labelsize": 14,
-            "legend.fontsize": 11,
-            "figure.facecolor": "white",
-            "axes.facecolor": "white",
-            "axes.spines.top": False,
-            "axes.spines.right": False,
-            "axes.grid": True,
-        }
-    )
-
-
-def detect_outliers_iqr(data: pd.Series) -> tuple:
-    """Detect outliers using the IQR method.
-
-    Returns:
-        Tuple of (outlier_mask, outlier_info_dict)
-    """
-    Q1 = data.quantile(0.25)
-    Q3 = data.quantile(0.75)
-    IQR = Q3 - Q1
-    lower_bound = Q1 - OUTLIER_THRESHOLD_IQR * IQR
-    upper_bound = Q3 + OUTLIER_THRESHOLD_IQR * IQR
-
-    outlier_mask = (data < lower_bound) | (data > upper_bound)
-    outlier_values = data[outlier_mask].tolist()
-
-    outlier_info = {
-        "count": int(outlier_mask.sum()),
-        "values": outlier_values,
-        "removed": False,  # We detect but don't remove
-    }
-
-    return outlier_mask, outlier_info
+# Extended plot style for this script
+PLOT_STYLE = {**BASE_PLOT_STYLE, "figure_size": (12, 8)}
 
 
 def load_csv_data(csv_paths: List[Path]) -> tuple:

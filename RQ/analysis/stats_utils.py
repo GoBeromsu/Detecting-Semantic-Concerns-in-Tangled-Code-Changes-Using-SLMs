@@ -4,11 +4,16 @@ Statistical utility functions for RQ analysis.
 Provides:
 - vargha_delaney_a: Effect size calculation for Hamming Loss
 - wilcoxon_signed_rank: Paired non-parametric significance test
+- detect_outliers_iqr: Outlier detection using IQR method
 """
 
 import numpy as np
+import pandas as pd
 from numpy.typing import ArrayLike
 from scipy.stats import rankdata, wilcoxon
+
+# Default threshold for outlier detection
+OUTLIER_THRESHOLD_IQR = 1.5
 
 
 def vargha_delaney_a(model_a: ArrayLike, model_b: ArrayLike) -> float:
@@ -107,3 +112,45 @@ def wilcoxon_signed_rank(model_a: ArrayLike, model_b: ArrayLike) -> float:
     except ValueError:
         # All differences are zero
         return 1.0
+
+
+def detect_outliers_iqr(
+    data: pd.Series, threshold: float = OUTLIER_THRESHOLD_IQR
+) -> tuple:
+    """
+    Detect outliers using the Interquartile Range (IQR) method.
+
+    Outliers are defined as values below Q1 - threshold*IQR or
+    above Q3 + threshold*IQR.
+
+    Args:
+        data: Pandas Series of values to check for outliers
+        threshold: IQR multiplier for outlier bounds (default: 1.5)
+
+    Returns:
+        Tuple of (outlier_mask, outlier_info):
+            - outlier_mask: Boolean Series where True indicates outlier
+            - outlier_info: Dict with count, values, bounds
+
+    Example:
+        >>> data = pd.Series([1, 2, 3, 4, 100])
+        >>> mask, info = detect_outliers_iqr(data)
+        >>> print(f"Found {info['count']} outliers")
+    """
+    Q1 = data.quantile(0.25)
+    Q3 = data.quantile(0.75)
+    IQR = Q3 - Q1
+
+    lower_bound = Q1 - threshold * IQR
+    upper_bound = Q3 + threshold * IQR
+
+    outlier_mask = (data < lower_bound) | (data > upper_bound)
+
+    outlier_info = {
+        "count": int(outlier_mask.sum()),
+        "values": data[outlier_mask].tolist(),
+        "lower_bound": float(lower_bound),
+        "upper_bound": float(upper_bound),
+    }
+
+    return outlier_mask, outlier_info
