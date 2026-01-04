@@ -43,8 +43,8 @@ def list_scripts(config: dict) -> None:
                 print(f"    - {script_name}: {description}")
 
 
-def run_rq(rq_num: int, config: dict, base_dir: Path) -> bool:
-    """Run all scripts for a specific RQ."""
+def run_rq(rq_num: int, config: dict, base_dir: Path, project_root: Path) -> bool:
+    """Run all scripts for a specific RQ using python -m for proper imports."""
     rq_key = f"rq{rq_num}"
 
     if rq_key not in config:
@@ -82,10 +82,14 @@ def run_rq(rq_num: int, config: dict, base_dir: Path) -> bool:
         print(f"\n  Running {script_name}...")
         print(f"  Description: {description}")
 
+        # Convert file name to module name (e.g., "concern_count_pairwise_pvalue.py" -> "concern_count_pairwise_pvalue")
+        module_name = script_file.replace(".py", "").replace("-", "_")
+        full_module = f"RQ.analysis.RQ{rq_num}.{module_name}"
+
         try:
             result = subprocess.run(
-                [sys.executable, str(script_path)],
-                cwd=rq_dir,
+                [sys.executable, "-m", full_module],
+                cwd=project_root,
                 capture_output=False,
             )
 
@@ -137,6 +141,7 @@ Examples:
     # Load configuration
     config = load_config()
     base_dir = Path(__file__).parent
+    project_root = base_dir.parent.parent  # RQ/analysis -> RQ -> project root
 
     # Handle --list
     if args.list:
@@ -160,7 +165,7 @@ Examples:
 
     results = {}
     for rq_num in rq_numbers:
-        results[rq_num] = run_rq(rq_num, config, base_dir)
+        results[rq_num] = run_rq(rq_num, config, base_dir, project_root)
 
     # Summary
     print("\n" + "=" * 60)
