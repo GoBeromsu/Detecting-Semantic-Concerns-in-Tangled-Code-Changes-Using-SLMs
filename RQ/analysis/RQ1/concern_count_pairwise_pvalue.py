@@ -9,10 +9,11 @@ Statistical Test Choice:
   3. Commit-level pairing controls for per-commit difficulty variance
 
 Effect Size Interpretation:
-- Rank-biserial correlation (r) is computed from diff = HS_a - HS_b
-- r < 0: model_a tends to have lower HS (better performance)
-- r > 0: model_b tends to have lower HS (better performance)
-- |r| > 0.5: large effect, 0.3-0.5: medium, < 0.3: small
+- Vargha-Delaney Â₁₂ = (R₁/m - (m+1)/2) / n (rank-based formula)
+- Â₁₂ > 0.5: model_a tends to have higher HS (worse performance)
+- Â₁₂ < 0.5: model_a tends to have lower HS (better performance)
+- Â₁₂ = 0.5: no difference
+- |Â₁₂ - 0.5|: < 0.06 negligible, 0.06-0.14 small, 0.14-0.21 medium, >= 0.21 large
 """
 
 import pandas as pd
@@ -20,9 +21,10 @@ import yaml
 import json
 from pathlib import Path
 import argparse
-from scipy.stats import wilcoxon, rankdata
 from itertools import combinations
 import numpy as np
+
+from ..stats_utils import vargha_delaney_a, wilcoxon_signed_rank
 
 # Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
@@ -66,7 +68,7 @@ def perform_pairwise_tests(csv_data: dict) -> dict:
 
     results = {"by_concern_count": {}, "summary": {
         "test_method": "Wilcoxon Signed-Rank Test (two-sided, paired)",
-        "effect_size_metric": "rank-biserial correlation",
+        "effect_size_metric": "Vargha-Delaney A",
         "significance_threshold": P_VALUE_THRESHOLD,
         "models": model_names,
         "concern_counts": concern_counts
@@ -82,36 +84,18 @@ def perform_pairwise_tests(csv_data: dict) -> dict:
             if len(data_a) == 0:
                 continue
 
-            # Fail fast if pairing is broken - silent skip could hide data issues
-            if len(data_a) != len(data_b):
-                raise ValueError(f"Length mismatch for {model_a} vs {model_b} at concern={cc}: "
-                                 f"{len(data_a)} vs {len(data_b)}")
+            # Statistical tests
+            p_value = wilcoxon_signed_rank(data_a, data_b)
+            effect_size = vargha_delaney_a(data_a, data_b)
 
-            # Wilcoxon signed-rank test
-            try:
-                result = wilcoxon(data_a, data_b, alternative='two-sided')
-                p_value = result.pvalue
-            except ValueError:
-                p_value = 1.0
-
-            # Rank-biserial correlation: r = (W+ - W-) / (W+ + W-)
-            # Based on diff = HS_a - HS_b, so r < 0 means model_a has lower HS (better)
-            diff = data_a - data_b
-            diff_nz = diff[diff != 0]
-            if len(diff_nz) > 0:
-                ranks = rankdata(np.abs(diff_nz), method='average')
-                w_plus, w_minus = np.sum(ranks[diff_nz > 0]), np.sum(ranks[diff_nz < 0])
-                effect_size = (w_plus - w_minus) / (w_plus + w_minus) if (w_plus + w_minus) > 0 else 0.0
-            else:
-                effect_size = 0.0
-
-            # Sign-support
-            a_wins, b_wins = int(np.sum(data_a < data_b)), int(np.sum(data_b < data_a))
+            # Win counts
+            a_wins = int(np.sum(data_a < data_b))
+            b_wins = int(np.sum(data_b < data_a))
             n = len(data_a)
 
             results["by_concern_count"][cc][f"{model_a} vs {model_b}"] = {
                 "p_value": float(p_value),
-                "p_formatted": "0.001" if p_value < 0.001 else f"{p_value:.3f}",
+                "p_formatted": "<0.001" if p_value < 0.001 else f"{p_value:.3f}",
                 "effect_size": float(effect_size),
                 "significant": bool(p_value < P_VALUE_THRESHOLD),
                 "a_wins": a_wins, "b_wins": b_wins, "n": n,
@@ -156,7 +140,7 @@ def save_results(results: dict, output_dir: Path):
         row = {"concerns": cc}
         for pair, short in pair_short.items():
             data = cc_data.get(pair, {})
-            row[f"r_{short}"] = f"{data['effect_size']:+.2f}" if data else ""
+            row[f"A_{short}"] = f"{data['effect_size']:.2f}" if data else ""
             row[f"p_{short}"] = fmt_p(data["p_value"]) if data else ""
         latex_rows.append(row)
 
@@ -167,7 +151,7 @@ def print_summary(results: dict):
     """Print summary to console."""
     print(f"\nTest: {results['summary']['test_method']}")
     print(f"Models: {', '.join(results['summary']['models'])}")
-    print("Note: lower HS is better; r < 0 favours the first model in the pair.")
+    print("Note: lower HS is better; A < 0.5 favours the first model in the pair.")
     print("-" * 80)
 
     for cc in results["summary"]["concern_counts"]:
@@ -176,7 +160,7 @@ def print_summary(results: dict):
             sig = "*" if data["significant"] else ""
             model_a, model_b = pair.split(" vs ")
             winner = f"{model_a} {data['a_win_pct']:.1f}%" if data["a_wins"] > data["b_wins"] else f"{model_b} {data['b_win_pct']:.1f}%"
-            print(f"  {pair}: p={data['p_formatted']}{sig}, r={data['effect_size']:.2f}, {winner}")
+            print(f"  {pair}: p={data['p_formatted']}{sig}, A={data['effect_size']:.2f}, {winner}")
 
 
 # =============================================================================

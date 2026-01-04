@@ -9,10 +9,11 @@ Statistical Test Choice:
   3. Commit-level pairing controls for per-commit difficulty variance
 
 Effect Size Interpretation:
-- Rank-biserial correlation (r) is computed from diff = HS_without - HS_with
-- r > 0: with message tends to have lower HS (better performance)
-- r < 0: without message tends to have lower HS (better performance)
-- |r| > 0.5: large effect, 0.3-0.5: medium, < 0.3: small
+- Vargha-Delaney Â₁₂ = (R₁/m - (m+1)/2) / n (rank-based formula)
+- Â₁₂ > 0.5: msg0 (without message) tends to have higher HS (worse) → with message is better
+- Â₁₂ < 0.5: msg0 (without message) tends to have lower HS (better) → without message is better
+- Â₁₂ = 0.5: no difference
+- |Â₁₂ - 0.5|: < 0.06 negligible, 0.06-0.14 small, 0.14-0.21 medium, >= 0.21 large
 """
 
 import pandas as pd
@@ -20,8 +21,9 @@ import yaml
 import json
 from pathlib import Path
 import argparse
-from scipy.stats import wilcoxon, rankdata
 import numpy as np
+
+from ..stats_utils import vargha_delaney_a, wilcoxon_signed_rank
 
 # Constants
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
@@ -70,7 +72,7 @@ def perform_pairwise_tests(csv_data: dict) -> dict:
 
     results = {"by_model": {}, "summary": {
         "test_method": "Wilcoxon Signed-Rank Test (two-sided, paired)",
-        "effect_size_metric": "rank-biserial correlation",
+        "effect_size_metric": "Vargha-Delaney A",
         "significance_threshold": P_VALUE_THRESHOLD,
         "models": model_names,
         "comparison": "Without Message vs With Message"
@@ -80,31 +82,12 @@ def perform_pairwise_tests(csv_data: dict) -> dict:
         data_msg0 = csv_data[model_name]["msg0"]["hamming_loss"].values
         data_msg1 = csv_data[model_name]["msg1"]["hamming_loss"].values
 
-        # Fail fast if pairing is broken
-        if len(data_msg0) != len(data_msg1):
-            raise ValueError(f"Length mismatch for {model_name}: "
-                             f"msg0={len(data_msg0)} vs msg1={len(data_msg1)}")
-
         if len(data_msg0) == 0:
             continue
 
-        # Wilcoxon signed-rank test
-        try:
-            result = wilcoxon(data_msg0, data_msg1, alternative='two-sided')
-            p_value = result.pvalue
-        except ValueError:
-            p_value = 1.0
-
-        # Rank-biserial correlation: r = (W+ - W-) / (W+ + W-)
-        # Based on diff = HS_msg0 - HS_msg1, so r > 0 means msg1 has lower HS (better)
-        diff = data_msg0 - data_msg1
-        diff_nz = diff[diff != 0]
-        if len(diff_nz) > 0:
-            ranks = rankdata(np.abs(diff_nz), method='average')
-            w_plus, w_minus = np.sum(ranks[diff_nz > 0]), np.sum(ranks[diff_nz < 0])
-            effect_size = (w_plus - w_minus) / (w_plus + w_minus) if (w_plus + w_minus) > 0 else 0.0
-        else:
-            effect_size = 0.0
+        # Statistical tests
+        p_value = wilcoxon_signed_rank(data_msg0, data_msg1)
+        effect_size = vargha_delaney_a(data_msg0, data_msg1)
 
         # Sign-support
         msg1_wins = int(np.sum(data_msg1 < data_msg0))  # msg1 better (lower HS)
@@ -154,7 +137,7 @@ def save_results(results: dict, output_dir: Path):
         if data:
             latex_rows.append({
                 "model": model_name,
-                "r": f"{data['effect_size']:+.2f}",
+                "A": f"{data['effect_size']:.2f}",
                 "p": fmt_p(data["p_value"])
             })
 
@@ -165,14 +148,14 @@ def print_summary(results: dict):
     """Print summary to console."""
     print(f"\nTest: {results['summary']['test_method']}")
     print(f"Comparison: {results['summary']['comparison']}")
-    print("Note: r > 0 means 'With Message' has lower HS (better).")
+    print("Note: A > 0.5 means 'With Message' has lower HS (better).")
     print("-" * 80)
 
     for model_name, data in results["by_model"].items():
         sig = "*" if data["significant"] else ""
-        winner = "With Msg" if data["effect_size"] > 0 else "Without Msg"
+        winner = "With Msg" if data["effect_size"] > 0.5 else "Without Msg"
         print(f"\n{model_name}:")
-        print(f"  p={data['p_formatted']}{sig}, r={data['effect_size']:.2f}")
+        print(f"  p={data['p_formatted']}{sig}, A={data['effect_size']:.2f}")
         print(f"  Without Msg: mean={data['msg0_mean']:.3f}, wins={data['msg0_win_pct']:.1f}%")
         print(f"  With Msg: mean={data['msg1_mean']:.3f}, wins={data['msg1_win_pct']:.1f}%")
         print(f"  Better: {winner}")
