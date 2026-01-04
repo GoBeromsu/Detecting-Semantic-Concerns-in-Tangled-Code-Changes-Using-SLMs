@@ -7,6 +7,7 @@ Analyzes performance metrics from CSV experiment results and generates summary t
 import pandas as pd
 import json
 import numpy as np
+import yaml
 import matplotlib.pyplot as plt
 from pathlib import Path
 import argparse
@@ -27,6 +28,13 @@ MODEL_NAME_MAP = {
 }
 
 METRIC_KEY = "hamming_loss"
+
+
+def load_config():
+    """Load configuration from config.yaml"""
+    config_path = Path(__file__).parent.parent / "config.yaml"
+    with open(config_path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 def load_individual_csv_data(csv_paths: list) -> Dict[str, pd.DataFrame]:
@@ -173,23 +181,35 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generate performance summary comparison from CSV experiment results"
     )
-    parser.add_argument("csv_files", nargs="+", help="CSV files to analyze")
+    parser.add_argument("csv_files", nargs="*", help="CSV files to analyze (optional, reads from config if not provided)")
     parser.add_argument("--output-dir", type=str, help="Output directory")
 
     args = parser.parse_args()
 
+    # Load configuration
+    config = load_config()
+    script_config = config["rq1"]["scripts"]["performance_summary"]
+
+    # Determine CSV files to use
+    if args.csv_files:
+        csv_files = args.csv_files
+    else:
+        # Read CSV paths from config
+        csv_files = [
+            str(PROJECT_ROOT / model_config["csv_path"])
+            for model_config in script_config["models"].values()
+        ]
+
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
-        from datetime import datetime
-
         output_dir = ANALYSIS_OUTPUT_DIR / "pf_summary"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Load individual CSV data for box plot
     print("Loading individual CSV data for performance box plot...")
-    csv_data = load_individual_csv_data(args.csv_files)
+    csv_data = load_individual_csv_data(csv_files)
 
     if not csv_data:
         print("No valid CSV data found. Please check file paths")
