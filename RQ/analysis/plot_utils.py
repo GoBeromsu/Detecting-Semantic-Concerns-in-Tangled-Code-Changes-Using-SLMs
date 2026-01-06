@@ -12,6 +12,22 @@ Provides consistent styling across all visualization scripts:
 import matplotlib.pyplot as plt
 from typing import Optional
 
+# Human‑readable display names for model labels in figures
+# Keeps CSV/model keys intact while unifying how names appear in legends/ticks
+DISPLAY_NAME_MAP = {
+    "Qwen": "Qwen3-14B",
+    "Qwen (FT)": "Qwen3-14B (LoRA)",
+    "QwenFT": "Qwen3-14B (LoRA)",
+    "LLM": "GPT-4.1",
+    "SLM": "Qwen3-14B",
+    "Fine-tuned SLM": "Qwen3-14B (LoRA)",
+}
+
+
+def display_model_name(name: str) -> str:
+    """Map internal model key to canonical display label for figures."""
+    return DISPLAY_NAME_MAP.get(name, name)
+
 # Color palette for consistent styling across all RQ visualizations
 COLORS = {
     "primary": "#2E86AB",

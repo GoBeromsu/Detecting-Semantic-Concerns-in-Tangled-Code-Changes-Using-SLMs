@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR
-from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style
+from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name
 
 MODEL_NAME_MAP = {"GPT-4.1": "GPT-4.1", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
 
@@ -259,7 +259,7 @@ def create_msg_impact_boxplot(csv_data: dict, output_dir: Path) -> Path:
 
     # Set x-axis ticks and labels
     ax.set_xticks(x_positions + width)  # Center the labels
-    ax.set_xticklabels(model_names)
+    ax.set_xticklabels([display_model_name(n) for n in model_names])
 
     # Add legend for conditions
     from matplotlib.patches import Patch

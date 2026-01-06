@@ -13,7 +13,7 @@ from pathlib import Path
 import argparse
 from typing import Dict
 
-from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style
+from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
 
 MODEL_NAME_MAP = {
@@ -138,7 +138,7 @@ def create_performance_boxplot(
 
     # Set x-axis ticks and labels
     ax.set_xticks(positions)
-    ax.set_xticklabels(model_names)
+    ax.set_xticklabels([display_model_name(n) for n in model_names])
 
     # Clean grid styling
     ax.grid(True, alpha=PLOT_STYLE["grid_alpha"], linestyle="-", linewidth=0.5)

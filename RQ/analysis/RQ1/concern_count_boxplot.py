@@ -13,7 +13,7 @@ import numpy as np
 from scipy import stats
 from typing import Dict, List, Tuple, Any
 
-from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style
+from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
 
 # Constants
@@ -233,7 +233,7 @@ def create_hamming_loss_boxplot(
         Patch(
             facecolor=model_colors[i % len(model_colors)],
             alpha=PLOT_STYLE["alpha"],
-            label=model_name,
+            label=display_model_name(model_name),
         )
         for i, model_name in enumerate(model_names)
     ]
