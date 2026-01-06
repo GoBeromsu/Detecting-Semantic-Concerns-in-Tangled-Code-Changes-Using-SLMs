@@ -6,58 +6,23 @@ Processes raw CSV data for detailed box plot analysis and group comparison.
 """
 
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
-from scipy import stats
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
+from typing import List, Dict, Any
 import argparse
 
-from ..plot_utils import COLORS as BASE_COLORS, PLOT_STYLE, setup_plot_style
-from ..stats_utils import detect_outliers_iqr
+from ..plot_utils import COLORS, PLOT_STYLE, boxplot_style, setup_plot_style
+from .utils import (
+    load_csv,
+    pearson_correlation,
+    add_correlation_text,
+    save_json,
+    P_VALUE_THRESHOLD,
+)
 
 # Constants - Use root results directory (from project root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ3"
-P_VALUE_THRESHOLD = 0.05
-
-# Extended colors for this script
-COLORS = {**BASE_COLORS, "with_message": "#2E86AB", "without_message": "#A23B72"}
-
-
-def load_csv_data(csv_paths: List[Path]) -> tuple:
-    """Load raw data from CSV files for detailed analysis.
-
-    Returns:
-        Tuple of (dataframe, outlier_info)
-    """
-    all_data = []
-
-    for csv_path in csv_paths:
-        if not csv_path.exists():
-            raise FileNotFoundError(f"CSV file not found: {csv_path}")
-
-        df = pd.read_csv(csv_path)
-
-        # Check required columns
-        required_cols = ["with_message", "inference_time"]
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        if missing_cols:
-            raise ValueError(f"Missing columns in {csv_path}: {missing_cols}")
-
-        df["source_file"] = csv_path.name
-        all_data.append(df[["with_message", "inference_time", "source_file"]])
-
-    combined_df = pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
-
-    # Detect outliers (but don't remove them)
-    _, outlier_info = detect_outliers_iqr(combined_df["inference_time"])
-
-    print(f"Detected {outlier_info['count']} outliers (shown in boxplot, not removed)")
-
-    return combined_df, outlier_info
 
 
 def calculate_group_comparison(df: pd.DataFrame) -> Dict[str, Any]:
@@ -70,117 +35,19 @@ def calculate_group_comparison(df: pd.DataFrame) -> Dict[str, Any]:
         "with_message": {
             "count": len(with_msg),
             "mean": float(with_msg.mean()),
-            "std": float(with_msg.std()),
-            "median": float(with_msg.median()),
-            "min": float(with_msg.min()),
-            "max": float(with_msg.max()),
         },
         "without_message": {
             "count": len(without_msg),
             "mean": float(without_msg.mean()),
-            "std": float(without_msg.std()),
-            "median": float(without_msg.median()),
-            "min": float(without_msg.min()),
-            "max": float(without_msg.max()),
         },
+        "mean_difference": float(with_msg.mean() - without_msg.mean()),
     }
-
-    # Statistical tests
-    if len(with_msg) > 1 and len(without_msg) > 1:
-        # Independent t-test
-        t_stat, t_pvalue = stats.ttest_ind(with_msg, without_msg)
-
-        # Mann-Whitney U test (non-parametric)
-        u_stat, u_pvalue = stats.mannwhitneyu(
-            with_msg, without_msg, alternative="two-sided"
-        )
-
-        # Cohen's d effect size
-        pooled_std = np.sqrt(
-            (
-                (len(with_msg) - 1) * with_msg.var()
-                + (len(without_msg) - 1) * without_msg.var()
-            )
-            / (len(with_msg) + len(without_msg) - 2)
-        )
-        cohens_d = (with_msg.mean() - without_msg.mean()) / pooled_std
-
-        stats_dict["statistical_tests"] = {
-            "t_test": {
-                "statistic": float(t_stat),
-                "p_value": float(t_pvalue),
-                "significant": bool(t_pvalue < P_VALUE_THRESHOLD),
-            },
-            "mann_whitney_u": {
-                "statistic": float(u_stat),
-                "p_value": float(u_pvalue),
-                "significant": bool(u_pvalue < P_VALUE_THRESHOLD),
-            },
-            "effect_size": {
-                "cohens_d": float(cohens_d),
-                "interpretation": (
-                    "Large"
-                    if abs(cohens_d) >= 0.8
-                    else (
-                        "Medium"
-                        if abs(cohens_d) >= 0.5
-                        else "Small" if abs(cohens_d) >= 0.2 else "Negligible"
-                    )
-                ),
-            },
-        }
-    else:
-        stats_dict["statistical_tests"] = None
 
     return stats_dict
 
 
-def calculate_point_biserial_correlation(df: pd.DataFrame) -> Tuple[float, float]:
-    """Calculate point-biserial correlation between binary variable and continuous variable."""
-    # Convert boolean to numeric (True=1, False=0)
-    with_message_numeric = df["with_message"].astype(int)
-    correlation, p_value = stats.pearsonr(with_message_numeric, df["inference_time"])
-    return correlation, p_value
-
-
-def perform_linear_regression(df: pd.DataFrame) -> Dict[str, Any]:
-    """Perform linear regression analysis between message presence and inference time."""
-    X = df["with_message"].astype(int).values.reshape(-1, 1)  # Convert boolean to int
-    y = df["inference_time"].values
-
-    # Fit linear regression model
-    model = LinearRegression()
-    model.fit(X, y)
-
-    # Calculate predictions and metrics
-    y_pred = model.predict(X)
-    r2 = r2_score(y, y_pred)
-
-    # Calculate confidence intervals (95%)
-    n = len(df)
-    y_mean = np.mean(y)
-    ss_res = np.sum((y - y_pred) ** 2)
-
-    # Standard error of regression
-    mse = ss_res / (n - 2)  # degrees of freedom = n - 2 for simple linear regression
-    se = np.sqrt(mse)
-
-    # t-value for 95% confidence interval
-    t_value = stats.t.ppf(0.975, n - 2)  # 97.5th percentile for 95% CI
-
-    return {
-        "slope": float(model.coef_[0]),
-        "intercept": float(model.intercept_),
-        "r_squared": float(r2),
-        "standard_error": float(se),
-        "t_value": float(t_value),
-        "model": model,
-        "predictions": y_pred,
-    }
-
-
 def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
-    """Create box plot with regression line showing inference time distribution and correlation."""
+    """Create box plot showing inference time distribution by commit message presence."""
     setup_plot_style()
 
     # Use consistent figure size
@@ -192,33 +59,16 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
 
     box_data = [without_msg_data, with_msg_data]
     labels = ["Without Message", "With Message"]
-    colors = [COLORS["without_message"], COLORS["with_message"]]
+    box_colors = [COLORS["secondary"], COLORS["primary"]]
 
     # Create box plot with adjusted width and positions
-    positions = [0, 1]  # Use 0, 1 for regression line
-    box_plot = ax.boxplot(
-        box_data,
-        positions=positions,
-        patch_artist=True,
-        widths=0.4,  # Narrower boxes to show regression line
-        showfliers=True,
-        whis=1.5,
-        boxprops=dict(alpha=PLOT_STYLE["alpha"]),
-        medianprops=dict(color=COLORS["success"], linewidth=PLOT_STYLE["line_width"]),
-        whiskerprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
-        capprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
-        flierprops=dict(
-            marker="o",
-            markerfacecolor=COLORS["primary"],
-            markersize=4,
-            alpha=0.7,
-            markeredgecolor="none",
-        ),
-    )
+    positions = [0, 1]
+    box_plot = ax.boxplot(box_data, positions=positions, **boxplot_style(widths=0.4))
 
-    # Color the boxes
-    for patch, color in zip(box_plot["boxes"], colors):
+    # Override box and flier colors for each group
+    for patch, flier, color in zip(box_plot["boxes"], box_plot["fliers"], box_colors):
         patch.set_facecolor(color)
+        flier.set_markerfacecolor(color)
 
     # Set custom x-axis labels and ticks
     ax.set_xticks(positions)
@@ -234,61 +84,24 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
         pad=20,
     )
 
-    # Add statistical information
-    group_stats = calculate_group_comparison(df)
-    correlation, p_value = calculate_point_biserial_correlation(df)
+    # Add statistical information using utility function
+    # Convert boolean to int for correlation calculation
+    df_numeric = df.assign(with_message_int=df["with_message"].astype(int))
+    correlation, p_value = pearson_correlation(df_numeric, "with_message_int")
+    add_correlation_text(ax, correlation, p_value, len(df))
 
-    # Perform statistical test
-    if group_stats["statistical_tests"]:
-        t_test = group_stats["statistical_tests"]["t_test"]
-        mann_whitney = group_stats["statistical_tests"]["mann_whitney_u"]
-        effect_size = group_stats["statistical_tests"]["effect_size"]
-
-        significance = (
-            "***"
-            if t_test["p_value"] < 0.001
-            else (
-                "**"
-                if t_test["p_value"] < 0.01
-                else "*" if t_test["p_value"] < P_VALUE_THRESHOLD else ""
-            )
-        )
-
-        stats_text = (
-            f"Point-biserial r = {correlation:.3f} {significance}\n"
-            f'Cohen\'s d = {effect_size["cohens_d"]:.3f}\n'
-            f"n = {len(df)}"
-        )
-
-        ax.text(
-            0.02,
-            0.98,
-            stats_text,
-            transform=ax.transAxes,
-            fontsize=10,
-            verticalalignment="top",
-            fontweight="bold",
-            bbox=dict(
-                boxstyle="round,pad=0.5",
-                facecolor=COLORS["background"],
-                alpha=0.9,
-                edgecolor=COLORS["primary"],
-                linewidth=1,
-            ),
-        )
-
-    # Add legend for box plot components and regression
+    # Add legend for box plot components
     from matplotlib.patches import Patch
     from matplotlib.lines import Line2D
 
     legend_elements = [
         Patch(
-            facecolor=COLORS["without_message"],
+            facecolor=COLORS["secondary"],
             alpha=PLOT_STYLE["alpha"],
             label="Without Message",
         ),
         Patch(
-            facecolor=COLORS["with_message"],
+            facecolor=COLORS["primary"],
             alpha=PLOT_STYLE["alpha"],
             label="With Message",
         ),
@@ -313,297 +126,30 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
     return output_path
 
 
-def create_regression_plot(df: pd.DataFrame, output_dir: Path) -> Path:
-    """Create scatter plot with linear regression line for message presence vs inference time."""
-    setup_plot_style()
-
-    # Use consistent figure size
-    fig, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
-
-    # Perform linear regression
-    regression_results = perform_linear_regression(df)
-
-    # Prepare data with jitter for visualization
-    x_vals = df["with_message"].astype(int)
-    x_jitter = x_vals + np.random.normal(0, 0.03, len(x_vals))
-
-    # Create scatter plot
-    colors = [
-        COLORS["without_message"] if not msg else COLORS["with_message"]
-        for msg in df["with_message"]
-    ]
-
-    ax.scatter(
-        x_jitter,
-        df["inference_time"],
-        c=colors,
-        alpha=PLOT_STYLE["alpha"],
-        s=PLOT_STYLE["marker_size"],
-        edgecolors=COLORS["text"],
-        linewidth=0.5,
-    )
-
-    # Create regression line
-    x_range = np.array([0, 1])
-    y_pred_line = (
-        regression_results["slope"] * x_range + regression_results["intercept"]
-    )
-
-    ax.plot(
-        x_range,
-        y_pred_line,
-        color=COLORS["secondary"],
-        linewidth=PLOT_STYLE["line_width"] + 1,
-        alpha=0.9,
-        label=f'Regression line (R² = {regression_results["r_squared"]:.3f})',
-    )
-
-    # Calculate and display statistics
-    correlation, p_value = calculate_point_biserial_correlation(df)
-    significance = (
-        "***"
-        if p_value < 0.001
-        else "**" if p_value < 0.01 else "*" if p_value < P_VALUE_THRESHOLD else ""
-    )
-
-    # Create regression equation text
-    slope = regression_results["slope"]
-    intercept = regression_results["intercept"]
-    equation = f"y = {slope:.3f}x + {intercept:.3f}"
-
-    stats_text = (
-        f"Point-biserial r = {correlation:.3f} {significance}\n"
-        f'R² = {regression_results["r_squared"]:.3f}\n'
-        f"{equation}\n"
-        f"n = {len(df)}"
-    )
-
-    ax.text(
-        0.02,
-        0.98,
-        stats_text,
-        transform=ax.transAxes,
-        fontsize=11,
-        verticalalignment="top",
-        fontweight="bold",
-        bbox=dict(
-            boxstyle="round,pad=0.5",
-            facecolor=COLORS["background"],
-            alpha=0.9,
-            edgecolor=COLORS["primary"],
-            linewidth=1,
-        ),
-    )
-
-    ax.set_xlabel(
-        "Commit Message Presence (0=No, 1=Yes)", fontweight="bold", color=COLORS["text"]
-    )
-    ax.set_ylabel("Inference Time (seconds)", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Linear Regression: Commit Message vs Inference Time",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
-
-    # Set x-axis ticks and limits for tighter spacing
-    ax.set_xticks([0, 1])
-    ax.set_xticklabels(["Without Message", "With Message"])
-    ax.set_xlim(-0.2, 1.2)  # Tighter x-axis limits
-    ax.legend(loc="upper right", framealpha=0.9)
-
-    plt.tight_layout()
-
-    output_path = output_dir / "regression_commit_message_inference_time.png"
-    plt.savefig(
-        output_path, dpi=PLOT_STYLE["dpi"], bbox_inches="tight", facecolor="white"
-    )
-    plt.close()
-
-    return output_path
-
-
 def generate_summary_stats(df: pd.DataFrame, outlier_info: dict) -> dict:
     """Generate summary statistics for the analysis."""
     group_stats = calculate_group_comparison(df)
-    correlation, p_value = calculate_point_biserial_correlation(df)
-    regression_results = perform_linear_regression(df)
+
+    # Convert boolean to int for correlation calculation
+    df_numeric = df.assign(with_message_int=df["with_message"].astype(int))
+    correlation, p_value = pearson_correlation(df_numeric, "with_message_int")
 
     stats_dict = {
         "sample_size": len(df),
         "correlation": correlation,
         "p_value": p_value,
         "significant": p_value < P_VALUE_THRESHOLD,
-        "outliers_detected": outlier_info["count"],
-        "outliers_removed": outlier_info["removed"],
+        "outlier_info": outlier_info,
         "group_statistics": group_stats,
-        "regression": regression_results,
+        "inference_time": {
+            "mean": float(df["inference_time"].mean()),
+            "std": float(df["inference_time"].std()),
+            "min": float(df["inference_time"].min()),
+            "max": float(df["inference_time"].max()),
+        },
     }
 
     return stats_dict
-
-
-def save_summary_json(
-    stats_dict: dict, outlier_info: dict, csv_files: List[str], output_dir: Path
-) -> Path:
-    """Save comprehensive summary as JSON."""
-    from datetime import datetime, timezone
-    import json
-
-    # Build comprehensive summary
-    summary = {
-        "analysis_info": {
-            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
-            "analysis_type": "efficiency_commit_message_correlation",
-            "input_files": csv_files,
-            "outlier_detection_method": "IQR",
-            "outlier_threshold": f"{OUTLIER_THRESHOLD_IQR}x IQR",
-        },
-        "data_summary": {
-            "total_samples": stats_dict["sample_size"],
-            "outliers_detected": stats_dict["outliers_detected"],
-            "outliers_removed": stats_dict["outliers_removed"],
-            "with_message_count": stats_dict["group_statistics"]["with_message"][
-                "count"
-            ],
-            "without_message_count": stats_dict["group_statistics"]["without_message"][
-                "count"
-            ],
-        },
-        "correlation_analysis": {
-            "point_biserial_correlation": {
-                "coefficient": round(float(stats_dict["correlation"]), 4),
-                "p_value": float(stats_dict["p_value"]),
-                "significant": bool(stats_dict["significant"]),
-                "significance_threshold": float(P_VALUE_THRESHOLD),
-                "effect_size": (
-                    "large"
-                    if abs(stats_dict["correlation"]) >= 0.5
-                    else (
-                        "medium"
-                        if abs(stats_dict["correlation"]) >= 0.3
-                        else (
-                            "small"
-                            if abs(stats_dict["correlation"]) >= 0.1
-                            else "negligible"
-                        )
-                    )
-                ),
-                "interpretation": (
-                    "Strong positive"
-                    if stats_dict["correlation"] > 0.5
-                    else (
-                        "Moderate positive"
-                        if stats_dict["correlation"] > 0.3
-                        else (
-                            "Weak positive"
-                            if stats_dict["correlation"] > 0.1
-                            else (
-                                "Weak negative"
-                                if stats_dict["correlation"] > -0.1
-                                else (
-                                    "Moderate negative"
-                                    if stats_dict["correlation"] > -0.3
-                                    else "Strong negative"
-                                )
-                            )
-                        )
-                    )
-                ),
-            }
-        },
-        "group_comparison": {
-            "with_message": {
-                "count": stats_dict["group_statistics"]["with_message"]["count"],
-                "mean": round(
-                    stats_dict["group_statistics"]["with_message"]["mean"], 4
-                ),
-                "std": round(stats_dict["group_statistics"]["with_message"]["std"], 4),
-                "median": round(
-                    stats_dict["group_statistics"]["with_message"]["median"], 4
-                ),
-                "min": round(stats_dict["group_statistics"]["with_message"]["min"], 4),
-                "max": round(stats_dict["group_statistics"]["with_message"]["max"], 4),
-            },
-            "without_message": {
-                "count": stats_dict["group_statistics"]["without_message"]["count"],
-                "mean": round(
-                    stats_dict["group_statistics"]["without_message"]["mean"], 4
-                ),
-                "std": round(
-                    stats_dict["group_statistics"]["without_message"]["std"], 4
-                ),
-                "median": round(
-                    stats_dict["group_statistics"]["without_message"]["median"], 4
-                ),
-                "min": round(
-                    stats_dict["group_statistics"]["without_message"]["min"], 4
-                ),
-                "max": round(
-                    stats_dict["group_statistics"]["without_message"]["max"], 4
-                ),
-            },
-        },
-        "statistical_tests": stats_dict["group_statistics"]["statistical_tests"],
-        "linear_regression": {
-            "equation": {
-                "slope": round(float(stats_dict["regression"]["slope"]), 4),
-                "intercept": round(float(stats_dict["regression"]["intercept"]), 4),
-                "formula": f"y = {stats_dict['regression']['slope']:.4f}x + {stats_dict['regression']['intercept']:.4f}",
-            },
-            "model_fit": {
-                "r_squared": round(float(stats_dict["regression"]["r_squared"]), 4),
-                "standard_error": round(
-                    float(stats_dict["regression"]["standard_error"]), 4
-                ),
-                "interpretation": (
-                    "Excellent fit"
-                    if stats_dict["regression"]["r_squared"] >= 0.9
-                    else (
-                        "Good fit"
-                        if stats_dict["regression"]["r_squared"] >= 0.7
-                        else (
-                            "Moderate fit"
-                            if stats_dict["regression"]["r_squared"] >= 0.5
-                            else (
-                                "Weak fit"
-                                if stats_dict["regression"]["r_squared"] >= 0.3
-                                else "Poor fit"
-                            )
-                        )
-                    )
-                ),
-            },
-        },
-        "outlier_analysis": {
-            "detection_method": "Interquartile Range (IQR)",
-            "threshold": f"Q1 - {OUTLIER_THRESHOLD_IQR}×IQR and Q3 + {OUTLIER_THRESHOLD_IQR}×IQR",
-            "total_detected": outlier_info["count"],
-            "outlier_values": (
-                [round(v, 2) for v in outlier_info["values"]]
-                if outlier_info["values"]
-                else []
-            ),
-            "impact": {
-                "removed_from_analysis": False,
-                "shown_in_boxplot": True,
-                "percentage_of_data": (
-                    round(
-                        (outlier_info["count"] / stats_dict["sample_size"]) * 100,
-                        1,
-                    )
-                    if outlier_info["count"] > 0
-                    else 0
-                ),
-            },
-        },
-    }
-
-    output_path = output_dir / "efficiency_commit_message_summary.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2, ensure_ascii=False)
-
-    return output_path
 
 
 def main():
@@ -619,27 +165,6 @@ def main():
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
-        from datetime import datetime
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-
-        # Validate CSV structure consistency across files
-        expected_columns = {"with_message", "inference_time"}
-        csv_paths = [Path(f) for f in args.csv_files]
-
-        for csv_path in csv_paths:
-            if not csv_path.exists():
-                raise FileNotFoundError(f"CSV file not found: {csv_path}")
-
-            df_sample = pd.read_csv(csv_path, nrows=1)
-            available_columns = set(df_sample.columns)
-
-            if not expected_columns.issubset(available_columns):
-                missing = expected_columns - available_columns
-                raise ValueError(
-                    f"Missing required columns in {csv_path.name}: {missing}"
-                )
-
         output_dir = ANALYSIS_OUTPUT_DIR / "ef_commit_message"
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -652,8 +177,10 @@ def main():
     csv_paths = [Path(f) for f in args.csv_files]
 
     try:
-        # Load data
-        df, outlier_info = load_csv_data(csv_paths)
+        # Load data using utility function
+        df, outlier_info = load_csv(
+            csv_paths, ["with_message", "inference_time"]
+        )
         print(f"Loaded {len(df)} data points from CSV files")
 
         # Generate statistics
@@ -668,34 +195,44 @@ def main():
         print(
             f"- Without message: {stats['group_statistics']['without_message']['count']} samples"
         )
-        print(f"- Point-biserial correlation: r = {stats['correlation']:.4f}")
+        print(f"- Pearson correlation: r = {stats['correlation']:.4f}")
         print(f"- P-value: {stats['p_value']:.6f}")
         print(f"- Significant: {'Yes' if stats['significant'] else 'No'}")
-
-        if stats["group_statistics"]["statistical_tests"]:
-            t_test = stats["group_statistics"]["statistical_tests"]["t_test"]
-            print(f"- t-test p-value: {t_test['p_value']:.6f}")
-            print(f"- t-test significant: {'Yes' if t_test['significant'] else 'No'}")
-
-            effect_size = stats["group_statistics"]["statistical_tests"]["effect_size"]
-            print(
-                f"- Cohen's d: {effect_size['cohens_d']:.4f} ({effect_size['interpretation']})"
-            )
 
         # Generate visualization
         print(f"\nGenerating visualization...")
         boxplot_path = create_boxplot(df, output_dir)
 
-        # Save results
-        json_path = save_summary_json(stats, outlier_info, args.csv_files, output_dir)
+        # Save results using utility function with group_comparison as extra_data
+        group_comparison = {
+            "group_comparison": {
+                "with_message": {
+                    "count": stats["group_statistics"]["with_message"]["count"],
+                    "mean": round(stats["group_statistics"]["with_message"]["mean"], 4),
+                },
+                "without_message": {
+                    "count": stats["group_statistics"]["without_message"]["count"],
+                    "mean": round(stats["group_statistics"]["without_message"]["mean"], 4),
+                },
+                "mean_difference": round(stats["group_statistics"]["mean_difference"], 4),
+            }
+        }
+
+        json_path = save_json(
+            output_path=output_dir / "efficiency_commit_message_summary.json",
+            analysis_type="efficiency_commit_message_correlation",
+            input_files=args.csv_files,
+            correlation=stats["correlation"],
+            p_value=stats["p_value"],
+            outlier_info=outlier_info,
+            inference_time_stats=stats["inference_time"],
+            sample_size=stats["sample_size"],
+            extra_data=group_comparison,
+        )
 
         print(f"\nResults saved to: {output_dir}")
-        print(f"- Box plot with regression: {boxplot_path.name}")
+        print(f"- Box plot: {boxplot_path.name}")
         print(f"- Summary JSON: {json_path.name}")
-        print(
-            f"\nRegression equation: y = {stats['regression']['slope']:.4f}x + {stats['regression']['intercept']:.4f}"
-        )
-        print(f"R² = {stats['regression']['r_squared']:.4f}")
 
         # Print group means for interpretation
         with_msg_mean = stats["group_statistics"]["with_message"]["mean"]

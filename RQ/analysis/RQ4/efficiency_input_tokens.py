@@ -2,116 +2,30 @@
 """
 Efficiency Analysis: Correlation between Input Tokens and Inference Time
 Analyzes the relationship between context length (input tokens) and inference time using Pearson correlation.
-Processes raw CSV data for detailed scatter plot analysis with linear regression.
 """
 
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
-from scipy import stats
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
 import argparse
 
-from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style
-from ..stats_utils import detect_outliers_iqr
+from ..plot_utils import COLORS, PLOT_STYLE, boxplot_style, setup_plot_style
+from .utils import (
+    load_csv,
+    pearson_correlation,
+    add_correlation_text,
+    add_boxplot_legend,
+    save_json,
+    P_VALUE_THRESHOLD,
+)
 
 # Constants - Use root results directory (from project root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ3"
-P_VALUE_THRESHOLD = 0.05
-
-
-def load_csv_data(csv_paths: List[Path]) -> tuple:
-    """Load raw data from CSV files for detailed analysis.
-
-    Returns:
-        Tuple of (dataframe, outlier_info)
-    """
-    all_data = []
-
-    for csv_path in csv_paths:
-        if not csv_path.exists():
-            raise FileNotFoundError(f"CSV file not found: {csv_path}")
-
-        df = pd.read_csv(csv_path)
-
-        # Check required columns
-        required_cols = ["context_len", "inference_time"]
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        if missing_cols:
-            raise ValueError(f"Missing columns in {csv_path}: {missing_cols}")
-
-        df["source_file"] = csv_path.name
-        all_data.append(df[["context_len", "inference_time", "source_file"]])
-
-    combined_df = pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
-
-    # Detect outliers (but don't remove them)
-    _, outlier_info = detect_outliers_iqr(combined_df["inference_time"])
-
-    print(f"Detected {outlier_info['count']} outliers (shown in boxplot, not removed)")
-
-    return combined_df, outlier_info
-
-
-def calculate_correlation(df: pd.DataFrame) -> Tuple[float, float]:
-    """Calculate Pearson correlation coefficient between input tokens and inference time."""
-    if len(df) < 2:
-        return 0.0, 1.0
-
-    correlation, p_value = stats.pearsonr(df["context_len"], df["inference_time"])
-    return correlation, p_value
-
-
-def perform_linear_regression(df: pd.DataFrame) -> Dict[str, Any]:
-    """Perform linear regression analysis between input tokens and inference time."""
-    X = df["context_len"].values.reshape(-1, 1)
-    y = df["inference_time"].values
-
-    # Fit linear regression model
-    model = LinearRegression()
-    model.fit(X, y)
-
-    # Calculate predictions and metrics
-    y_pred = model.predict(X)
-    r2 = r2_score(y, y_pred)
-
-    # Calculate confidence intervals (95%)
-    n = len(df)
-    y_mean = np.mean(y)
-    ss_res = np.sum((y - y_pred) ** 2)
-    ss_tot = np.sum((y - y_mean) ** 2)
-
-    # Standard error of regression
-    mse = ss_res / (n - 2)  # degrees of freedom = n - 2 for simple linear regression
-    se = np.sqrt(mse)
-
-    # t-value for 95% confidence interval
-    t_value = stats.t.ppf(0.975, n - 2)  # 97.5th percentile for 95% CI
-
-    # Standard error for prediction
-    x_mean = np.mean(X)
-    ss_x = np.sum((X - x_mean) ** 2)
-
-    return {
-        "slope": float(model.coef_[0]),
-        "intercept": float(model.intercept_),
-        "r_squared": float(r2),
-        "standard_error": float(se),
-        "t_value": float(t_value),
-        "model": model,
-        "predictions": y_pred,
-        "x_mean": float(x_mean),
-        "ss_x": float(ss_x),
-        "mse": float(mse),
-    }
 
 
 def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
-    """Create box plot with regression line showing inference time distribution and correlation."""
+    """Create box plot showing inference time distribution with Pearson correlation stats."""
     setup_plot_style()
 
     fig, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
@@ -121,28 +35,8 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
         df[df["context_len"] == cl]["inference_time"].values for cl in context_lengths
     ]
 
-    # Create box plot with unified colors
-    box_plot = ax.boxplot(
-        box_data,
-        positions=context_lengths,
-        patch_artist=True,
-        widths=500,
-        showfliers=True,
-        whis=1.5,
-        boxprops=dict(facecolor=COLORS["primary"], alpha=PLOT_STYLE["alpha"]),
-        medianprops=dict(color=COLORS["success"], linewidth=PLOT_STYLE["line_width"]),
-        whiskerprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
-        capprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
-        flierprops=dict(
-            marker="o",
-            markerfacecolor=COLORS["primary"],
-            markersize=4,
-            alpha=0.7,
-            markeredgecolor="none",
-        ),
-    )
-
-    # No regression line - clean box plot only
+    # Create box plot with unified colors (widths=500 for token-scale x-axis)
+    ax.boxplot(box_data, positions=context_lengths, **boxplot_style(widths=500))
 
     ax.set_xlabel("Input Token Length", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Inference Time (seconds)", fontweight="bold", color=COLORS["text"])
@@ -158,54 +52,11 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
     ax.set_xticklabels([str(int(cl)) for cl in context_lengths])
 
     # Add correlation statistics with sample size
-    correlation, p_value = calculate_correlation(df)
-    significance = (
-        "***"
-        if p_value < 0.001
-        else "**" if p_value < 0.01 else "*" if p_value < P_VALUE_THRESHOLD else ""
-    )
+    correlation, p_value = pearson_correlation(df, "context_len")
+    add_correlation_text(ax, correlation, p_value, len(df))
 
-    stats_text = (
-        f"Pearson r = {correlation:.3f} {significance}\n"
-        f"p = {p_value:.4f}\n"
-        f"n = {len(df)}"
-    )
-    ax.text(
-        0.02,
-        0.98,
-        stats_text,
-        transform=ax.transAxes,
-        fontsize=10,
-        verticalalignment="top",
-        fontweight="bold",
-        bbox=dict(
-            boxstyle="round,pad=0.5",
-            facecolor=COLORS["background"],
-            alpha=0.9,
-            edgecolor=COLORS["primary"],
-            linewidth=1,
-        ),
-    )
-
-    # Add legend for box plot components and regression
-    from matplotlib.patches import Patch
-    from matplotlib.lines import Line2D
-
-    legend_elements = [
-        Patch(
-            facecolor=COLORS["primary"],
-            alpha=PLOT_STYLE["alpha"],
-            label="Distribution (IQR)",
-        ),
-        Line2D(
-            [0],
-            [0],
-            color=COLORS["success"],
-            linewidth=PLOT_STYLE["line_width"],
-            label="Median",
-        ),
-    ]
-    ax.legend(handles=legend_elements, loc="lower right", framealpha=0.9)
+    # Add legend for box plot components
+    add_boxplot_legend(ax, loc="lower right")
 
     plt.tight_layout()
 
@@ -218,302 +69,23 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
     return output_path
 
 
-def create_regression_plot(df: pd.DataFrame, output_dir: Path) -> Path:
-    """Create scatter plot with linear regression line and confidence interval."""
-    setup_plot_style()
-
-    fig, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
-
-    # Perform linear regression
-    regression_results = perform_linear_regression(df)
-
-    # Create scatter plot with slight jitter to show overlapping points
-    x_jitter = df["context_len"] + np.random.normal(
-        0, 0.03 * df["context_len"].std(), len(df)
-    )
-
-    ax.scatter(
-        x_jitter,
-        df["inference_time"],
-        color=COLORS["primary"],
-        alpha=PLOT_STYLE["alpha"],
-        s=PLOT_STYLE["marker_size"],
-        edgecolors=COLORS["text"],
-        linewidth=0.5,
-        label="Data points",
-    )
-
-    # Create regression line
-    x_range = np.linspace(df["context_len"].min(), df["context_len"].max(), 100)
-    y_pred_line = (
-        regression_results["slope"] * x_range + regression_results["intercept"]
-    )
-
-    ax.plot(
-        x_range,
-        y_pred_line,
-        color=COLORS["secondary"],
-        linewidth=PLOT_STYLE["line_width"] + 1,
-        alpha=0.9,
-        label=f'Regression line (R² = {regression_results["r_squared"]:.3f})',
-    )
-
-    # Calculate and add 95% confidence interval
-    n = len(df)
-    x_mean = regression_results["x_mean"]
-    ss_x = regression_results["ss_x"]
-    mse = regression_results["mse"]
-    t_val = regression_results["t_value"]
-
-    # Standard error for each point on the line
-    se_line = np.sqrt(mse * (1 / n + (x_range - x_mean) ** 2 / ss_x))
-    ci_upper = y_pred_line + t_val * se_line
-    ci_lower = y_pred_line - t_val * se_line
-
-    # Fill confidence interval
-    ax.fill_between(
-        x_range,
-        ci_lower,
-        ci_upper,
-        color=COLORS["secondary"],
-        alpha=0.2,
-        label="95% Confidence interval",
-    )
-
-    # Calculate and display statistics
-    correlation, p_value = calculate_correlation(df)
-    significance = (
-        "***"
-        if p_value < 0.001
-        else "**" if p_value < 0.01 else "*" if p_value < P_VALUE_THRESHOLD else ""
-    )
-
-    # Create regression equation text
-    slope = regression_results["slope"]
-    intercept = regression_results["intercept"]
-    equation = f"y = {slope:.6f}x + {intercept:.3f}"
-
-    stats_text = (
-        f"Pearson r = {correlation:.3f} {significance}\n"
-        f'R² = {regression_results["r_squared"]:.3f}\n'
-        f"{equation}\n"
-        f"n = {len(df)}"
-    )
-
-    ax.text(
-        0.02,
-        0.98,
-        stats_text,
-        transform=ax.transAxes,
-        fontsize=10,
-        verticalalignment="top",
-        fontweight="bold",
-        bbox=dict(
-            boxstyle="round,pad=0.5",
-            facecolor=COLORS["background"],
-            alpha=0.9,
-            edgecolor=COLORS["primary"],
-            linewidth=1,
-        ),
-    )
-
-    ax.set_xlabel("Input Token Length", fontweight="bold", color=COLORS["text"])
-    ax.set_ylabel("Inference Time (seconds)", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Linear Regression: Input Tokens vs Inference Time",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
-
-    # Set reasonable ticks for x-axis
-    context_lengths = sorted(df["context_len"].unique())
-    ax.set_xticks(context_lengths)
-    ax.legend(loc="lower right", framealpha=0.9)
-
-    plt.tight_layout()
-
-    output_path = output_dir / "regression_input_tokens_inference_time.png"
-    plt.savefig(
-        output_path, dpi=PLOT_STYLE["dpi"], bbox_inches="tight", facecolor="white"
-    )
-    plt.close()
-
-    return output_path
-
-
 def generate_summary_stats(df: pd.DataFrame, outlier_info: dict) -> dict:
     """Generate summary statistics for the analysis."""
-    correlation, p_value = calculate_correlation(df)
-    regression_results = perform_linear_regression(df)
+    correlation, p_value = pearson_correlation(df, "context_len")
 
     stats_dict = {
         "sample_size": len(df),
         "correlation": correlation,
         "p_value": p_value,
         "significant": p_value < P_VALUE_THRESHOLD,
-        "context_len_mean": df["context_len"].mean(),
-        "context_len_std": df["context_len"].std(),
         "inference_time_mean": df["inference_time"].mean(),
         "inference_time_std": df["inference_time"].std(),
         "inference_time_min": df["inference_time"].min(),
         "inference_time_max": df["inference_time"].max(),
         "outliers_detected": outlier_info["count"],
-        "outliers_removed": outlier_info["removed"],
-        "regression": regression_results,
     }
 
     return stats_dict
-
-
-def save_summary_json(
-    stats_dict: dict, outlier_info: dict, csv_files: List[str], output_dir: Path
-) -> Path:
-    """Save comprehensive summary as JSON."""
-    from datetime import datetime, timezone
-    import json
-
-    # Build comprehensive summary
-    summary = {
-        "analysis_info": {
-            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
-            "analysis_type": "efficiency_input_tokens_correlation",
-            "input_files": csv_files,
-            "outlier_detection_method": "IQR",
-            "outlier_threshold": f"{OUTLIER_THRESHOLD_IQR}x IQR",
-        },
-        "data_summary": {
-            "total_samples": stats_dict["sample_size"],
-            "outliers_detected": stats_dict["outliers_detected"],
-            "outliers_removed": stats_dict["outliers_removed"],
-            "context_len_range": {
-                "min": int(
-                    stats_dict["context_len_mean"] - stats_dict["context_len_std"]
-                ),
-                "max": int(
-                    stats_dict["context_len_mean"] + stats_dict["context_len_std"]
-                ),
-            },
-        },
-        "correlation_analysis": {
-            "pearson_correlation": {
-                "coefficient": round(float(stats_dict["correlation"]), 4),
-                "p_value": float(stats_dict["p_value"]),
-                "significant": bool(stats_dict["significant"]),
-                "significance_threshold": float(P_VALUE_THRESHOLD),
-                "effect_size": (
-                    "large"
-                    if abs(stats_dict["correlation"]) >= 0.5
-                    else (
-                        "medium"
-                        if abs(stats_dict["correlation"]) >= 0.3
-                        else (
-                            "small"
-                            if abs(stats_dict["correlation"]) >= 0.1
-                            else "negligible"
-                        )
-                    )
-                ),
-                "interpretation": (
-                    "Strong positive"
-                    if stats_dict["correlation"] > 0.5
-                    else (
-                        "Moderate positive"
-                        if stats_dict["correlation"] > 0.3
-                        else (
-                            "Weak positive"
-                            if stats_dict["correlation"] > 0.1
-                            else (
-                                "Weak negative"
-                                if stats_dict["correlation"] > -0.1
-                                else (
-                                    "Moderate negative"
-                                    if stats_dict["correlation"] > -0.3
-                                    else "Strong negative"
-                                )
-                            )
-                        )
-                    )
-                ),
-            }
-        },
-        "linear_regression": {
-            "equation": {
-                "slope": round(float(stats_dict["regression"]["slope"]), 6),
-                "intercept": round(float(stats_dict["regression"]["intercept"]), 4),
-                "formula": f"y = {stats_dict['regression']['slope']:.6f}x + {stats_dict['regression']['intercept']:.4f}",
-            },
-            "model_fit": {
-                "r_squared": round(float(stats_dict["regression"]["r_squared"]), 4),
-                "standard_error": round(
-                    float(stats_dict["regression"]["standard_error"]), 4
-                ),
-                "interpretation": (
-                    "Excellent fit"
-                    if stats_dict["regression"]["r_squared"] >= 0.9
-                    else (
-                        "Good fit"
-                        if stats_dict["regression"]["r_squared"] >= 0.7
-                        else (
-                            "Moderate fit"
-                            if stats_dict["regression"]["r_squared"] >= 0.5
-                            else (
-                                "Weak fit"
-                                if stats_dict["regression"]["r_squared"] >= 0.3
-                                else "Poor fit"
-                            )
-                        )
-                    )
-                ),
-            },
-            "confidence_interval": {
-                "level": 95,
-                "t_value": round(float(stats_dict["regression"]["t_value"]), 4),
-            },
-        },
-        "descriptive_statistics": {
-            "input_tokens": {
-                "mean": round(float(stats_dict["context_len_mean"]), 2),
-                "std": round(float(stats_dict["context_len_std"]), 2),
-                "unit": "tokens",
-            },
-            "inference_time": {
-                "mean": round(float(stats_dict["inference_time_mean"]), 4),
-                "std": round(float(stats_dict["inference_time_std"]), 4),
-                "min": round(float(stats_dict["inference_time_min"]), 4),
-                "max": round(float(stats_dict["inference_time_max"]), 4),
-                "unit": "seconds",
-            },
-        },
-        "outlier_analysis": {
-            "detection_method": "Interquartile Range (IQR)",
-            "threshold": f"Q1 - {OUTLIER_THRESHOLD_IQR}×IQR and Q3 + {OUTLIER_THRESHOLD_IQR}×IQR",
-            "total_detected": outlier_info["count"],
-            "outlier_values": (
-                [round(v, 2) for v in outlier_info["values"]]
-                if outlier_info["values"]
-                else []
-            ),
-            "impact": {
-                "removed_from_analysis": False,
-                "shown_in_boxplot": True,
-                "percentage_of_data": (
-                    round(
-                        (outlier_info["count"] / stats_dict["sample_size"]) * 100,
-                        1,
-                    )
-                    if outlier_info["count"] > 0
-                    else 0
-                ),
-            },
-        },
-    }
-
-    output_path = output_dir / "efficiency_input_tokens_summary.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2, ensure_ascii=False)
-
-    return output_path
 
 
 def main():
@@ -529,27 +101,6 @@ def main():
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
-        from datetime import datetime
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-
-        # Validate CSV structure consistency across files
-        expected_columns = {"context_len", "inference_time"}
-        csv_paths = [Path(f) for f in args.csv_files]
-
-        for csv_path in csv_paths:
-            if not csv_path.exists():
-                raise FileNotFoundError(f"CSV file not found: {csv_path}")
-
-            df_sample = pd.read_csv(csv_path, nrows=1)
-            available_columns = set(df_sample.columns)
-
-            if not expected_columns.issubset(available_columns):
-                missing = expected_columns - available_columns
-                raise ValueError(
-                    f"Missing required columns in {csv_path.name}: {missing}"
-                )
-
         output_dir = ANALYSIS_OUTPUT_DIR / "ef_input_tokens"
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -562,8 +113,10 @@ def main():
     csv_paths = [Path(f) for f in args.csv_files]
 
     try:
-        # Load data
-        df, outlier_info = load_csv_data(csv_paths)
+        # Load data using shared utility
+        df, outlier_info = load_csv(
+            csv_paths, ["context_len", "inference_time"]
+        )
         print(f"Loaded {len(df)} data points from CSV files")
 
         # Generate statistics
@@ -581,16 +134,26 @@ def main():
         print(f"\nGenerating visualization...")
         boxplot_path = create_boxplot(df, output_dir)
 
-        # Save results
-        json_path = save_summary_json(stats, outlier_info, args.csv_files, output_dir)
+        # Save results using shared utility
+        json_path = save_json(
+            output_path=output_dir / "efficiency_input_tokens_summary.json",
+            analysis_type="efficiency_input_tokens_correlation",
+            input_files=args.csv_files,
+            correlation=stats["correlation"],
+            p_value=stats["p_value"],
+            outlier_info=outlier_info,
+            inference_time_stats={
+                "mean": stats["inference_time_mean"],
+                "std": stats["inference_time_std"],
+                "min": stats["inference_time_min"],
+                "max": stats["inference_time_max"],
+            },
+            sample_size=stats["sample_size"],
+        )
 
         print(f"\nResults saved to: {output_dir}")
-        print(f"- Box plot with regression: {boxplot_path.name}")
+        print(f"- Box plot: {boxplot_path.name}")
         print(f"- Summary JSON: {json_path.name}")
-        print(
-            f"\nRegression equation: y = {stats['regression']['slope']:.6f}x + {stats['regression']['intercept']:.4f}"
-        )
-        print(f"R² = {stats['regression']['r_squared']:.4f}")
 
     except Exception as e:
         print(f"Error processing CSV files: {e}")
