@@ -11,9 +11,10 @@ import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple
 from sklearn.linear_model import LinearRegression
 
-# Constants - Use root results directory (from project root)
-PROJECT_ROOT = Path(__file__).parent.parent.parent  # Go up from RQ/analysis/ to project root
-ANALYSIS_OUTPUT_DIR_BASE = PROJECT_ROOT / "results" / "analysis"
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_BASE
+
+# Constants
+ANALYSIS_OUTPUT_DIR_BASE = ANALYSIS_OUTPUT_BASE
 P_VALUE_SIGNIFICANCE_THRESHOLD: float = 0.05
 
 INPUT_CSV_PATHS: List[Path] = [

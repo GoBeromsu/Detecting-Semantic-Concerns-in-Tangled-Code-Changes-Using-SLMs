@@ -11,11 +11,11 @@ from datetime import datetime, timezone
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_BASE
 
-# Constants - Use RQ/results directory for model results, root/results for analysis outputs
-PROJECT_ROOT = Path(__file__).parent.parent.parent  # Go up from RQ/analysis/ to project root
+# Constants
 RESULTS_DIR: Path = PROJECT_ROOT / "RQ" / "results"  # Model results are in RQ/results/
-ANALYSIS_DIR: Path = PROJECT_ROOT / "results" / "analysis"  # Analysis outputs go to root/results/analysis/
+ANALYSIS_DIR: Path = ANALYSIS_OUTPUT_BASE  # Analysis outputs go to root/results/analysis/
 RELATION_VALUES: Tuple[str, str, str] = ("LLM>SLM", "Equal", "SLM>LLM")
 METRICS: Tuple[str, str, str, str] = ("precision", "recall", "f1", "exact_match")
  
