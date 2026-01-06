@@ -178,9 +178,9 @@ def save_json(
             "input_files": input_files,
         },
         "correlation_analysis": {
-            "pearson_r": round(correlation, 4),
-            "p_value": p_value,
-            "significant": p_value < P_VALUE_THRESHOLD,
+            "pearson_r": round(float(correlation), 4),
+            "p_value": float(p_value),
+            "significant": bool(p_value < P_VALUE_THRESHOLD),
         },
         "outlier_analysis": {
             "method": "IQR",
@@ -192,13 +192,13 @@ def save_json(
             ),
         },
         "inference_time": {
-            "mean": round(inference_time_stats["mean"], 4),
-            "std": round(inference_time_stats["std"], 4),
-            "min": round(inference_time_stats["min"], 4),
-            "max": round(inference_time_stats["max"], 4),
+            "mean": round(float(inference_time_stats["mean"]), 4),
+            "std": round(float(inference_time_stats["std"]), 4),
+            "min": round(float(inference_time_stats["min"]), 4),
+            "max": round(float(inference_time_stats["max"]), 4),
             "unit": "seconds",
         },
-        "sample_size": sample_size,
+        "sample_size": int(sample_size),
     }
 
     if extra_data:
