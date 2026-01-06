@@ -19,10 +19,7 @@ from .utils import (
     save_json,
     P_VALUE_THRESHOLD,
 )
-
-# Constants - Use root results directory (from project root)
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ3"
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR
 
 
 def calculate_group_comparison(df: pd.DataFrame) -> Dict[str, Any]:

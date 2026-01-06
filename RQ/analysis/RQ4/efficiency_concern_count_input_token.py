@@ -13,10 +13,7 @@ import argparse
 
 from ..plot_utils import COLORS, GROUP_COLORS, PLOT_STYLE, boxplot_style, setup_plot_style
 from .utils import load_csv, save_json
-
-# Constants - Use root results directory (from project root)
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ3"
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR
 
 
 def create_boxplot_by_concern_grouped_by_token(
