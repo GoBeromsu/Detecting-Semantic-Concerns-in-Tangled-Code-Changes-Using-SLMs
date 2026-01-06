@@ -13,15 +13,12 @@ from pathlib import Path
 import argparse
 from datetime import datetime
 
-# Constants - Use root results directory (from project root)
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ2"
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
 
 
 def load_config():
     """Load configuration from config.yaml"""
-    config_path = Path(__file__).parent.parent / "config.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 

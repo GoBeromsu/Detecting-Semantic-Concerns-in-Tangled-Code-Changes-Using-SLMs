@@ -25,11 +25,9 @@ from itertools import combinations
 import numpy as np
 
 from ..stats_utils import compute_pairwise_stats
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
 
 # Constants
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-RQ_NAME = Path(__file__).parent.name
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / RQ_NAME
 P_VALUE_THRESHOLD = 0.05
 
 
@@ -39,8 +37,7 @@ P_VALUE_THRESHOLD = 0.05
 
 def load_data():
     """Load configuration and CSV data for all models."""
-    config_path = Path(__file__).parent.parent / "config.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     script_config = config["rq1"]["scripts"]["concern_count_pairwise_pvalue"]

@@ -14,11 +14,7 @@ import argparse
 from typing import Dict
 
 from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style
-
-# Constants
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-RQ_NAME = Path(__file__).parent.name
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / RQ_NAME
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
 
 MODEL_NAME_MAP = {
     "GPT-4.1": "GPT-4.1",
@@ -32,8 +28,7 @@ METRIC_KEY = "hamming_loss"
 
 def load_config():
     """Load configuration from config.yaml"""
-    config_path = Path(__file__).parent.parent / "config.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 

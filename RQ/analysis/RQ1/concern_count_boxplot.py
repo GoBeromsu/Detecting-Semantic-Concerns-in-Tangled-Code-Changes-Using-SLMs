@@ -14,11 +14,9 @@ from scipy import stats
 from typing import Dict, List, Tuple, Any
 
 from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
 
-# Constants - Use root results directory (from project root)
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-RQ_NAME = Path(__file__).parent.name
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / RQ_NAME
+# Constants
 P_VALUE_THRESHOLD = 0.05
 
 
@@ -97,8 +95,7 @@ def perform_statistical_tests(csv_data: Dict[str, pd.DataFrame]) -> Dict[str, An
 
 def load_config():
     """Load configuration from config.yaml"""
-    config_path = Path(__file__).parent.parent / "config.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
