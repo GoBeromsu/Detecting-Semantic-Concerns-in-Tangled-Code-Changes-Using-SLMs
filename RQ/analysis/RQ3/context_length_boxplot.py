@@ -12,17 +12,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Dict, List, Tuple, Any
 
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
 from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style
-
-# Constants - Use root results directory (from project root)
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ2"
 
 
 def load_config():
     """Load configuration from config.yaml"""
-    config_path = Path(__file__).parent.parent / "config.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
