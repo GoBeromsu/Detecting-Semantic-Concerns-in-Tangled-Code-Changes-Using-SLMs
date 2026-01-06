@@ -3,21 +3,22 @@ Statistical utility functions for RQ analysis.
 
 Provides:
 - vargha_delaney_a: Effect size calculation (Vargha-Delaney Â₁₂)
-- mann_whitney_u: Independent non-parametric significance test
+- wilcoxon_signed_rank: Paired non-parametric significance test
 - detect_outliers_iqr: Outlier detection using IQR method
 - compute_pairwise_stats: Wrapper that computes stats + formatted values
 
 Statistical Test Choice (following Arcuri & Briand 2014):
-- Mann-Whitney U Test is used for pairwise model comparisons because:
-  1. It is the standard non-parametric test for independent samples in SE research
-  2. Pairs naturally with Vargha-Delaney Â₁₂ effect size
-  3. Makes no distributional assumptions about Hamming Loss
+- Wilcoxon Signed-Rank Test is used for pairwise model comparisons because:
+  1. Same commits are evaluated by different models (paired design)
+  2. Tests whether the differences are symmetric around zero
+  3. Pairs naturally with Vargha-Delaney Â₁₂ effect size
+  4. Makes no distributional assumptions about metric values
 """
 
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
-from scipy.stats import rankdata, mannwhitneyu
+from scipy.stats import rankdata, wilcoxon
 
 # Default threshold for outlier detection
 OUTLIER_THRESHOLD_IQR = 1.5
@@ -78,27 +79,37 @@ def vargha_delaney_a(model_a: ArrayLike, model_b: ArrayLike) -> float:
     return float((r1 / n_a - (n_a + 1) / 2) / n_b)
 
 
-def mann_whitney_u(model_a: ArrayLike, model_b: ArrayLike) -> float:
+def wilcoxon_signed_rank(model_a: ArrayLike, model_b: ArrayLike) -> float:
     """
-    Perform Mann-Whitney U test for independent Hamming Loss samples.
+    Perform Wilcoxon signed-rank test for paired samples.
 
-    Non-parametric test for independent samples. Used because:
-    1. Standard test for comparing two groups in SE research (Arcuri & Briand 2014)
-    2. Pairs naturally with Vargha-Delaney Â₁₂ effect size
-    3. Makes no distributional assumptions about Hamming Loss
+    Evaluates whether the performance difference between two models is due to chance.
+
+    Design Rationale:
+    1. Paired Comparison: We compare models on the SAME set of commits.
+       This controls for commit difficulty, label counts, and complexity.
+    2. Two-sided Test: The null hypothesis is that the difference is random (chance).
+       We test if the observed difference is too extreme to be just a coincidence.
+
+    Interpretation:
+    - p-value < 0.05: The performance difference is NOT by chance (Significant).
+    - p-value >= 0.05: The difference could be due to random chance (Not significant).
+
+    Reference:
+        Arcuri, A., & Briand, L. (2014). A Hitchhiker's Guide to Statistical
+        Tests for Assessing Randomized Algorithms in Software Engineering.
 
     Args:
-        model_a: Hamming Loss values from first model
-        model_b: Hamming Loss values from second model
+        model_a: Metric values from first model (must align with model_b by commit)
+        model_b: Metric values from second model (must align with model_a by commit)
 
     Returns:
-        Two-sided p-value. Small p-value (< 0.05) indicates
-        significant difference between models.
+        Two-sided p-value. Small p-value indicates significance (not by chance).
 
     Example:
-        >>> model_a_hl = [0.1, 0.2, 0.15, 0.3]
-        >>> model_b_hl = [0.2, 0.25, 0.2, 0.35]
-        >>> p = mann_whitney_u(model_a_hl, model_b_hl)
+        >>> model_a_hl = [0.1, 0.2, 0.15, 0.3]  # HL for commits 1-4
+        >>> model_b_hl = [0.2, 0.25, 0.2, 0.35]  # HL for same commits 1-4
+        >>> p = wilcoxon_signed_rank(model_a_hl, model_b_hl)
         >>> print(f"p = {p:.3f}")
     """
     model_a = np.asarray(model_a)
@@ -107,11 +118,30 @@ def mann_whitney_u(model_a: ArrayLike, model_b: ArrayLike) -> float:
     if len(model_a) == 0 or len(model_b) == 0:
         return 1.0
 
+    if len(model_a) != len(model_b):
+        raise ValueError("Paired test requires equal-length samples")
+
+    # 1. Compute differences (Paired nature)
+    # We analyze the "difference" per commit, not the raw values.
+    differences = model_a - model_b
+
+    # 2. Remove zero differences (Handling Ties)
+    # Standard practice for Wilcoxon test:
+    # If a pair has difference = 0 (models perform exactly the same),
+    # it provides no information about "direction" of difference.
+    # Therefore, these ties are excluded from the ranking process.
+    non_zero_diff = differences[differences != 0]
+
+    if len(non_zero_diff) == 0:
+        # All differences are zero -> Models are identical
+        # p-value = 1.0 (100% chance they are the same)
+        return 1.0
+
     try:
-        result = mannwhitneyu(model_a, model_b, alternative='two-sided')
+        result = wilcoxon(non_zero_diff, alternative='two-sided')
         return float(result.pvalue)
     except ValueError:
-        # All values are identical
+        # Not enough data points
         return 1.0
 
 
@@ -165,7 +195,7 @@ def compute_pairwise_stats(model_a: ArrayLike, model_b: ArrayLike, sig_threshold
     """
     Compute pairwise statistics with LaTeX-formatted values.
 
-    Uses Mann-Whitney U test for significance and Vargha-Delaney Â₁₂ for effect size,
+    Uses Wilcoxon signed-rank test for significance and Vargha-Delaney Â₁₂ for effect size,
     following SE research best practices (Arcuri & Briand 2014).
 
     Args:
@@ -183,7 +213,7 @@ def compute_pairwise_stats(model_a: ArrayLike, model_b: ArrayLike, sig_threshold
         >>> stats = compute_pairwise_stats(model_a_hl, model_b_hl)
         >>> print(stats["p_value"])  # '$<$ 0.001'
     """
-    p_value = mann_whitney_u(model_a, model_b)
+    p_value = wilcoxon_signed_rank(model_a, model_b)
     effect_size = vargha_delaney_a(model_a, model_b)
 
     return {
