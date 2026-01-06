@@ -3,10 +3,10 @@
 Message Impact Pairwise P-Value Table Generator
 
 Statistical Test Choice (following Arcuri & Briand 2014):
-- Mann-Whitney U Test (independent, non-parametric) is used because:
-  1. Standard test for comparing two groups in SE research
-  2. Pairs naturally with Vargha-Delaney Â₁₂ effect size
-  3. Hamming loss distributions are often non-normal and bounded [0, 1]
+- Wilcoxon Signed-Rank Test (paired, non-parametric) is used because:
+  1. Same commits are evaluated with/without message (paired design)
+  2. Tests whether differences are symmetric around zero
+  3. Pairs naturally with Vargha-Delaney A12 effect size
 
 Effect Size Interpretation (Vargha & Delaney 2000):
 - Vargha-Delaney Â₁₂ = P(X > Y) + 0.5 * P(X = Y)
@@ -67,11 +67,11 @@ def load_data():
 # =============================================================================
 
 def perform_pairwise_tests(csv_data: dict) -> dict:
-    """Perform Mann-Whitney U tests for msg0 vs msg1 for each model."""
+    """Perform Wilcoxon signed-rank tests for msg0 vs msg1 for each model."""
     model_names = list(csv_data.keys())
 
     results = {"by_model": {}, "summary": {
-        "test_method": "Mann-Whitney U Test (two-sided, independent)",
+        "test_method": "Wilcoxon Signed-Rank Test (two-sided, paired)",
         "effect_size_metric": "Vargha-Delaney A12",
         "significance_threshold": P_VALUE_THRESHOLD,
         "models": model_names,
@@ -153,7 +153,7 @@ def main():
         return
 
     # Process
-    print("Performing Mann-Whitney U tests...")
+    print("Performing Wilcoxon signed-rank tests...")
     results = perform_pairwise_tests(csv_data)
 
     # Output
