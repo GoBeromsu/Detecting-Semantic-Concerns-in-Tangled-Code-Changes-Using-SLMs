@@ -1,1 +1,8 @@
 """RQ2: Impact of Commit Message analysis scripts."""
+
+from .. import PROJECT_ROOT, ANALYSIS_OUTPUT_BASE, CONFIG_PATH
+
+RQ_NAME = "RQ2"
+ANALYSIS_OUTPUT_DIR = ANALYSIS_OUTPUT_BASE / RQ_NAME
+
+__all__ = ["PROJECT_ROOT", "ANALYSIS_OUTPUT_DIR", "CONFIG_PATH", "RQ_NAME"]
