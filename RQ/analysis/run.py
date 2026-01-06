@@ -86,9 +86,17 @@ def run_rq(rq_num: int, config: dict, base_dir: Path, project_root: Path) -> boo
         module_name = script_file.replace(".py", "").replace("-", "_")
         full_module = f"RQ.analysis.RQ{rq_num}.{module_name}"
 
+        # Build command with optional csv_files arguments
+        cmd = [sys.executable, "-m", full_module]
+
+        # If script has csv_files in config, pass them as arguments
+        if "csv_files" in script_config:
+            for csv_file in script_config["csv_files"]:
+                cmd.append(str(project_root / csv_file))
+
         try:
             result = subprocess.run(
-                [sys.executable, "-m", full_module],
+                cmd,
                 cwd=project_root,
                 capture_output=False,
             )
