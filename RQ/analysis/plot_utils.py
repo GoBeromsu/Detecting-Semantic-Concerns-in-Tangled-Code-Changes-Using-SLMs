@@ -3,11 +3,14 @@ Plot utilities for RQ analysis.
 
 Provides consistent styling across all visualization scripts:
 - COLORS: Color palette for plots
+- GROUP_COLORS: Colors for multi-category visualizations
 - PLOT_STYLE: Common plot configuration
+- boxplot_style: Function returning boxplot styling configuration
 - setup_plot_style: Matplotlib rcParams setup
 """
 
 import matplotlib.pyplot as plt
+from typing import Optional
 
 # Color palette for consistent styling across all RQ visualizations
 COLORS = {
@@ -19,6 +22,15 @@ COLORS = {
     "text": "#2C3E50",
 }
 
+# Group colors for multi-category visualizations (boxplots, grouped charts)
+GROUP_COLORS = [
+    COLORS["primary"],
+    COLORS["secondary"],
+    COLORS["accent"],
+    COLORS["success"],
+    COLORS["text"],
+]
+
 # Plot styling configuration
 PLOT_STYLE = {
     "figure_size": (10, 6),
@@ -28,6 +40,44 @@ PLOT_STYLE = {
     "alpha": 0.7,
     "grid_alpha": 0.3,
 }
+
+
+def boxplot_style(
+    box_color: Optional[str] = None,
+    widths: float = 0.5,
+) -> dict:
+    """Get boxplot style configuration for matplotlib.
+
+    Args:
+        box_color: Facecolor for boxes and fliers. If None, uses COLORS["primary"].
+        widths: Width of boxes. Default 0.5.
+
+    Returns:
+        Dict ready to be unpacked into ax.boxplot(**style).
+
+    Example:
+        ax.boxplot(data, **boxplot_style())
+        ax.boxplot(data, **boxplot_style(box_color=GROUP_COLORS[i], widths=0.4))
+    """
+    color = box_color or COLORS["primary"]
+
+    return {
+        "patch_artist": True,
+        "widths": widths,
+        "showfliers": True,
+        "whis": 1.5,
+        "boxprops": {"facecolor": color, "alpha": PLOT_STYLE["alpha"]},
+        "medianprops": {"color": COLORS["success"], "linewidth": 2},
+        "whiskerprops": {"color": COLORS["text"], "linewidth": 1},
+        "capprops": {"color": COLORS["text"], "linewidth": 1},
+        "flierprops": {
+            "marker": "o",
+            "markerfacecolor": color,
+            "markersize": 4,
+            "alpha": 0.7,
+            "markeredgecolor": "none",
+        },
+    }
 
 
 def setup_plot_style():
