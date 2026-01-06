@@ -141,7 +141,7 @@ def add_boxplot_legend(ax, loc: str = "lower right") -> None:
             label="Median",
         ),
     ]
-    ax.legend(handles=legend_elements, loc=loc, framealpha=0.9)
+    ax.legend(handles=legend_elements, loc=loc, framealpha=0.9, fontsize=10)
 
 
 def save_json(
