@@ -11,11 +11,8 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
+from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR
 from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style
-
-# Constants
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ANALYSIS_OUTPUT_DIR = PROJECT_ROOT / "results" / "analysis" / "RQ2"
 
 MODEL_NAME_MAP = {"GPT-4.1": "GPT-4.1", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
 
