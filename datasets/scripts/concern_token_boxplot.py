@@ -172,15 +172,9 @@ def create_token_length_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
         ),
     )
 
-    # Set labels and title
+    # Set labels
     ax.set_xlabel("Concern Count", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Input Token Length", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Token Length Distribution by Concern Count",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
 
     # Set x-axis ticks and labels
     ax.set_xticks(concern_counts)

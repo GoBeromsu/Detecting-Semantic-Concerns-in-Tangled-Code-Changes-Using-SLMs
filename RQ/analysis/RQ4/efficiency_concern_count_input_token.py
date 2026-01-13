@@ -64,15 +64,9 @@ def create_boxplot_by_concern_grouped_by_token(
                 **boxplot_style(box_color=group_color, widths=width * 0.8),
             )
 
-    # Set labels and title
+    # Set labels
     ax.set_xlabel("Concern Count", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Inference Time (seconds)", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Inference Time Distribution by Concern Count",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
 
     # Set x-axis ticks and labels
     ax.set_xticks(x_positions + width * (len(unique_tokens) - 1) / 2)
@@ -177,15 +171,9 @@ def create_boxplot_by_token_grouped_by_concern(
                 **boxplot_style(box_color=group_color, widths=width * 0.8),
             )
 
-    # Set labels and title
+    # Set labels
     ax.set_xlabel("Input Token Length", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Inference Time (seconds)", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Inference Time Distribution by Token Length",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
 
     # Set x-axis ticks and labels
     ax.set_xticks(x_positions + width * (len(unique_concerns) - 1) / 2)

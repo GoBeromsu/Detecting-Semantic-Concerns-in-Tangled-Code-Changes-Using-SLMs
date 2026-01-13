@@ -247,15 +247,9 @@ def create_msg_impact_boxplot(csv_data: dict, output_dir: Path) -> Path:
                 ),
             )
 
-    # Set labels and title
+    # Set labels
     ax.set_xlabel("Model", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Hamming Loss", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Impact of Commit Messages on Model Performance",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
 
     # Set x-axis ticks and labels
     ax.set_xticks(x_positions + width)  # Center the labels

@@ -126,15 +126,9 @@ def create_performance_boxplot(
                 markeredgecolor="none",
             )
 
-    # Set labels and title
+    # Set labels
     ax.set_xlabel("Model", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Hamming Loss", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Model Performance Comparison",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
 
     # Set x-axis ticks and labels
     ax.set_xticks(positions)

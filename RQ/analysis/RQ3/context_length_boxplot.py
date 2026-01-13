@@ -152,16 +152,10 @@ def create_context_length_boxplot(
                 ),
             )
 
-    # Set labels and title
+    # Set labels
     metric_label = "Hamming Loss" if metric == "hamming_loss" else "F1 Score"
     ax.set_xlabel("Input Token Length", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel(metric_label, fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        f"{metric_label} Distribution by Context Length and Model",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
 
     # Set x-axis ticks and labels
     ax.set_xticks(x_positions + width)  # Center the labels

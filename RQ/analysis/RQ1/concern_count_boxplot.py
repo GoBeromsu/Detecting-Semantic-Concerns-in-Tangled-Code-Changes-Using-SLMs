@@ -212,15 +212,9 @@ def create_hamming_loss_boxplot(
                 ),
             )
 
-    # Set labels and title
+    # Set labels
     ax.set_xlabel("Concern Count", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Hamming Loss", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Hamming Loss Distribution by Concern Count and Model",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
 
     # Set x-axis ticks and labels
     ax.set_xticks(x_positions + width)  # Center the labels

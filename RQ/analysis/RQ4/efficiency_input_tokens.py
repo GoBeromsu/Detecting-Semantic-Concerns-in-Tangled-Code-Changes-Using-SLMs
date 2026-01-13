@@ -37,12 +37,6 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
 
     ax.set_xlabel("Input Token Length", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Inference Time (seconds)", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Inference Time: Distribution & Correlation with Input Tokens",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
 
     # Set x-axis ticks and labels
     ax.set_xticks(context_lengths)

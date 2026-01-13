@@ -74,12 +74,6 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
 
     ax.set_xlabel("Commit Message Presence", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Inference Time (seconds)", fontweight="bold", color=COLORS["text"])
-    ax.set_title(
-        "Inference Time: Distribution & Correlation with Commit Message",
-        fontweight="bold",
-        color=COLORS["text"],
-        pad=20,
-    )
 
     # Add statistical information using utility function
     # Convert boolean to int for correlation calculation
