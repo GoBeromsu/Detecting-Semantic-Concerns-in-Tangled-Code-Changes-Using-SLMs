@@ -101,6 +101,8 @@ def setup_plot_style():
     plt.style.use("default")
     plt.rcParams.update(
         {
+            "font.family": "serif",
+            "font.serif": ["Times New Roman"],
             "font.size": 15,
             "axes.titlesize": 18,
             "axes.labelsize": 16,
