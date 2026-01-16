@@ -1,31 +1,30 @@
 """
 Utility functions for RQ4 efficiency analysis.
 
-Common functions shared across efficiency analysis scripts:
-- load_efficiency_csv: Load CSV with column validation and outlier detection
-- save_efficiency_json: Save analysis results as JSON with standard structure
+Provides shared functionality for efficiency analysis scripts:
+- load_csv: Load CSV with column validation and outlier detection
+- save_json: Save analysis results as JSON
 - add_correlation_text: Add correlation stats text to plot
 - add_boxplot_legend: Add standard legend to boxplot
 """
 
 import json
-import pandas as pd
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Tuple
+
+import pandas as pd
 from scipy import stats
 
-from ..stats_utils import detect_outliers_iqr
 from ..plot_utils import COLORS, PLOT_STYLE
+from ..stats_utils import detect_outliers_iqr
 
-# Constants
 P_VALUE_THRESHOLD = 0.05
 
 
 def load_csv(
-    csv_paths: List[Path],
-    required_cols: List[str],
-) -> Tuple[pd.DataFrame, dict]:
+    csv_paths: list[Path],
+    required_cols: list[str],
+) -> tuple[pd.DataFrame, dict]:
     """Load CSV files with column validation and outlier detection.
 
     Args:
@@ -52,7 +51,6 @@ def load_csv(
 
     combined_df = pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
 
-    # Detect outliers on inference_time
     _, outlier_info = detect_outliers_iqr(combined_df["inference_time"])
     print(f"Detected {outlier_info['count']} outliers (shown in boxplot, not removed)")
 
@@ -61,7 +59,7 @@ def load_csv(
 
 def pearson_correlation(
     df: pd.DataFrame, x_col: str, y_col: str = "inference_time"
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Calculate Pearson correlation between two columns.
 
     Args:
@@ -77,28 +75,18 @@ def pearson_correlation(
     return stats.pearsonr(df[x_col], df[y_col])
 
 
-def significance_stars(p_value: float) -> str:
-    """Get significance stars for p-value."""
-    if p_value < 0.001:
-        return "***"
-    elif p_value < 0.01:
-        return "**"
-    elif p_value < P_VALUE_THRESHOLD:
-        return "*"
-    return ""
-
-
-def add_correlation_text(ax, correlation: float, p_value: float, n: int) -> None:
+def add_correlation_text(
+    ax, correlation: float, _p_value: float, _n: int
+) -> None:
     """Add correlation statistics text box to plot.
 
     Args:
         ax: Matplotlib axes
         correlation: Pearson correlation coefficient
-        p_value: P-value from correlation test
-        n: Sample size
+        _p_value: P-value (reserved for future use)
+        _n: Sample size (reserved for future use)
     """
-    stars = significance_stars(p_value)
-    stats_text = f"Pearson r = {correlation:.3f} {stars}\np = {p_value:.4f}\nn = {n}"
+    stats_text = f"Pearson r = {correlation:.3f}"
 
     ax.text(
         0.02,
@@ -147,13 +135,13 @@ def add_boxplot_legend(ax, loc: str = "lower right") -> None:
 def save_json(
     output_path: Path,
     analysis_type: str,
-    input_files: List[str],
+    input_files: list[str],
     correlation: float,
     p_value: float,
     outlier_info: dict,
     inference_time_stats: dict,
     sample_size: int,
-    extra_data: dict = None,
+    extra_data: dict | None = None,
 ) -> Path:
     """Save efficiency analysis results as JSON.
 
