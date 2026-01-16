@@ -203,7 +203,8 @@ def create_msg_impact_boxplot(csv_data: dict, output_dir: Path) -> Path:
     width = 0.25  # Width of each box
     x_positions = np.arange(len(model_names))
 
-    # Create box plots for each condition with sequential model styling
+    # Create box plots for each condition with sequential condition styling
+    # Color distinguishes condition (Without/With Msg), x-axis distinguishes models
     for i, condition in enumerate(conditions):
         for j, model_name in enumerate(model_names):
             if (
@@ -213,8 +214,8 @@ def create_msg_impact_boxplot(csv_data: dict, output_dir: Path) -> Path:
             ):
                 data = [plot_data[condition][model_name]]
                 pos = [x_positions[j] + i * width]
-                # Sequential styling by model index
-                color, hatch = get_style_by_index(j)
+                # Sequential styling by condition index (message presence)
+                color, hatch = get_style_by_index(i)
 
                 boxprops = dict(
                     facecolor=color,
@@ -257,8 +258,9 @@ def create_msg_impact_boxplot(csv_data: dict, output_dir: Path) -> Path:
     ax.set_xticks(x_positions + width / 2)  # Center the labels
     ax.set_xticklabels([display_model_name(n) for n in model_names])
 
-    # Add legend for models with sequential colors and hatches
-    legend_patches, legend_kwargs = create_legend_patches(model_names)
+    # Add legend for conditions (Without/With Msg) with sequential colors and hatches
+    condition_labels = ["Without Msg", "With Msg"]
+    legend_patches, legend_kwargs = create_legend_patches(condition_labels, use_display_names=False)
     ax.legend(handles=legend_patches, **legend_kwargs)
 
     # Clean grid styling
