@@ -5,15 +5,13 @@ Analyzes performance metrics from CSV experiment results and generates summary t
 """
 
 import pandas as pd
-import json
-import numpy as np
 import yaml
 import matplotlib.pyplot as plt
 from pathlib import Path
 import argparse
 from typing import Dict
 
-from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name
+from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name, get_style_by_index
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
 
 MODEL_NAME_MAP = {
@@ -78,22 +76,22 @@ def create_performance_boxplot(
     # Prepare data for plotting
     model_names = list(csv_data.keys())
 
-    # Define colors for each model (matching msg_impact colors)
-    model_colors = [COLORS["primary"], COLORS["secondary"], COLORS["accent"]]
-
     # Create figure
     fig, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
 
-    # Prepare box plot data
+    # Prepare box plot data with sequential styling
     box_data = []
     positions = []
     colors_list = []
+    hatches_list = []
 
     for i, model_name in enumerate(model_names):
         if model_name in csv_data and len(csv_data[model_name]) > 0:
             box_data.append(csv_data[model_name]["hamming_loss"].tolist())
             positions.append(i)
-            colors_list.append(model_colors[i % len(model_colors)])
+            color, hatch = get_style_by_index(i)
+            colors_list.append(color)
+            hatches_list.append(hatch)
 
     # Create box plot
     if box_data:
@@ -104,7 +102,7 @@ def create_performance_boxplot(
             patch_artist=True,
             showfliers=True,  # Show outliers (points beyond 1.5*IQR)
             whis=1.5,  # Standard whisker length (1.5 * IQR)
-            boxprops=dict(alpha=PLOT_STYLE["alpha"]),
+            boxprops=dict(alpha=PLOT_STYLE["alpha"], edgecolor=COLORS["text"], linewidth=1.5),
             medianprops=dict(
                 color=COLORS["success"], linewidth=PLOT_STYLE["line_width"]
             ),
@@ -112,9 +110,11 @@ def create_performance_boxplot(
             capprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
         )
 
-        # Color each box with its corresponding model color
-        for patch, color in zip(bp["boxes"], colors_list):
+        # Color each box with its corresponding model color and hatch pattern
+        for patch, color, hatch in zip(bp["boxes"], colors_list, hatches_list):
             patch.set_facecolor(color)
+            if hatch:
+                patch.set_hatch(hatch)
 
         # Set flier properties for each model's color
         for flier, color in zip(bp["fliers"], colors_list):

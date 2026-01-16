@@ -123,7 +123,7 @@ Analyzes how factors influence inference latency:
 
 - **GPT-4.1**: OpenAI API baseline (zero-shot)
 - **Qwen3-14B**: Base SLM for comparison
-- **Qwen3-14B-LoRA**: Fine-tuned SLM with LoRA (rank=64, alpha=128)
+- **Qwen3-14B-LoRA**: Fine-tuned SLM with LoRA (rank=32, alpha=48)
 
 ### Dataset
 
@@ -158,6 +158,8 @@ Extended result tables from the paper are available in the `supplementary/` dire
 | Without Msg | 0.11 | 0.28 | 0.25 |
 | With Msg | 0.09 | 0.25 | 0.14 |
 | Delta | 0.02 | 0.03 | 0.11 |
+
+> **Note**: For Qwen3-FT, commit message inclusion reduces Hamming Loss by 44% ((0.25 - 0.14) / 0.25 = 0.44).
 
 ### Mean Hamming Loss by Input Token Length (RQ3)
 

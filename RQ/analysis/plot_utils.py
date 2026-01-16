@@ -47,6 +47,15 @@ GROUP_COLORS = [
     COLORS["text"],
 ]
 
+# Hatch patterns for colorblind accessibility (distinguishable in grayscale)
+HATCH_PATTERNS = [
+    "",      # Solid (no hatch) - GPT-4.1
+    "///",   # Dense diagonal - Qwen3
+    "xxx",   # Dense cross - Qwen3-FT
+    "|||",   # Vertical lines
+    "...",   # Dots
+]
+
 # Plot styling configuration
 PLOT_STYLE = {
     "figure_size": (10, 6),
@@ -61,12 +70,14 @@ PLOT_STYLE = {
 def boxplot_style(
     box_color: Optional[str] = None,
     widths: float = 0.5,
+    hatch: Optional[str] = None,
 ) -> dict:
     """Get boxplot style configuration for matplotlib.
 
     Args:
         box_color: Facecolor for boxes and fliers. If None, uses COLORS["primary"].
         widths: Width of boxes. Default 0.5.
+        hatch: Hatch pattern for boxes (e.g., '//', '\\\\', 'xx'). Default None.
 
     Returns:
         Dict ready to be unpacked into ax.boxplot(**style).
@@ -74,15 +85,25 @@ def boxplot_style(
     Example:
         ax.boxplot(data, **boxplot_style())
         ax.boxplot(data, **boxplot_style(box_color=GROUP_COLORS[i], widths=0.4))
+        ax.boxplot(data, **boxplot_style(box_color=GROUP_COLORS[i], hatch=HATCH_PATTERNS[i]))
     """
     color = box_color or COLORS["primary"]
+
+    boxprops = {
+        "facecolor": color,
+        "alpha": PLOT_STYLE["alpha"],
+        "edgecolor": COLORS["text"],
+        "linewidth": 1.5,
+    }
+    if hatch:
+        boxprops["hatch"] = hatch
 
     return {
         "patch_artist": True,
         "widths": widths,
         "showfliers": True,
         "whis": 1.5,
-        "boxprops": {"facecolor": color, "alpha": PLOT_STYLE["alpha"]},
+        "boxprops": boxprops,
         "medianprops": {"color": COLORS["success"], "linewidth": 2},
         "whiskerprops": {"color": COLORS["text"], "linewidth": 1},
         "capprops": {"color": COLORS["text"], "linewidth": 1},
@@ -116,3 +137,91 @@ def setup_plot_style():
             "axes.grid": True,
         }
     )
+
+
+# =============================================================================
+# Sequential Style Helpers (colorblind-friendly, order-based assignment)
+# =============================================================================
+
+
+def get_style_by_index(index: int) -> tuple[str, str]:
+    """Get (color, hatch) tuple by sequential index.
+
+    Ensures consistent colorblind-friendly styling across all visualizations.
+    First item = primary + solid, second = secondary + ///, etc.
+
+    Args:
+        index: Zero-based index for the data series.
+
+    Returns:
+        Tuple of (color_hex, hatch_pattern).
+
+    Example:
+        color, hatch = get_style_by_index(0)  # ('#2E86AB', '')
+        color, hatch = get_style_by_index(1)  # ('#A23B72', '///')
+    """
+    return GROUP_COLORS[index % len(GROUP_COLORS)], HATCH_PATTERNS[index % len(HATCH_PATTERNS)]
+
+
+def get_color_palette(n: int = 3) -> list[str]:
+    """Get color palette for n data series.
+
+    Args:
+        n: Number of colors needed.
+
+    Returns:
+        List of color hex codes.
+    """
+    return GROUP_COLORS[:n]
+
+
+def get_hatch_palette(n: int = 3) -> list[str]:
+    """Get hatch pattern palette for n data series.
+
+    Args:
+        n: Number of patterns needed.
+
+    Returns:
+        List of hatch pattern strings.
+    """
+    return HATCH_PATTERNS[:n]
+
+
+def create_legend_patches(
+    labels: list[str],
+    loc: str = "upper right",
+    use_display_names: bool = True,
+) -> tuple[list, dict]:
+    """Create legend patches with sequential colors and hatches.
+
+    Args:
+        labels: List of labels for legend entries.
+        loc: Legend location (default: "upper right").
+        use_display_names: Whether to apply display_model_name() to labels.
+
+    Returns:
+        Tuple of (legend_elements, legend_kwargs) for ax.legend().
+
+    Example:
+        patches, kwargs = create_legend_patches(["GPT-4.1", "Qwen", "QwenFT"])
+        ax.legend(handles=patches, **kwargs)
+    """
+    from matplotlib.patches import Patch
+
+    n = len(labels)
+    colors = get_color_palette(n)
+    hatches = get_hatch_palette(n)
+
+    patches = [
+        Patch(
+            facecolor=colors[i],
+            alpha=PLOT_STYLE["alpha"],
+            edgecolor=COLORS["text"],
+            linewidth=1.5,
+            hatch=hatches[i] if hatches[i] else None,
+            label=display_model_name(labels[i]) if use_display_names else labels[i],
+        )
+        for i in range(n)
+    ]
+
+    return patches, {"loc": loc, "framealpha": 0.9}

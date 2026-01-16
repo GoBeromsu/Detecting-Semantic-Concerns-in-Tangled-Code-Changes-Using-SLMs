@@ -10,87 +10,10 @@ from pathlib import Path
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
-from typing import Dict, List, Tuple, Any
+from typing import Dict
 
-from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name
+from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, get_style_by_index, create_legend_patches
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
-
-# Constants
-P_VALUE_THRESHOLD = 0.05
-
-
-def perform_statistical_tests(csv_data: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
-    """Perform comprehensive statistical tests on hamming loss data."""
-    results = {"anova": {}, "pairwise": {}, "descriptive": {}}
-
-    # Prepare data for ANOVA
-    all_data = []
-    for model_name, df in csv_data.items():
-        for concern_count in [1, 2, 3, 4, 5]:
-            concern_data = df[df["concern_count"] == concern_count]["hamming_loss"]
-            for value in concern_data:
-                all_data.append(
-                    {
-                        "model": model_name,
-                        "concern_count": concern_count,
-                        "hamming_loss": value,
-                    }
-                )
-
-    analysis_df = pd.DataFrame(all_data)
-
-    # ANOVA for each concern count
-    for concern_count in [1, 2, 3, 4, 5]:
-        concern_data = analysis_df[analysis_df["concern_count"] == concern_count]
-        groups = [
-            concern_data[concern_data["model"] == model]["hamming_loss"].values
-            for model in concern_data["model"].unique()
-        ]
-
-        try:
-            f_stat, p_value = stats.f_oneway(*groups)
-            results["anova"][concern_count] = {
-                "f_statistic": float(f_stat),
-                "p_value": float(p_value),
-                "significant": p_value < P_VALUE_THRESHOLD,
-            }
-        except Exception as e:
-            results["anova"][concern_count] = {"error": str(e)}
-
-    # Model-wise correlation with concern count
-    for model_name, df in csv_data.items():
-        try:
-            correlation, p_value = stats.pearsonr(
-                df["concern_count"], df["hamming_loss"]
-            )
-            results["pairwise"][model_name] = {
-                "correlation": float(correlation),
-                "p_value": float(p_value),
-                "significant": p_value < P_VALUE_THRESHOLD,
-            }
-        except Exception as e:
-            results["pairwise"][model_name] = {"error": str(e)}
-
-    # Descriptive statistics
-    for model_name, df in csv_data.items():
-        model_stats = {}
-        for concern_count in [1, 2, 3, 4, 5]:
-            concern_data = df[df["concern_count"] == concern_count]["hamming_loss"]
-            if len(concern_data) > 0:
-                model_stats[concern_count] = {
-                    "count": len(concern_data),
-                    "mean": float(concern_data.mean()),
-                    "std": float(concern_data.std()),
-                    "median": float(concern_data.median()),
-                    "q25": float(concern_data.quantile(0.25)),
-                    "q75": float(concern_data.quantile(0.75)),
-                    "min": float(concern_data.min()),
-                    "max": float(concern_data.max()),
-                }
-        results["descriptive"][model_name] = model_stats
-
-    return results
 
 
 def load_config():
@@ -161,14 +84,11 @@ def create_hamming_loss_boxplot(
     # Create figure
     fig, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
 
-    # Define colors for each model
-    model_colors = [COLORS["primary"], COLORS["secondary"], COLORS["accent"]]
-
     # Calculate positions for grouped box plots
     width = 0.25  # Width of each box
     x_positions = np.arange(len(concern_counts))
 
-    # Create box plots for each model
+    # Create box plots for each model with sequential styling
     for i, model_name in enumerate(model_names):
         model_data = []
         positions = []
@@ -185,6 +105,17 @@ def create_hamming_loss_boxplot(
 
         # Create box plot for this model following standard boxplot definition
         if model_data and positions:
+            color, hatch = get_style_by_index(i)
+
+            boxprops = dict(
+                facecolor=color,
+                alpha=PLOT_STYLE["alpha"],
+                edgecolor=COLORS["text"],
+                linewidth=1.5,
+            )
+            if hatch:
+                boxprops["hatch"] = hatch
+
             ax.boxplot(
                 model_data,
                 positions=positions,
@@ -192,10 +123,7 @@ def create_hamming_loss_boxplot(
                 patch_artist=True,
                 showfliers=True,  # Show outliers (points beyond 1.5*IQR)
                 whis=1.5,  # Standard whisker length (1.5 * IQR)
-                boxprops=dict(
-                    facecolor=model_colors[i % len(model_colors)],
-                    alpha=PLOT_STYLE["alpha"],
-                ),
+                boxprops=boxprops,
                 medianprops=dict(
                     color=COLORS["success"], linewidth=PLOT_STYLE["line_width"]
                 ),
@@ -205,7 +133,7 @@ def create_hamming_loss_boxplot(
                 capprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
                 flierprops=dict(
                     marker="o",
-                    markerfacecolor=model_colors[i % len(model_colors)],
+                    markerfacecolor=color,
                     markersize=4,
                     alpha=0.7,
                     markeredgecolor="none",
@@ -220,18 +148,9 @@ def create_hamming_loss_boxplot(
     ax.set_xticks(x_positions + width)  # Center the labels
     ax.set_xticklabels(concern_counts)
 
-    # Add legend for models
-    from matplotlib.patches import Patch
-
-    legend_elements = [
-        Patch(
-            facecolor=model_colors[i % len(model_colors)],
-            alpha=PLOT_STYLE["alpha"],
-            label=display_model_name(model_name),
-        )
-        for i, model_name in enumerate(model_names)
-    ]
-    ax.legend(handles=legend_elements, loc="upper right", framealpha=0.9)
+    # Add legend for models with sequential colors and hatches
+    legend_patches, legend_kwargs = create_legend_patches(model_names)
+    ax.legend(handles=legend_patches, **legend_kwargs)
 
     # Clean grid styling
     ax.grid(True, alpha=PLOT_STYLE["grid_alpha"], linestyle="-", linewidth=0.5)
@@ -275,18 +194,10 @@ def main():
         description="Generate hamming loss box plot from CSV experiment results"
     )
     parser.add_argument("--output-dir", type=str, help="Output directory")
-    parser.add_argument(
-        "--use-config",
-        action="store_true",
-        default=True,
-        help="Use config.yaml for model configuration",
-    )
-
     args = parser.parse_args()
 
     # Load configuration
     config = load_config()
-    script_config = config["rq1"]["scripts"]["concern_count_boxplot"]
 
     # Set output directory
     if args.output_dir:
