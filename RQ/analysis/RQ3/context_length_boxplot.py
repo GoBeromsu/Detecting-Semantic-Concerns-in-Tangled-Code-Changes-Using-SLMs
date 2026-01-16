@@ -10,10 +10,9 @@ from pathlib import Path
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Dict, List, Tuple, Any
 
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
-from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name
+from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name, get_style_by_index, create_legend_patches
 
 
 def load_config():
@@ -101,14 +100,11 @@ def create_context_length_boxplot(
     # Create figure
     fig, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
 
-    # Define colors for each model
-    model_colors = [COLORS["primary"], COLORS["secondary"], COLORS["accent"]]
-
     # Calculate positions for grouped box plots
     width = 0.25  # Width of each box
     x_positions = np.arange(len(context_lengths))
 
-    # Create box plots for each model
+    # Create box plots for each model with sequential styling
     for i, model_name in enumerate(model_names):
         model_data = []
         positions = []
@@ -125,6 +121,17 @@ def create_context_length_boxplot(
 
         # Create box plot for this model following standard boxplot definition
         if model_data and positions:
+            color, hatch = get_style_by_index(i)
+
+            boxprops = dict(
+                facecolor=color,
+                alpha=PLOT_STYLE["alpha"],
+                edgecolor=COLORS["text"],
+                linewidth=1.5,
+            )
+            if hatch:
+                boxprops["hatch"] = hatch
+
             ax.boxplot(
                 model_data,
                 positions=positions,
@@ -132,10 +139,7 @@ def create_context_length_boxplot(
                 patch_artist=True,
                 showfliers=True,  # Show outliers (points beyond 1.5*IQR)
                 whis=1.5,  # Standard whisker length (1.5 * IQR)
-                boxprops=dict(
-                    facecolor=model_colors[i % len(model_colors)],
-                    alpha=PLOT_STYLE["alpha"],
-                ),
+                boxprops=boxprops,
                 medianprops=dict(
                     color=COLORS["success"], linewidth=PLOT_STYLE["line_width"]
                 ),
@@ -145,7 +149,7 @@ def create_context_length_boxplot(
                 capprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
                 flierprops=dict(
                     marker="o",
-                    markerfacecolor=model_colors[i % len(model_colors)],
+                    markerfacecolor=color,
                     markersize=4,
                     alpha=0.7,
                     markeredgecolor="none",
@@ -161,18 +165,9 @@ def create_context_length_boxplot(
     ax.set_xticks(x_positions + width)  # Center the labels
     ax.set_xticklabels(context_lengths)
 
-    # Add legend for models
-    from matplotlib.patches import Patch
-
-    legend_elements = [
-        Patch(
-            facecolor=model_colors[i % len(model_colors)],
-            alpha=PLOT_STYLE["alpha"],
-            label=display_model_name(model_name),
-        )
-        for i, model_name in enumerate(model_names)
-    ]
-    ax.legend(handles=legend_elements, loc="upper right", framealpha=0.9)
+    # Add legend for models with sequential colors and hatches
+    legend_patches, legend_kwargs = create_legend_patches(model_names)
+    ax.legend(handles=legend_patches, **legend_kwargs)
 
     # Clean grid styling
     ax.grid(True, alpha=PLOT_STYLE["grid_alpha"], linestyle="-", linewidth=0.5)

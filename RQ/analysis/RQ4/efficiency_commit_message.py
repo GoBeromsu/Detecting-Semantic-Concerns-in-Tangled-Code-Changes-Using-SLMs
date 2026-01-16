@@ -8,10 +8,10 @@ Processes raw CSV data for detailed box plot analysis and group comparison.
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import List, Dict, Any
 import argparse
+from typing import Dict, Any
 
-from ..plot_utils import COLORS, PLOT_STYLE, boxplot_style, setup_plot_style
+from ..plot_utils import COLORS, PLOT_STYLE, boxplot_style, setup_plot_style, get_color_palette, get_hatch_palette
 from .utils import (
     load_csv,
     pearson_correlation,
@@ -56,15 +56,21 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
 
     box_data = [without_msg_data, with_msg_data]
     labels = ["Without Message", "With Message"]
-    box_colors = [COLORS["secondary"], COLORS["primary"]]
+    # Sequential styling for 2 groups
+    box_colors = get_color_palette(2)
+    box_hatches = get_hatch_palette(2)
 
     # Create box plot with adjusted width and positions
     positions = [0, 1]
     box_plot = ax.boxplot(box_data, positions=positions, **boxplot_style(widths=0.4))
 
-    # Override box and flier colors for each group
-    for patch, flier, color in zip(box_plot["boxes"], box_plot["fliers"], box_colors):
+    # Override box and flier colors and hatches for each group (colorblind-friendly)
+    for patch, flier, color, hatch in zip(box_plot["boxes"], box_plot["fliers"], box_colors, box_hatches):
         patch.set_facecolor(color)
+        patch.set_edgecolor(COLORS["text"])
+        patch.set_linewidth(1.5)
+        if hatch:
+            patch.set_hatch(hatch)
         flier.set_markerfacecolor(color)
 
     # Set custom x-axis labels and ticks
@@ -81,21 +87,21 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
     correlation, p_value = pearson_correlation(df_numeric, "with_message_int")
     add_correlation_text(ax, correlation, p_value, len(df))
 
-    # Add legend for box plot components
+    # Add legend for box plot components with sequential styling
     from matplotlib.patches import Patch
     from matplotlib.lines import Line2D
 
     legend_elements = [
         Patch(
-            facecolor=COLORS["secondary"],
+            facecolor=box_colors[i],
             alpha=PLOT_STYLE["alpha"],
-            label="Without Message",
-        ),
-        Patch(
-            facecolor=COLORS["primary"],
-            alpha=PLOT_STYLE["alpha"],
-            label="With Message",
-        ),
+            edgecolor=COLORS["text"],
+            linewidth=1.5,
+            hatch=box_hatches[i] if box_hatches[i] else None,
+            label=labels[i],
+        )
+        for i in range(len(labels))
+    ] + [
         Line2D(
             [0],
             [0],

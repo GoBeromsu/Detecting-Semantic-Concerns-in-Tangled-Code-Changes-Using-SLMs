@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR
-from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name
+from ..plot_utils import COLORS, PLOT_STYLE, setup_plot_style, display_model_name, get_style_by_index, create_legend_patches
 
 MODEL_NAME_MAP = {"GPT-4.1": "GPT-4.1", "Qwen": "Qwen", "Qwen (FT)": "QwenFT"}
 
@@ -199,70 +199,67 @@ def create_msg_impact_boxplot(csv_data: dict, output_dir: Path) -> Path:
     # Create figure
     fig, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
 
-    # Define colors for each condition
-    condition_colors = [COLORS["secondary"], COLORS["primary"]]
-
     # Calculate positions for grouped box plots
     width = 0.25  # Width of each box
     x_positions = np.arange(len(model_names))
 
-    # Create box plots for each condition
+    # Create box plots for each condition with sequential model styling
     for i, condition in enumerate(conditions):
-        condition_data = []
-        positions = []
-
         for j, model_name in enumerate(model_names):
             if (
                 condition in plot_data
                 and model_name in plot_data[condition]
                 and len(plot_data[condition][model_name]) > 0
             ):
+                data = [plot_data[condition][model_name]]
+                pos = [x_positions[j] + i * width]
+                # Sequential styling by model index
+                color, hatch = get_style_by_index(j)
 
-                condition_data.append(plot_data[condition][model_name])
-                positions.append(x_positions[j] + i * width)
+                boxprops = dict(
+                    facecolor=color,
+                    alpha=PLOT_STYLE["alpha"],
+                    edgecolor=COLORS["text"],
+                    linewidth=1.5,
+                )
+                if hatch:
+                    boxprops["hatch"] = hatch
 
-        # Create box plot for this condition following standard boxplot definition
-        if condition_data and positions:
-            ax.boxplot(
-                condition_data,
-                positions=positions,
-                widths=width * 0.8,
-                patch_artist=True,
-                showfliers=True,  # Show outliers (points beyond 1.5*IQR)
-                whis=1.5,  # Standard whisker length (1.5 * IQR)
-                boxprops=dict(facecolor=condition_colors[i], alpha=PLOT_STYLE["alpha"]),
-                medianprops=dict(
-                    color=COLORS["success"], linewidth=PLOT_STYLE["line_width"]
-                ),
-                whiskerprops=dict(
-                    color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]
-                ),
-                capprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
-                flierprops=dict(
-                    marker="o",
-                    markerfacecolor=condition_colors[i],
-                    markersize=4,
-                    alpha=0.7,
-                    markeredgecolor="none",
-                ),
-            )
+                ax.boxplot(
+                    data,
+                    positions=pos,
+                    widths=width * 0.8,
+                    patch_artist=True,
+                    showfliers=True,
+                    whis=1.5,
+                    boxprops=boxprops,
+                    medianprops=dict(
+                        color=COLORS["success"], linewidth=PLOT_STYLE["line_width"]
+                    ),
+                    whiskerprops=dict(
+                        color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]
+                    ),
+                    capprops=dict(color=COLORS["text"], linewidth=PLOT_STYLE["line_width"]),
+                    flierprops=dict(
+                        marker="o",
+                        markerfacecolor=color,
+                        markersize=4,
+                        alpha=0.7,
+                        markeredgecolor="none",
+                    ),
+                )
 
     # Set labels
     ax.set_xlabel("Model", fontweight="bold", color=COLORS["text"])
     ax.set_ylabel("Hamming Loss", fontweight="bold", color=COLORS["text"])
 
     # Set x-axis ticks and labels
-    ax.set_xticks(x_positions + width)  # Center the labels
+    ax.set_xticks(x_positions + width / 2)  # Center the labels
     ax.set_xticklabels([display_model_name(n) for n in model_names])
 
-    # Add legend for conditions
-    from matplotlib.patches import Patch
-
-    legend_elements = [
-        Patch(facecolor=condition_colors[i], alpha=PLOT_STYLE["alpha"], label=condition)
-        for i, condition in enumerate(conditions)
-    ]
-    ax.legend(handles=legend_elements, loc="upper right", framealpha=0.9)
+    # Add legend for models with sequential colors and hatches
+    legend_patches, legend_kwargs = create_legend_patches(model_names)
+    ax.legend(handles=legend_patches, **legend_kwargs)
 
     # Clean grid styling
     ax.grid(True, alpha=PLOT_STYLE["grid_alpha"], linestyle="-", linewidth=0.5)

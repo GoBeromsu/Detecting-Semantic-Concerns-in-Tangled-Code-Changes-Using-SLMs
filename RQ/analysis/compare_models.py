@@ -12,6 +12,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_BASE
+from .plot_utils import COLORS
 
 # Constants
 RESULTS_DIR: Path = PROJECT_ROOT / "RQ" / "results"  # Model results are in RQ/results/
@@ -78,7 +79,8 @@ def create_scatter_plot(comparison_data: pd.DataFrame, metric_name: str, output_
     slm_values_col = f"{metric_name}_SLM"
     llm_values_col = f"{metric_name}_LLM"
 
-    relation_colors = {"LLM>SLM": "#2ca02c", "Equal": "#7f7f7f", "SLM>LLM": "#ff7f0e"}
+    # Colorblind-safe colors from plot_utils
+    relation_colors = {"LLM>SLM": COLORS["primary"], "Equal": "#A0A0A0", "SLM>LLM": COLORS["accent"]}
     point_colors = comparison_data[f"relation_{metric_name}"].map(relation_colors)
 
     fig, ax = plt.subplots(figsize=(6, 5))
@@ -106,7 +108,8 @@ def create_scatter_plot(comparison_data: pd.DataFrame, metric_name: str, output_
 def create_comparison_bar_chart(comparison_data: pd.DataFrame, metric_name: str, output_dir: Path) -> Path:
     relation_values = comparison_data[f"relation_{metric_name}"].astype(str).copy()
     comparison_categories: List[str] = list(RELATION_VALUES)
-    bar_colors = ["#1f77b4", "#7f7f7f", "#ff7f0e"]
+    # Colorblind-safe colors from plot_utils
+    bar_colors = [COLORS["primary"], "#A0A0A0", COLORS["accent"]]
 
     category_counts = relation_values.value_counts().reindex(comparison_categories, fill_value=0).reset_index()
     category_counts.columns = ["comparison_type", "count"]
@@ -150,7 +153,8 @@ def create_accuracy_breakdown_chart(comparison_data: pd.DataFrame, metric_name: 
         only_slm_correct.sum(),
         both_models_wrong.sum()
     ]
-    category_colors = ["#2ca02c", "#1f77b4", "#ff7f0e", "#d62728"]
+    # Colorblind-safe colors from plot_utils
+    category_colors = [COLORS["primary"], COLORS["secondary"], COLORS["accent"], COLORS["success"]]
     
     fig, ax = plt.subplots(figsize=(6, 4))
     accuracy_bars = ax.bar(accuracy_categories, category_counts, color=category_colors)
