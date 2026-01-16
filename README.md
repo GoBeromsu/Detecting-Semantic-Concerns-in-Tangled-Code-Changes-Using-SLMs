@@ -137,6 +137,38 @@ Analyzes how factors influence inference latency:
 - **`prompt.py`**: Prompt templates for zero-shot and few-shot learning
 - **`llms/`**: Unified API connectors for OpenAI, HuggingFace, and LM Studio
 
+## Supplementary Materials
+
+Extended result tables from the paper are available in the `supplementary/` directory.
+
+### Mean Hamming Loss by Concern Count (RQ1)
+
+| Count | GPT-4.1 | Qwen3 | Qwen3-FT |
+|-------|---------|-------|----------|
+| 1 | 0.07 | 0.11 | 0.04 |
+| 2 | 0.09 | 0.23 | 0.13 |
+| 3 | 0.09 | 0.33 | 0.15 |
+| 4 | 0.10 | 0.33 | 0.20 |
+| 5 | 0.12 | 0.27 | 0.17 |
+
+### Mean Hamming Loss by Commit Message Inclusion (RQ2)
+
+| Condition | GPT-4.1 | Qwen3 | Qwen3-FT |
+|-----------|---------|-------|----------|
+| Without Msg | 0.11 | 0.28 | 0.25 |
+| With Msg | 0.09 | 0.25 | 0.14 |
+| Delta | 0.02 | 0.03 | 0.11 |
+
+### Mean Hamming Loss by Input Token Length (RQ3)
+
+| Token Length | GPT-4.1 | Qwen3 | Qwen3-FT |
+|--------------|---------|-------|----------|
+| 1024 | 0.10 | 0.26 | 0.15 |
+| 2048 | 0.10 | 0.26 | 0.15 |
+| 4096 | 0.10 | 0.25 | 0.15 |
+| 8192 | 0.10 | 0.25 | 0.14 |
+| 12288 | 0.09 | 0.26 | 0.14 |
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
