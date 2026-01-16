@@ -127,8 +127,8 @@ Analyzes how factors influence inference latency:
 
 ### Dataset
 
-- **Train**: `tangled_ccs_dataset_train.csv` (70% split)
-- **Test**: `tangled_ccs_dataset_test.csv` (30% split)
+- **Train**: `tangled_ccs_dataset_train.csv` (80% split)
+- **Test**: `tangled_ccs_dataset_test.csv` (20% split)
 - Based on Conventional Commits Specification (CCS)
 
 ### Utilities
