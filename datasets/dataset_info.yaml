@@ -13,6 +13,8 @@ configs:
         dtype: string
       - name: types
         dtype: string
+      - name: repo
+        dtype: string
 
   - config_name: test
     data_files:
@@ -28,11 +30,15 @@ configs:
         dtype: string
       - name: types
         dtype: string
+      - name: repo
+        dtype: string
 
   - config_name: original
     data_files:
-      - data/sampled_ccs_dataset.csv
+      - data/repo_grouped_pool.csv
     features:
+      - name: repo
+        dtype: string
       - name: annotated_type
         dtype: string
       - name: masked_commit_message
@@ -41,3 +47,5 @@ configs:
         dtype: string
       - name: sha
         dtype: string
+      - name: token_count
+        dtype: int32

@@ -48,8 +48,8 @@ def load_model(
     n_batch: Optional[int] = 2048,  # Maximize prompt processing efficiency
     flash_attn: Optional[bool] = True,  # Enable Flash Attention
     offload_kqv: Optional[bool] = True,  # Process K/Q/V tensors on GPU
-    use_mlock: Optional[bool] = True,  # Lock model in RAM to eliminate disk I/O delays
-    use_mmap: Optional[bool] = False,  # Disable memory mapping for RAM-fixed model
+    use_mlock: Optional[bool] = False,  # Do NOT pin weights in host RAM; all layers live in VRAM (n_gpu_layers=-1), so a locked host copy is redundant and OOMs low-RAM hosts (e.g. 32GB Blackwell box). The old True was tuned for the 128GB H100/parscratch cluster.
+    use_mmap: Optional[bool] = True,  # mmap the GGUF so the OS pages weights on demand and evicts after GPU upload -> negligible steady-state host RAM. No effect on inference latency (weights are on GPU).
     swa_full: Optional[bool] = True,  # Use full SWA cache size
 ) -> "Llama":
     """Load a llama.cpp model from Hugging Face and return a ready Llama instance.

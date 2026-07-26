@@ -235,10 +235,14 @@ def main():
     encoding = tiktoken.get_encoding(ENCODING_MODEL)
 
     # Define dataset paths
+    # NOTE: "sampled" points to the repo-grouped pool (build_repo_pool.py output),
+    # which superseded the old sampled_ccs_dataset.csv (removed). Same required
+    # columns (git_diff, masked_commit_message, annotated_type, sha), so the
+    # atomic-dataset analysis path below works unchanged.
     data_dir = Path(__file__).parent.parent / "data"
     datasets = {
         "tangled": data_dir / "tangled_ccs_dataset_test.csv",
-        "sampled": data_dir / "sampled_ccs_dataset.csv",
+        "sampled": data_dir / "repo_grouped_pool.csv",
         "full": data_dir / "CCS Dataset.csv"
     }
 

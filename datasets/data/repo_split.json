@@ -1,0 +1,60 @@
+{
+  "train": [
+    "McLaouth/infracost",
+    "aidenybai/million",
+    "benawad/dogehouse",
+    "bzmaxat/electron",
+    "camunda/zeebe",
+    "crimx/ext-saladict",
+    "dendronhq/dendron",
+    "evanrichter/influxdb_iox",
+    "hirosystems/stacks-subnets",
+    "ibis-project/ibis",
+    "kevinleeelsa/blockchain-demo",
+    "linkedin/css-blocks",
+    "mikro-orm/mikro-orm",
+    "nocodb/nocodb",
+    "orgTestCodacy11KRepos110MB/repo-3134-openreplay",
+    "profMagija/nocodb",
+    "rohankumardubey/goreleaser",
+    "thanjira111/mm",
+    "tsparticles/tsparticles",
+    "vaibhav-deepsource/nuxt-framework",
+    "wzhiqing/cube"
+  ],
+  "test": [
+    "2lambda123/ionic-framework",
+    "Aris-ngoy/React-native-paper-modified",
+    "DioxusLabs/dioxus",
+    "JanDeDobbeleer/oh-my-posh",
+    "Kevin4dp802mq7hn8/fork",
+    "MariannaV/schedule",
+    "chifaplus/nocodb",
+    "danoventa/CrackingTheCodingInterview",
+    "epage/clapng",
+    "erg-lang/erg",
+    "hobserver/react-module-state",
+    "influxdata/influxdb",
+    "orgTestCodacy11KRepos110MB/repo-3123-dagger",
+    "orgTestCodacy11KRepos110MB/repo-3187-ts-toolbelt",
+    "orhun/git-cliff"
+  ],
+  "train_type_supply": {
+    "feat": 123,
+    "fix": 92,
+    "refactor": 351,
+    "test": 135,
+    "docs": 104,
+    "build": 96,
+    "ci": 104
+  },
+  "test_type_supply": {
+    "feat": 32,
+    "fix": 42,
+    "refactor": 98,
+    "test": 41,
+    "docs": 37,
+    "build": 31,
+    "ci": 23
+  }
+}

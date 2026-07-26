@@ -15,12 +15,15 @@ This repository contains the complete implementation and analysis for detecting 
 ├── datasets/                    # Dataset creation and processing
 │   ├── data/                   # Raw and processed datasets
 │   │   ├── CCS Dataset.csv
-│   │   ├── sampled_ccs_dataset.csv
+│   │   ├── repo_grouped_pool.csv
+│   │   ├── repo_split.json
 │   │   ├── tangled_ccs_dataset_train.csv
-│   │   └── tangled_ccs_dataset_test.csv
-│   └── scripts/                # Dataset generation scripts
-│       ├── sample_atomic_commites.py
-│       ├── generate_tangled_commites.py
+│   │   ├── tangled_ccs_dataset_test.csv
+│   │   └── legacy/              # Backups of superseded cross-repo tangled CSVs
+│   └── scripts/                # Dataset generation scripts (repo-grouped pipeline)
+│       ├── build_repo_pool.py       # Stage 1: CCS Dataset.csv -> repo_grouped_pool.csv
+│       ├── generate_repo_tangled.py # Stage 2: repo_grouped_pool.csv -> tangled_ccs_dataset_{train,test}.csv
+│       ├── validate_repo_dataset.py # Stage 3: validates Stage 2 outputs
 │       ├── analyze_token_distribution.py
 │       ├── concern_token_boxplot.py
 │       └── upload_to_huggingface.py

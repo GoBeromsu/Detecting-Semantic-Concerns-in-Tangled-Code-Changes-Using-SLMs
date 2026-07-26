@@ -21,12 +21,21 @@ DATASETS_PATH = Path(__file__).parent.parent
 DATA_PATH = DATASETS_PATH / "data"
 SCRIPTS_PATH = DATASETS_PATH / "scripts"
 
+# This script always updates the existing HF dataset repo as a new commit on
+# top of its history (upload_folder/upload_file, no delete_repo or wholesale
+# delete_patterns). Override via COMMIT_MESSAGE env var for future revisions.
+COMMIT_MESSAGE = os.getenv(
+    "COMMIT_MESSAGE",
+    "Rebuild: intra-repo tangled commits, repo-disjoint split, "
+    "7-type taxonomy (chore removed, style/perf merged into refactor)",
+)
+
 REQUIRED_FILES = [
-    DATA_PATH / "sampled_ccs_dataset.csv",
+    DATA_PATH / "repo_grouped_pool.csv",
+    DATA_PATH / "repo_split.json",
     DATA_PATH / "tangled_ccs_dataset_train.csv",
     DATA_PATH / "tangled_ccs_dataset_test.csv",
     DATA_PATH / "CCS Dataset.csv",
-    DATA_PATH / "excluded_commits.csv",
 ]
 
 # Helper function for file checking
@@ -97,7 +106,26 @@ def upload_data_folder(repo_id: str) -> None:
             repo_id=repo_id,
             repo_type="dataset",
             path_in_repo="data",
-            ignore_patterns=[".DS_Store", "*.tmp", "__pycache__"],
+            # "legacy/*" excludes data/legacy/ (old cross-repo dataset backup):
+            # that prior version already lives in the HF repo's commit
+            # history, so re-uploading it as new files would just clutter the
+            # dataset.
+            # ".omc/*" and ".git*" defensively exclude internal tool/orchestration
+            # state and VCS metadata that must never end up inside a public
+            # dataset folder, even if such a directory is accidentally present
+            # locally at upload time (this is how internal state files were
+            # once uploaded by mistake - see the cleanup commit in repo history).
+            ignore_patterns=[
+                ".DS_Store",
+                "*.tmp",
+                "__pycache__",
+                "legacy/*",
+                ".omc/*",
+                ".git*",
+            ],
+            commit_message=COMMIT_MESSAGE,
+            # No delete_patterns: this call only adds/overwrites files present
+            # locally, it never removes files that already exist in the repo.
         )
         print("✓ Data folder uploaded successfully")
     except Exception as e:
@@ -110,9 +138,9 @@ def upload_scripts(repo_id: str) -> None:
     api = HfApi()
     
     specified_scripts = [
-        "clean_ccs_dataset.py",
-        "sample_atomic_commites.py",
-        "generate_tangled_commites.py"
+        "build_repo_pool.py",
+        "generate_repo_tangled.py",
+        "validate_repo_dataset.py",
     ]
     
     print("Uploading selected scripts...")
@@ -126,6 +154,7 @@ def upload_scripts(repo_id: str) -> None:
                     path_in_repo=f"scripts/{script_name}",
                     repo_id=repo_id,
                     repo_type="dataset",
+                    commit_message=COMMIT_MESSAGE,
                 )
                 print(f"✓ Uploaded scripts/{script_name}")
             except Exception as e:
@@ -153,6 +182,7 @@ def upload_metadata_files(repo_id: str) -> None:
                     path_in_repo=repo_path,
                     repo_id=repo_id,
                     repo_type="dataset",
+                    commit_message=COMMIT_MESSAGE,
                 )
                 print(f"✓ Uploaded {repo_path}")
             except Exception as e:
@@ -210,7 +240,7 @@ def check_required_files() -> None:
         file_size = data_file.stat().st_size / (1024 * 1024)
         print(f"  - data/{data_file.name} ({file_size:.1f} MB)")
     
-    specified_scripts =  ["sample_atomic_commites.py", "generate_tangled_commites.py"]
+    specified_scripts = ["build_repo_pool.py", "generate_repo_tangled.py", "validate_repo_dataset.py"]
     print(f"\nScripts to upload ({len(specified_scripts)}):")
     for script_name in specified_scripts:
         script_path = SCRIPTS_PATH / script_name
@@ -226,6 +256,7 @@ def main() -> None:
     print(f"Repository: {DATASET_REPO_ID}")
     print(f"Dataset path: {DATASETS_PATH}")
     print(f"Data path: {DATA_PATH}")
+    print(f"Commit message: {COMMIT_MESSAGE}")
 
     check_required_files()
 
