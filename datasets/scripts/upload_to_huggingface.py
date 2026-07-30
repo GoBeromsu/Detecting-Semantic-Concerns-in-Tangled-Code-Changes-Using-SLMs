@@ -56,6 +56,13 @@ SCRIPT_MANIFEST: Final[tuple[str, ...]] = (
     "show_tokens_distribution.py",
     "upload_to_huggingface.py",
 )
+# The Hub reads configs ONLY from the card's YAML frontmatter; dataset_info.yaml is
+# ignored. test_dataset_card.py pins these pairs to that frontmatter block.
+VERIFICATION_TARGETS: Final[tuple[tuple[str, str], ...]] = (
+    ("default", "train"),
+    ("default", "test"),
+    ("original", "train"),
+)
 EXPECTED_REMOTE_TREE: Final[frozenset[str]] = frozenset(
     {
         ".gitattributes",
@@ -235,11 +242,11 @@ def verify_upload(repo_id: str) -> None:
     print("\nVerifying dataset upload...")
 
     try:
-        for config_name in ("train", "test", "original"):
-            dataset = load_dataset(repo_id, config_name, split="train")
+        for config_name, split in VERIFICATION_TARGETS:
+            dataset = load_dataset(repo_id, config_name, split=split)
             if not isinstance(dataset, Sized):
-                raise RuntimeError(f"{config_name} dataset is not sized")
-            print(f"✓ {config_name.title()} dataset loaded: {len(dataset)} samples")
+                raise RuntimeError(f"{config_name}/{split} dataset is not sized")
+            print(f"✓ {config_name}/{split} loaded: {len(dataset)} samples")
             print(f"  Columns: {dataset.column_names}")
 
         print("\n✓ Dataset upload verification successful!")
