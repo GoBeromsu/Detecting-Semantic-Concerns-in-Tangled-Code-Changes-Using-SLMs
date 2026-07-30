@@ -25,21 +25,44 @@ Joined-token metrics re-encode `''.join(json.loads(diff))` with `cl100k_base`.
 
 ## Missing test-split combinations: reachability and cause attribution
 
-A combo is a **sampling artifact** only when no single test repo can supply a <=12288-token witness. A combo with a feasible single-repo witness but no generated row is a **sampler bug**.
+Reachability is necessary but **not sufficient** to call a gap a sampler defect.
+A combo is *unreachable* when no single test repo can supply a <=12288-token witness — then the pool, not the sampler, is the cause.
+A *reachable* combo that produced no row is only a defect if the sampler had enough draws to be expected to hit it; see the draw-budget section below.
 
 | Combination | repos with all types | feasible repos | witness joined tokens | binding constraint | verdict |
 | --- | --- | --- | --- | --- | --- |
-| (build, ci, test) | 4 | 4 | 676 | none: at least one test repo has a <= 12288-token witness | sampler bug |
-| (build, feat, fix) | 9 | 9 | 741 | none: at least one test repo has a <= 12288-token witness | sampler bug |
-| (build, feat, test) | 10 | 10 | 777 | none: at least one test repo has a <= 12288-token witness | sampler bug |
-| (ci, docs, test) | 4 | 4 | 570 | none: at least one test repo has a <= 12288-token witness | sampler bug |
-| (docs, fix, refactor) | 7 | 7 | 452 | none: at least one test repo has a <= 12288-token witness | sampler bug |
-| (feat, refactor, test) | 12 | 12 | 930 | none: at least one test repo has a <= 12288-token witness | sampler bug |
-| (build, feat, fix, refactor) | 8 | 8 | 1055 | none: at least one test repo has a <= 12288-token witness | sampler bug |
-| (build, fix, refactor, test) | 9 | 9 | 795 | none: at least one test repo has a <= 12288-token witness | sampler bug |
-| (build, ci, feat, fix, refactor) | 3 | 3 | 2363 | none: at least one test repo has a <= 12288-token witness | sampler bug |
+| (build, ci, test) | 4 | 4 | 676 | none: a <= 12288-token single-repo witness exists | reachable |
+| (build, feat, fix) | 9 | 9 | 741 | none: a <= 12288-token single-repo witness exists | reachable |
+| (build, feat, test) | 10 | 10 | 777 | none: a <= 12288-token single-repo witness exists | reachable |
+| (ci, docs, test) | 4 | 4 | 570 | none: a <= 12288-token single-repo witness exists | reachable |
+| (docs, fix, refactor) | 7 | 7 | 452 | none: a <= 12288-token single-repo witness exists | reachable |
+| (feat, refactor, test) | 12 | 12 | 930 | none: a <= 12288-token single-repo witness exists | reachable |
+| (build, feat, fix, refactor) | 8 | 8 | 1055 | none: a <= 12288-token single-repo witness exists | reachable |
+| (build, fix, refactor, test) | 9 | 9 | 795 | none: a <= 12288-token single-repo witness exists | reachable |
+| (build, ci, feat, fix, refactor) | 3 | 3 | 2363 | none: a <= 12288-token single-repo witness exists | reachable |
 
-**Cause verdict:** 0 sampling artifact; 9 sampler bug. Each row above supplies the per-combo single-repo and token-budget evidence.
+**Reachability:** 9 reachable; 0 unreachable (pool artifact).
+
+## Draw budget: is the gap explained without a sampler defect?
+
+Under a correct sampler, each concern count draws independently, so the expected number of still-uncovered combinations after `draws` draws is `C * (1 - 1/C)^draws` (coupon collector). `draws needed` is the expected number required to cover every combination, `C * H(C)`.
+
+| split | k | combos C | draws | expected uncovered | observed uncovered | draws needed |
+| --- | --- | --- | --- | --- | --- | --- |
+| train | 1 | 7 | 280 | 0.00 | 0 | 18 |
+| train | 2 | 21 | 280 | 0.00 | 0 | 77 |
+| train | 3 | 35 | 280 | 0.01 | 0 | 145 |
+| train | 4 | 35 | 280 | 0.01 | 0 | 145 |
+| train | 5 | 21 | 280 | 0.00 | 0 | 77 |
+| test | 1 | 7 | 70 | 0.00 | 0 | 18 |
+| test | 2 | 21 | 70 | 0.69 | 0 | 77 |
+| test | 3 | 35 | 70 | 4.60 | 6 | 145 |
+| test | 4 | 35 | 70 | 4.60 | 2 | 145 |
+| test | 5 | 21 | 70 | 0.69 | 1 | 77 |
+
+**Totals:** expected 10.60 uncovered, observed 9.
+
+**Cause verdict:** the observed gap tracks the draw-budget prediction, so it is a **draw-budget shortfall, not a sampler defect**. The test split draws only 70 times per concern count while covering C(7,3)=35 combinations needs ~145 draws in expectation; the train split's 280 draws clear that bar, which is exactly why train reaches full coverage and test does not. The generator targets marginal per-type uniformity (achieved exactly) and never promises joint C(7,k) coverage.
 
 ## Atomic-commit reuse
 
