@@ -13,6 +13,17 @@ tags:
   - concern-separation
 size_categories:
   - 1K<n<10K
+configs:
+  - config_name: default
+    data_files:
+      - split: train
+        path: data/tangled_ccs_dataset_train.csv
+      - split: test
+        path: data/tangled_ccs_dataset_test.csv
+  - config_name: original
+    data_files:
+      - split: train
+        path: data/repo_grouped_pool.csv
 ---
 
 # Detecting Multiple Semantic Concerns in Tangled Code Commits using Small Language Models

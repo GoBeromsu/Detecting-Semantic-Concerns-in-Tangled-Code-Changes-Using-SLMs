@@ -1,94 +1,136 @@
 #!/usr/bin/env python3
 """Upload dataset to HuggingFace Hub with overwrite functionality."""
 
-import sys
+from __future__ import annotations
+
+import argparse
 import os
+import sys
+from collections.abc import Iterable, Mapping, Sequence, Sized
 from pathlib import Path
-from typing import Optional
+from typing import Final
+
 from dotenv import load_dotenv
+from huggingface_hub import CommitOperationDelete, HfApi, login, upload_folder
 
-from datasets import load_dataset
-from huggingface_hub import HfApi, login, create_repo, upload_folder
-
-# Load environment variables from .env file
-load_dotenv()
-
-DATASET_REPO_ID = os.getenv(
+# noqa: SIZE_OK — this self-contained artifact is uploaded to Hugging Face.
+DATASET_REPO_ID: Final[str] = os.getenv(
     "DATASET_REPO_ID",
-    "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs",
+    "Berom0227/tangled-ccs-commits",
 )
-DATASETS_PATH = Path(__file__).parent.parent
-DATA_PATH = DATASETS_PATH / "data"
-SCRIPTS_PATH = DATASETS_PATH / "scripts"
+DATASETS_PATH: Final[Path] = Path(__file__).parent.parent
+DATA_PATH: Final[Path] = DATASETS_PATH / "data"
+SCRIPTS_PATH: Final[Path] = DATASETS_PATH / "scripts"
 
 # This script always updates the existing HF dataset repo as a new commit on
 # top of its history (upload_folder/upload_file, no delete_repo or wholesale
 # delete_patterns). Override via COMMIT_MESSAGE env var for future revisions.
-COMMIT_MESSAGE = os.getenv(
+COMMIT_MESSAGE: Final[str] = os.getenv(
     "COMMIT_MESSAGE",
     "Rebuild: intra-repo tangled commits, repo-disjoint split, "
     "7-type taxonomy (chore removed, style/perf merged into refactor)",
 )
 
-REQUIRED_FILES = [
+REQUIRED_FILES: Final[tuple[Path, ...]] = (
     DATA_PATH / "repo_grouped_pool.csv",
     DATA_PATH / "repo_split.json",
     DATA_PATH / "tangled_ccs_dataset_train.csv",
     DATA_PATH / "tangled_ccs_dataset_test.csv",
     DATA_PATH / "CCS Dataset.csv",
-]
+)
+
+OLD_PIPELINE_SCRIPTS: Final[tuple[str, ...]] = (
+    "scripts/clean_ccs_dataset.py",
+    "scripts/generate_tangled_commites.py",
+    "scripts/sample_atomic_commites.py",
+)
+STALE_REMOTE_PATHS: Final[tuple[str, ...]] = OLD_PIPELINE_SCRIPTS + (
+    "dataset_info.yaml",
+)
+TOKEN_ENVIRONMENT_VARIABLES: Final[tuple[str, ...]] = (
+    "HUGGINGFACE_HUB_TOKEN",
+    "HF_TOKEN",
+    "HUGGINGFACE_TOKEN",
+)
+SCRIPT_MANIFEST: Final[tuple[str, ...]] = (
+    "build_repo_pool.py",
+    "generate_repo_tangled.py",
+    "validate_repo_dataset.py",
+    "show_tokens_distribution.py",
+    "upload_to_huggingface.py",
+)
+# The Hub reads configs ONLY from the card's YAML frontmatter; dataset_info.yaml is
+# ignored. test_dataset_card.py pins these pairs to that frontmatter block.
+VERIFICATION_TARGETS: Final[tuple[tuple[str, str], ...]] = (
+    ("default", "train"),
+    ("default", "test"),
+    ("original", "train"),
+)
+TARGET_DESCRIPTIONS: Final[dict[tuple[str, str], str]] = {
+    ("default", "train"): "tangled commits for training",
+    ("default", "test"): "tangled commits for evaluation",
+    ("original", "train"): "atomic commit pool",
+}
+EXPECTED_REMOTE_TREE: Final[frozenset[str]] = frozenset(
+    {
+        ".gitattributes",
+        "README.md",
+        "data/CCS Dataset.csv",
+        "data/repo_grouped_pool.csv",
+        "data/repo_split.json",
+        "data/tangled_ccs_dataset_test.csv",
+        "data/tangled_ccs_dataset_train.csv",
+        "scripts/build_repo_pool.py",
+        "scripts/generate_repo_tangled.py",
+        "scripts/show_tokens_distribution.py",
+        "scripts/upload_to_huggingface.py",
+        "scripts/validate_repo_dataset.py",
+    }
+)
 
 # Helper function for file checking
-def get_data_files() -> list:
+def get_data_files() -> list[Path]:
     """Get list of data files for verification."""
-    data_files = []
+    data_files: list[Path] = []
     for data_file in DATA_PATH.glob("*"):
         if data_file.is_file() and data_file.name != ".DS_Store":
             data_files.append(data_file)
     return data_files
 
 
-def get_hf_token() -> Optional[str]:
-    """Get HuggingFace token from command line args or environment."""
-    if len(sys.argv) > 1:
-        return sys.argv[1]
-    return os.getenv("HUGGINGFACE_HUB_TOKEN")
+def plan_deletions(
+    remote_files: Iterable[str], targets: Iterable[str] = STALE_REMOTE_PATHS
+) -> list[str]:
+    """Return configured deletion targets that currently exist remotely."""
+    remote_file_set = frozenset(remote_files)
+    return [target for target in targets if target in remote_file_set]
 
 
-def authenticate_huggingface(token: Optional[str] = None) -> None:
+def resolve_token(argv: Sequence[str], env: Mapping[str, str]) -> str | None:
+    """Resolve an explicit Hugging Face token without mutating process state."""
+    if len(argv) > 1:
+        return argv[1]
+
+    for variable_name in TOKEN_ENVIRONMENT_VARIABLES:
+        token = env.get(variable_name)
+        if token:
+            return token
+    return None
+
+
+def authenticate_huggingface() -> None:
     """Authenticate with HuggingFace Hub."""
-    if not token:
-        token = get_hf_token()
-
-    if not token:
-        print("✗ No HuggingFace token provided")
-        print("Usage: python upload_to_huggingface.py <token>")
-        print("Or set HUGGINGFACE_HUB_TOKEN in .env file")
-        sys.exit(1)
-
+    token = resolve_token(sys.argv, os.environ)
     try:
-        login(token=token)
-        print("✓ Successfully authenticated with HuggingFace Hub")
-    except Exception as e:
-        print(f"✗ Authentication failed: {e}")
-        sys.exit(1)
+        if token is not None:
+            login(token=token)
+            print("✓ Successfully authenticated with HuggingFace Hub")
+            return
 
-
-def ensure_repo_exists(repo_id: str) -> None:
-    """Ensure HuggingFace repository exists, create if it doesn't."""
-    api = HfApi()
-
-    try:
-        api.repo_info(repo_id=repo_id, repo_type="dataset")
-        print(f"✓ Repository {repo_id} exists, will update existing files")
-    except Exception:
-        print(f"Repository {repo_id} doesn't exist, creating new one...")
-        try:
-            create_repo(repo_id=repo_id, repo_type="dataset", private=False)
-            print(f"✓ Created new repository: {repo_id}")
-        except Exception as create_error:
-            print(f"Error creating repository: {create_error}")
-            raise
+        HfApi().whoami()
+        print("✓ Successfully authenticated with cached HuggingFace credentials")
+    except Exception as error:  # noqa: BROAD_EXCEPT_OK
+        raise RuntimeError("Unable to authenticate with HuggingFace Hub") from error
 
 
 def upload_data_folder(repo_id: str) -> None:
@@ -120,6 +162,7 @@ def upload_data_folder(repo_id: str) -> None:
                 "*.tmp",
                 "__pycache__",
                 "legacy/*",
+                "legacy/**",
                 ".omc/*",
                 ".git*",
             ],
@@ -136,86 +179,144 @@ def upload_data_folder(repo_id: str) -> None:
 def upload_scripts(repo_id: str) -> None:
     """Upload selected scripts to HuggingFace Hub."""
     api = HfApi()
-    
-    specified_scripts = [
-        "build_repo_pool.py",
-        "generate_repo_tangled.py",
-        "validate_repo_dataset.py",
-    ]
-    
+    failed_paths: list[str] = []
+
     print("Uploading selected scripts...")
-    
-    for script_name in specified_scripts:
+
+    for script_name in SCRIPT_MANIFEST:
         script_path = SCRIPTS_PATH / script_name
-        if script_path.exists():
-            try:
-                api.upload_file(
-                    path_or_fileobj=str(script_path),
-                    path_in_repo=f"scripts/{script_name}",
-                    repo_id=repo_id,
-                    repo_type="dataset",
-                    commit_message=COMMIT_MESSAGE,
-                )
-                print(f"✓ Uploaded scripts/{script_name}")
-            except Exception as e:
-                print(f"✗ Failed to upload {script_name}: {e}")
-        else:
-            print(f"⚠ Script not found: {script_path}")
+        repo_path = f"scripts/{script_name}"
+        if not script_path.is_file():
+            failed_paths.append(repo_path)
+            print(f"✗ Missing script: {repo_path}")
+            continue
+
+        try:
+            api.upload_file(
+                path_or_fileobj=str(script_path),
+                path_in_repo=repo_path,
+                repo_id=repo_id,
+                repo_type="dataset",
+                commit_message=COMMIT_MESSAGE,
+            )
+            print(f"✓ Uploaded {repo_path}")
+        except Exception as error:  # noqa: BROAD_EXCEPT_OK
+            failed_paths.append(repo_path)
+            print(f"✗ Failed to upload {repo_path}: {error}")
+
+    if failed_paths:
+        raise RuntimeError(f"Failed to upload scripts: {', '.join(failed_paths)}")
 
 
 def upload_metadata_files(repo_id: str) -> None:
-    """Upload README and dataset_info.yaml files."""
+    """Upload the dataset card, whose frontmatter is the only config source."""
     api = HfApi()
-    
-    metadata_files = [
+    metadata_files: tuple[tuple[str, Path], ...] = (
         ("README.md", DATASETS_PATH / "README.md"),
-        ("dataset_info.yaml", DATASETS_PATH / "dataset_info.yaml"),
-    ]
-    
+    )
+    failed_paths: list[str] = []
+
     print("Uploading metadata files...")
-    
+
     for repo_path, local_path in metadata_files:
-        if local_path.exists():
-            try:
-                api.upload_file(
-                    path_or_fileobj=str(local_path),
-                    path_in_repo=repo_path,
-                    repo_id=repo_id,
-                    repo_type="dataset",
-                    commit_message=COMMIT_MESSAGE,
-                )
-                print(f"✓ Uploaded {repo_path}")
-            except Exception as e:
-                print(f"✗ Failed to upload {repo_path}: {e}")
-        else:
-            print(f"⚠ File not found: {local_path}")
+        if not local_path.is_file():
+            failed_paths.append(repo_path)
+            print(f"✗ Missing metadata file: {repo_path}")
+            continue
+
+        try:
+            api.upload_file(
+                path_or_fileobj=str(local_path),
+                path_in_repo=repo_path,
+                repo_id=repo_id,
+                repo_type="dataset",
+                commit_message=COMMIT_MESSAGE,
+            )
+            print(f"✓ Uploaded {repo_path}")
+        except Exception as error:  # noqa: BROAD_EXCEPT_OK
+            failed_paths.append(repo_path)
+            print(f"✗ Failed to upload {repo_path}: {error}")
+
+    if failed_paths:
+        raise RuntimeError(f"Failed to upload metadata files: {', '.join(failed_paths)}")
+
+
+def configuration_summary_lines() -> tuple[str, ...]:
+    return tuple(
+        f"  - {config_name}/{split}: {TARGET_DESCRIPTIONS[(config_name, split)]}"
+        for config_name, split in VERIFICATION_TARGETS
+    )
 
 
 def verify_upload(repo_id: str) -> None:
     """Verify dataset upload by loading all configurations."""
+    from datasets import load_dataset
+
     print("\nVerifying dataset upload...")
 
     try:
-        # Verify train dataset
-        train_dataset = load_dataset(repo_id, "train", split="train")
-        print(f"✓ Train dataset loaded: {len(train_dataset)} samples")
-        print(f"  Columns: {train_dataset.column_names}")
-
-        # Verify test dataset
-        test_dataset = load_dataset(repo_id, "test", split="train")
-        print(f"✓ Test dataset loaded: {len(test_dataset)} samples")
-        print(f"  Columns: {test_dataset.column_names}")
-        
-        # Verify original dataset
-        original_dataset = load_dataset(repo_id, "original", split="train")
-        print(f"✓ Original dataset loaded: {len(original_dataset)} samples")
-        print(f"  Columns: {original_dataset.column_names}")
+        for config_name, split in VERIFICATION_TARGETS:
+            dataset = load_dataset(repo_id, config_name, split=split)
+            if not isinstance(dataset, Sized):
+                raise RuntimeError(f"{config_name}/{split} dataset is not sized")
+            print(f"✓ {config_name}/{split} loaded: {len(dataset)} samples")
+            print(f"  Columns: {dataset.column_names}")
 
         print("\n✓ Dataset upload verification successful!")
 
     except Exception as e:
         print(f"✗ Dataset verification failed: {e}")
         print("Dataset may still be processing. Try again in a few minutes.")
+        raise RuntimeError("Dataset upload verification failed") from e
+
+
+def delete_stale_remote_paths(
+    api: HfApi, repo_id: str, remote_files: Iterable[str]
+) -> None:
+    """Delete every still-present stale remote path in one atomic commit."""
+    deletion_plan = plan_deletions(remote_files)
+    if not deletion_plan:
+        print("✓ nothing to delete")
+        return
+
+    api.create_commit(
+        repo_id=repo_id,
+        operations=[
+            CommitOperationDelete(path_in_repo=path) for path in deletion_plan
+        ],
+        repo_type="dataset",
+        commit_message="Remove superseded pipeline scripts and Hub-ignored metadata",
+    )
+    print(f"✓ Deleted {len(deletion_plan)} stale remote paths")
+
+
+def parse_cli_args(argv: Sequence[str]) -> argparse.Namespace:
+    """Parse the optional token and read-only dry-run switch."""
+    parser = argparse.ArgumentParser(
+        description="Synchronize the tangled commits dataset with Hugging Face."
+    )
+    parser.add_argument("token", nargs="?", help="Optional Hugging Face access token")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show the planned synchronization without changing the remote repository",
+    )
+    return parser.parse_args(argv[1:])
+
+
+def report_dry_run(remote_files: Iterable[str]) -> None:
+    """Print the read-only deletion plan and post-deletion tree diff."""
+    remote_tree = frozenset(remote_files)
+    deletion_plan = plan_deletions(remote_tree)
+    resulting_tree = remote_tree.difference(deletion_plan)
+    missing_paths = sorted(EXPECTED_REMOTE_TREE.difference(resulting_tree))
+    unexpected_paths = sorted(resulting_tree.difference(EXPECTED_REMOTE_TREE))
+
+    print("\nDry-run synchronization plan")
+    print(f"Deletion plan: {deletion_plan}")
+    print(f"Upload manifest: {list(SCRIPT_MANIFEST)}")
+    print(f"Missing paths after synchronization: {missing_paths}")
+    print(f"Unexpected paths after synchronization: {unexpected_paths}")
 
 
 def check_required_files() -> None:
@@ -240,9 +341,8 @@ def check_required_files() -> None:
         file_size = data_file.stat().st_size / (1024 * 1024)
         print(f"  - data/{data_file.name} ({file_size:.1f} MB)")
     
-    specified_scripts = ["build_repo_pool.py", "generate_repo_tangled.py", "validate_repo_dataset.py"]
-    print(f"\nScripts to upload ({len(specified_scripts)}):")
-    for script_name in specified_scripts:
+    print(f"\nScripts to upload ({len(SCRIPT_MANIFEST)}):")
+    for script_name in SCRIPT_MANIFEST:
         script_path = SCRIPTS_PATH / script_name
         if script_path.exists():
             print(f"  - scripts/{script_name}")
@@ -252,32 +352,42 @@ def check_required_files() -> None:
 
 def main() -> None:
     """Main execution function."""
+    cli_args = parse_cli_args(sys.argv)
+    load_dotenv()
+    repo_id = os.getenv("DATASET_REPO_ID", DATASET_REPO_ID)
+
     print("🚀 Starting HuggingFace dataset upload...")
-    print(f"Repository: {DATASET_REPO_ID}")
+    print(f"Repository: {repo_id}")
     print(f"Dataset path: {DATASETS_PATH}")
     print(f"Data path: {DATA_PATH}")
     print(f"Commit message: {COMMIT_MESSAGE}")
 
     check_required_files()
 
+    if cli_args.dry_run:
+        remote_files = HfApi().list_repo_files(repo_id=repo_id, repo_type="dataset")
+        report_dry_run(remote_files)
+        return
+
     try:
         authenticate_huggingface()
-        ensure_repo_exists(DATASET_REPO_ID)
-        
+
         # Upload in separate steps for better control
-        upload_data_folder(DATASET_REPO_ID)
-        upload_scripts(DATASET_REPO_ID)
-        upload_metadata_files(DATASET_REPO_ID)
+        api = HfApi()
+        remote_files = api.list_repo_files(repo_id=repo_id, repo_type="dataset")
+        delete_stale_remote_paths(api, repo_id, remote_files)
+        upload_data_folder(repo_id)
+        upload_scripts(repo_id)
+        upload_metadata_files(repo_id)
         
-        verify_upload(DATASET_REPO_ID)
+        verify_upload(repo_id)
 
         print(
-            f"\n🎉 Dataset successfully updated at: https://huggingface.co/datasets/{DATASET_REPO_ID}"
+            f"\n🎉 Dataset successfully updated at: https://huggingface.co/datasets/{repo_id}"
         )
         print("\nDataset configurations available:")
-        print("  - train: Tangled commits for training")
-        print("  - test: Tangled commits for testing") 
-        print("  - original: Original atomic commits")
+        for summary_line in configuration_summary_lines():
+            print(summary_line)
 
     except Exception as e:
         print(f"✗ Upload failed: {e}")
