@@ -130,6 +130,25 @@ def test_summary_lines_are_derived_from_the_verification_targets() -> None:
         assert f"{config_name}/{split}" in line
 
 
+def test_hub_ignored_metadata_is_scheduled_for_removal() -> None:
+    """dataset_info.yaml must be deleted, not merely left unuploaded.
+
+    The Hub never reads that filename, and its contents now contradict the
+    frontmatter: it declares configs 'train'/'test'/'original' while the real
+    layout is 'default'/'original'. Leaving it published advertises a
+    load_dataset call that raises.
+    """
+    import importlib
+    import sys
+
+    sys.path.insert(0, str(REPOSITORY_ROOT / "datasets" / "scripts"))
+    uploader = importlib.import_module("upload_to_huggingface")
+
+    assert "dataset_info.yaml" in uploader.STALE_REMOTE_PATHS
+    assert "dataset_info.yaml" not in uploader.EXPECTED_REMOTE_TREE
+    assert not (REPOSITORY_ROOT / "datasets" / "dataset_info.yaml").exists()
+
+
 def test_declared_configs_are_exactly_default_and_original() -> None:
     frontmatter = read_frontmatter(CARD_PATH)
     configs = frontmatter["configs"]

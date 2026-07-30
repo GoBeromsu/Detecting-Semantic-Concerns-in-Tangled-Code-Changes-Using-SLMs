@@ -136,9 +136,9 @@ def test_plan_deletions_empty_when_none_present(hf_upload: ModuleType) -> None:
 
 
 def test_plan_deletions_is_order_stable(hf_upload: ModuleType) -> None:
-    reversed_remote = list(reversed(hf_upload.OLD_PIPELINE_SCRIPTS))
+    reversed_remote = list(reversed(hf_upload.STALE_REMOTE_PATHS))
     assert hf_upload.plan_deletions(reversed_remote) == list(
-        hf_upload.OLD_PIPELINE_SCRIPTS
+        hf_upload.STALE_REMOTE_PATHS
     )
 
 
@@ -177,14 +177,13 @@ def test_script_manifest_has_five_entries_all_on_disk(hf_upload: ModuleType) -> 
     assert all((hf_upload.SCRIPTS_PATH / script).is_file() for script in expected_manifest)
 
 
-def test_expected_remote_tree_is_thirteen_paths(hf_upload: ModuleType) -> None:
+def test_expected_remote_tree_is_twelve_paths(hf_upload: ModuleType) -> None:
     # Given the post-sync public dataset layout / When comparing expected paths
-    # Then it contains precisely the thirteen allowed remote files
+    # Then it contains precisely the twelve allowed remote files
     expected_tree = frozenset(
         {
             ".gitattributes",
             "README.md",
-            "dataset_info.yaml",
             "data/CCS Dataset.csv",
             "data/repo_grouped_pool.csv",
             "data/repo_split.json",
@@ -198,13 +197,13 @@ def test_expected_remote_tree_is_thirteen_paths(hf_upload: ModuleType) -> None:
         }
     )
     assert hf_upload.EXPECTED_REMOTE_TREE == expected_tree
-    assert len(hf_upload.EXPECTED_REMOTE_TREE) == 13
+    assert len(hf_upload.EXPECTED_REMOTE_TREE) == 12
 
 
 def test_expected_remote_tree_excludes_deleted_scripts(hf_upload: ModuleType) -> None:
     # Given the removal plan / When comparing it with the desired remote tree
     # Then no deprecated pipeline script can remain in the resulting tree
-    assert not set(hf_upload.OLD_PIPELINE_SCRIPTS) & hf_upload.EXPECTED_REMOTE_TREE
+    assert not set(hf_upload.STALE_REMOTE_PATHS) & hf_upload.EXPECTED_REMOTE_TREE
 
 
 def test_upload_scripts_raises_on_failure(
@@ -236,8 +235,7 @@ def test_upload_metadata_raises_on_failure(
         hf_upload.upload_metadata_files("test/repo")
 
     assert "README.md" in str(error.value)
-    assert "dataset_info.yaml" in str(error.value)
-    assert api.upload_file.call_count == 2
+    assert api.upload_file.call_count == 1
 
 
 def test_upload_scripts_raises_on_missing_local_file(
@@ -310,7 +308,7 @@ def test_delete_skips_network_when_nothing_to_delete(hf_upload: ModuleType) -> N
     # Then no commit mutation is issued for the idempotent re-run
     api = MagicMock()
 
-    hf_upload.delete_old_pipeline_scripts(api, "test/repo", ["README.md"])
+    hf_upload.delete_stale_remote_paths(api, "test/repo", ["README.md"])
 
     api.create_commit.assert_not_called()
 
@@ -323,14 +321,14 @@ def test_delete_issues_single_commit_for_present_targets(
     api = MagicMock()
     monkeypatch.setattr(hf_upload, "CommitOperationDelete", _DeleteOperation)
 
-    hf_upload.delete_old_pipeline_scripts(
-        api, "test/repo", hf_upload.OLD_PIPELINE_SCRIPTS
+    hf_upload.delete_stale_remote_paths(
+        api, "test/repo", hf_upload.STALE_REMOTE_PATHS
     )
 
     api.create_commit.assert_called_once()
     create_kwargs = api.create_commit.call_args.kwargs
     assert create_kwargs["operations"] == [
-        _DeleteOperation(path) for path in hf_upload.OLD_PIPELINE_SCRIPTS
+        _DeleteOperation(path) for path in hf_upload.STALE_REMOTE_PATHS
     ]
     assert create_kwargs["repo_id"] == "test/repo"
     assert create_kwargs["repo_type"] == "dataset"
@@ -343,7 +341,7 @@ def test_dry_run_reads_remote_tree_without_mutating(
     # Then it reports the planned state without invoking any sync mutation
     api = MagicMock()
     api.list_repo_files.return_value = tuple(
-        hf_upload.EXPECTED_REMOTE_TREE | set(hf_upload.OLD_PIPELINE_SCRIPTS)
+        hf_upload.EXPECTED_REMOTE_TREE | set(hf_upload.STALE_REMOTE_PATHS)
     )
     authenticate = MagicMock()
     upload_data = MagicMock()

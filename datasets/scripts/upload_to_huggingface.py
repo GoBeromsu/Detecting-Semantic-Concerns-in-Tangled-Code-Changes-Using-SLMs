@@ -44,6 +44,9 @@ OLD_PIPELINE_SCRIPTS: Final[tuple[str, ...]] = (
     "scripts/generate_tangled_commites.py",
     "scripts/sample_atomic_commites.py",
 )
+STALE_REMOTE_PATHS: Final[tuple[str, ...]] = OLD_PIPELINE_SCRIPTS + (
+    "dataset_info.yaml",
+)
 TOKEN_ENVIRONMENT_VARIABLES: Final[tuple[str, ...]] = (
     "HUGGINGFACE_HUB_TOKEN",
     "HF_TOKEN",
@@ -72,7 +75,6 @@ EXPECTED_REMOTE_TREE: Final[frozenset[str]] = frozenset(
     {
         ".gitattributes",
         "README.md",
-        "dataset_info.yaml",
         "data/CCS Dataset.csv",
         "data/repo_grouped_pool.csv",
         "data/repo_split.json",
@@ -97,7 +99,7 @@ def get_data_files() -> list[Path]:
 
 
 def plan_deletions(
-    remote_files: Iterable[str], targets: Iterable[str] = OLD_PIPELINE_SCRIPTS
+    remote_files: Iterable[str], targets: Iterable[str] = STALE_REMOTE_PATHS
 ) -> list[str]:
     """Return configured deletion targets that currently exist remotely."""
     remote_file_set = frozenset(remote_files)
@@ -207,11 +209,10 @@ def upload_scripts(repo_id: str) -> None:
 
 
 def upload_metadata_files(repo_id: str) -> None:
-    """Upload README and dataset_info.yaml files."""
+    """Upload the dataset card, whose frontmatter is the only config source."""
     api = HfApi()
     metadata_files: tuple[tuple[str, Path], ...] = (
         ("README.md", DATASETS_PATH / "README.md"),
-        ("dataset_info.yaml", DATASETS_PATH / "dataset_info.yaml"),
     )
     failed_paths: list[str] = []
 
@@ -269,10 +270,10 @@ def verify_upload(repo_id: str) -> None:
         raise RuntimeError("Dataset upload verification failed") from e
 
 
-def delete_old_pipeline_scripts(
+def delete_stale_remote_paths(
     api: HfApi, repo_id: str, remote_files: Iterable[str]
 ) -> None:
-    """Delete present deprecated pipeline scripts in one atomic commit."""
+    """Delete every still-present stale remote path in one atomic commit."""
     deletion_plan = plan_deletions(remote_files)
     if not deletion_plan:
         print("✓ nothing to delete")
@@ -284,9 +285,9 @@ def delete_old_pipeline_scripts(
             CommitOperationDelete(path_in_repo=path) for path in deletion_plan
         ],
         repo_type="dataset",
-        commit_message="Remove deprecated dataset pipeline scripts",
+        commit_message="Remove superseded pipeline scripts and Hub-ignored metadata",
     )
-    print(f"✓ Deleted {len(deletion_plan)} deprecated pipeline scripts")
+    print(f"✓ Deleted {len(deletion_plan)} stale remote paths")
 
 
 def parse_cli_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -374,7 +375,7 @@ def main() -> None:
         # Upload in separate steps for better control
         api = HfApi()
         remote_files = api.list_repo_files(repo_id=repo_id, repo_type="dataset")
-        delete_old_pipeline_scripts(api, repo_id, remote_files)
+        delete_stale_remote_paths(api, repo_id, remote_files)
         upload_data_folder(repo_id)
         upload_scripts(repo_id)
         upload_metadata_files(repo_id)

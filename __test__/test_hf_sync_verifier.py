@@ -23,7 +23,6 @@ EXPECTED_TREE_LITERAL: Final[frozenset[str]] = frozenset(
     {
         ".gitattributes",
         "README.md",
-        "dataset_info.yaml",
         "data/tangled_ccs_dataset_train.csv",
         "data/tangled_ccs_dataset_test.csv",
         "data/repo_grouped_pool.csv",
@@ -58,25 +57,26 @@ def _verifier() -> ModuleType:
     return _load_module_fresh()
 
 
-def test_identity_map_has_eight_entries_and_covers_ccs_dataset_with_space() -> None:
+def test_identity_map_has_seven_entries_and_covers_ccs_dataset_with_space() -> None:
     # Given: the identity map of byte-identical remote->local pairs
     identity = _verifier().IDENTITY_MAP
 
     # When / Then: it has exactly 8 entries and keeps the spaced filename intact
-    assert len(identity) == 8, f"expected 8 identity pairs, got {sorted(identity)}"
+    assert len(identity) == 7, f"expected 7 identity pairs, got {sorted(identity)}"
     assert identity["data/CCS Dataset.csv"] == "datasets/data/CCS Dataset.csv"
-    assert identity["dataset_info.yaml"] == "datasets/dataset_info.yaml"
     assert identity["data/repo_split.json"] == "datasets/data/repo_split.json"
 
 
-def test_deleted_scripts_are_exactly_the_three_old_pipeline_files() -> None:
-    # Given / When: the set of scripts that must be absent from the HF repo
-    # Then: it is exactly the three superseded pipeline files
-    assert _verifier().DELETED_SCRIPTS == frozenset(
+def test_deleted_remote_paths_are_the_three_scripts_plus_hub_ignored_metadata() -> None:
+    # Given / When: the set of paths that must be absent from the HF repo
+    # Then: the three superseded pipeline files plus dataset_info.yaml, whose
+    # filename the Hub never reads and whose configs contradict the card
+    assert _verifier().DELETED_REMOTE_PATHS == frozenset(
         {
             "scripts/clean_ccs_dataset.py",
             "scripts/generate_tangled_commites.py",
             "scripts/sample_atomic_commites.py",
+            "dataset_info.yaml",
         }
     )
 
@@ -91,7 +91,7 @@ def test_surviving_scripts_are_not_in_deleted_set() -> None:
 
     # When / Then: neither is marked for deletion and both are expected remotely
     for survivor in survivors:
-        assert survivor not in verifier.DELETED_SCRIPTS
+        assert survivor not in verifier.DELETED_REMOTE_PATHS
         assert survivor in verifier.EXPECTED_REMOTE_TREE
 
 

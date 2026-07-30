@@ -42,7 +42,6 @@ IDENTITY_MAP: Final[Mapping[str, str]] = {
     "data/repo_grouped_pool.csv": "datasets/data/repo_grouped_pool.csv",
     "data/repo_split.json": "datasets/data/repo_split.json",
     "data/CCS Dataset.csv": "datasets/data/CCS Dataset.csv",
-    "dataset_info.yaml": "datasets/dataset_info.yaml",
     "scripts/generate_repo_tangled.py": "datasets/scripts/generate_repo_tangled.py",
     "scripts/show_tokens_distribution.py": "datasets/scripts/show_tokens_distribution.py",
 }
@@ -55,21 +54,22 @@ MUST_MATCH_MAP: Final[Mapping[str, str]] = {
     "scripts/upload_to_huggingface.py": "datasets/scripts/upload_to_huggingface.py",
 }
 
-# Superseded pipeline scripts that must no longer exist on HuggingFace.
-DELETED_SCRIPTS: Final[frozenset[str]] = frozenset(
+# Paths that must no longer exist on HuggingFace: the superseded pipeline scripts
+# plus dataset_info.yaml, a filename the Hub never reads.
+DELETED_REMOTE_PATHS: Final[frozenset[str]] = frozenset(
     {
         "scripts/clean_ccs_dataset.py",
         "scripts/generate_tangled_commites.py",
         "scripts/sample_atomic_commites.py",
+        "dataset_info.yaml",
     }
 )
 
-# The exact remote listing expected after the sync (13 entries, .gitattributes included).
+# The exact remote listing expected after the sync (12 entries, .gitattributes included).
 EXPECTED_REMOTE_TREE: Final[frozenset[str]] = frozenset(
     {
         ".gitattributes",
         "README.md",
-        "dataset_info.yaml",
         "data/tangled_ccs_dataset_train.csv",
         "data/tangled_ccs_dataset_test.csv",
         "data/repo_grouped_pool.csv",
@@ -171,7 +171,7 @@ def _report_tree(remote_files: list[str]) -> list[str]:
     """Print tree/forbidden/deletion checks and return the failure descriptions."""
     failures: list[str] = []
 
-    still_present = sorted(DELETED_SCRIPTS.intersection(remote_files))
+    still_present = sorted(DELETED_REMOTE_PATHS.intersection(remote_files))
     print(f"\nRemote listing: {len(remote_files)} files")
     for path in still_present:
         failures.append(f"deleted script still on HF: {path}")
