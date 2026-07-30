@@ -63,6 +63,11 @@ VERIFICATION_TARGETS: Final[tuple[tuple[str, str], ...]] = (
     ("default", "test"),
     ("original", "train"),
 )
+TARGET_DESCRIPTIONS: Final[dict[tuple[str, str], str]] = {
+    ("default", "train"): "tangled commits for training",
+    ("default", "test"): "tangled commits for evaluation",
+    ("original", "train"): "atomic commit pool",
+}
 EXPECTED_REMOTE_TREE: Final[frozenset[str]] = frozenset(
     {
         ".gitattributes",
@@ -235,6 +240,13 @@ def upload_metadata_files(repo_id: str) -> None:
         raise RuntimeError(f"Failed to upload metadata files: {', '.join(failed_paths)}")
 
 
+def configuration_summary_lines() -> tuple[str, ...]:
+    return tuple(
+        f"  - {config_name}/{split}: {TARGET_DESCRIPTIONS[(config_name, split)]}"
+        for config_name, split in VERIFICATION_TARGETS
+    )
+
+
 def verify_upload(repo_id: str) -> None:
     """Verify dataset upload by loading all configurations."""
     from datasets import load_dataset
@@ -373,9 +385,8 @@ def main() -> None:
             f"\n🎉 Dataset successfully updated at: https://huggingface.co/datasets/{repo_id}"
         )
         print("\nDataset configurations available:")
-        print("  - train: Tangled commits for training")
-        print("  - test: Tangled commits for testing") 
-        print("  - original: Original atomic commits")
+        for summary_line in configuration_summary_lines():
+            print(summary_line)
 
     except Exception as e:
         print(f"✗ Upload failed: {e}")

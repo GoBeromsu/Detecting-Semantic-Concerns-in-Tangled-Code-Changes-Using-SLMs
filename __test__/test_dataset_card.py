@@ -109,6 +109,27 @@ def test_verification_targets_match_the_published_card() -> None:
     assert set(uploader.VERIFICATION_TARGETS) == declared
 
 
+def test_summary_lines_are_derived_from_the_verification_targets() -> None:
+    """The closing summary must not hardcode config names.
+
+    It previously advertised 'train'/'test'/'original' as configs while the real
+    layout is 'default'/'original', so the success message told the reader
+    something load_dataset would reject.
+    """
+    import importlib
+    import sys
+
+    sys.path.insert(0, str(REPOSITORY_ROOT / "datasets" / "scripts"))
+    uploader = importlib.import_module("upload_to_huggingface")
+
+    lines = uploader.configuration_summary_lines()
+    assert len(lines) == len(uploader.VERIFICATION_TARGETS)
+    for (config_name, split), line in zip(
+        uploader.VERIFICATION_TARGETS, lines, strict=True
+    ):
+        assert f"{config_name}/{split}" in line
+
+
 def test_declared_configs_are_exactly_default_and_original() -> None:
     frontmatter = read_frontmatter(CARD_PATH)
     configs = frontmatter["configs"]
