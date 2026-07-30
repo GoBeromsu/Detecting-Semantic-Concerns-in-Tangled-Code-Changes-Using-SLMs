@@ -54,3 +54,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["utils", "visual_eval"]
+
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: long-running checks (full-dataset re-encodes, pipeline re-runs)",
+    "network: requires network access",
+    "gpu: requires a CUDA device",
+]

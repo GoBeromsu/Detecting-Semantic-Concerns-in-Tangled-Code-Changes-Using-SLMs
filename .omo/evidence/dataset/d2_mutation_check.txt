@@ -1,0 +1,44 @@
+$ uv run pytest __test__/test_dataset_distribution.py -v
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-8.4.1, pluggy-1.6.0 -- /Users/beomsu/Documents/01_Project/EMSE/Concern-is-All-You-Need/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/beomsu/Documents/01_Project/EMSE/Concern-is-All-You-Need
+configfile: pyproject.toml
+plugins: anyio-4.9.0
+collecting ... collected 21 items
+
+__test__/test_dataset_distribution.py::test_canonical_type_vocabulary_is_seven_types PASSED
+__test__/test_dataset_distribution.py::test_split_row_count[train] PASSED
+__test__/test_dataset_distribution.py::test_split_row_count[test] PASSED
+__test__/test_dataset_distribution.py::test_marginal_type_totals_are_uniform[train] FAILED
+__test__/test_dataset_distribution.py::test_marginal_type_totals_are_uniform[test] PASSED
+__test__/test_dataset_distribution.py::test_rows_per_concern_count_are_uniform[train] PASSED
+__test__/test_dataset_distribution.py::test_rows_per_concern_count_are_uniform[test] PASSED
+__test__/test_dataset_distribution.py::test_per_concern_count_and_type_counts_scale_with_k[train] PASSED
+__test__/test_dataset_distribution.py::test_per_concern_count_and_type_counts_scale_with_k[test] PASSED
+__test__/test_dataset_distribution.py::test_types_are_distinct_and_sized_by_concern_count[train] PASSED
+__test__/test_dataset_distribution.py::test_types_are_distinct_and_sized_by_concern_count[test] PASSED
+__test__/test_dataset_distribution.py::test_sha_sets_are_unique_within_split[train] PASSED
+__test__/test_dataset_distribution.py::test_sha_sets_are_unique_within_split[test] PASSED
+__test__/test_dataset_distribution.py::test_every_sha_resolves_to_its_rows_repo[train] PASSED
+__test__/test_dataset_distribution.py::test_every_sha_resolves_to_its_rows_repo[test] PASSED
+__test__/test_dataset_distribution.py::test_repo_split_partitions_are_disjoint PASSED
+__test__/test_dataset_distribution.py::test_no_sha_is_shared_between_splits PASSED
+__test__/test_dataset_distribution.py::test_train_split_covers_every_type_combination PASSED
+__test__/test_dataset_distribution.py::test_test_split_combination_coverage_is_documented PASSED
+__test__/test_dataset_distribution.py::test_joined_diff_fits_token_budget[train] PASSED
+__test__/test_dataset_distribution.py::test_joined_diff_fits_token_budget[test] PASSED
+
+=================================== FAILURES ===================================
+_________________ test_marginal_type_totals_are_uniform[train] _________________
+
+>       assert counts == Counter({t: expected for t in CANONICAL_TYPES})
+E       AssertionError: assert Counter({'fix': 600, 'feat': 600, 'refactor': 600, 'test': 600, 'docs': 600, 'build': 600, 'ci': 600}) == Counter({'feat': 599, 'fix': 599, 'refactor': 599, 'test': 599, 'docs': 599, 'build': 599, 'ci': 599})
+
+__test__/test_dataset_distribution.py:111: AssertionError
+=========================== short test summary info ============================
+FAILED __test__/test_dataset_distribution.py::test_marginal_type_totals_are_uniform[train]
+========================= 1 failed, 20 passed in 2.35s =========================
+
+Mutation: changed train SplitExpectation.per_type from 600 to 599.
+Result: exit code 1; exactly one test node failed. Reverted immediately after this run.
