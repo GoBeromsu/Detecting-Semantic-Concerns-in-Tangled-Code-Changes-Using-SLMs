@@ -47,6 +47,8 @@ A *reachable* combo that produced no row is only a defect if the sampler had eno
 
 Under a correct sampler, each concern count draws independently, so the expected number of still-uncovered combinations after `draws` draws is `C * (1 - 1/C)^draws` (coupon collector). `draws needed` is the expected number required to cover every combination, `C * H(C)`.
 
+**Model caveat — read before citing these numbers.** The formula assumes draws are uniform over combinations. They are not: `pick_type_combination` tries the k most under-represented types first and only falls back to a random k-subset, which is what drives exact marginal uniformity. So treat the per-k figures as an order-of-magnitude reference, not a fit — the k=3 and k=4 rows deviate individually in opposite directions. Two robust facts carry the conclusion and do not depend on the uniformity assumption: (1) the same sampler reaches full coverage at 280 draws (train) and not at 70 (test), and (2) 70 is well below the ~145 draws needed for C(7,3)=35 under any reasonable draw model.
+
 | split | k | combos C | draws | expected uncovered | observed uncovered | draws needed |
 | --- | --- | --- | --- | --- | --- | --- |
 | train | 1 | 7 | 280 | 0.00 | 0 | 18 |
