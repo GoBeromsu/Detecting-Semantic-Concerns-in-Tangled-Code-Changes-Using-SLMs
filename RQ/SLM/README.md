@@ -4,7 +4,7 @@ Two independent paths are preserved:
 
 | Path | Purpose | Entry points |
 |---|---|---|
-| Local Unsloth | Qwen3.6-27B BF16, unmerged LoRA adapter | `python -m RQ.SLM.unsloth.{preflight,train,memory,infer}` |
+| Local Unsloth | Qwen3.6-27B BF16, unmerged LoRA adapter | `python -m RQ.SLM.unsloth.{probe,preflight,train,memory,infer}` |
 | Legacy | Published Qwen3-14B/GGUF results | `RQ/SLM/{train,infer,convert_to_gguf}.py` and protected legacy shells |
 
 The legacy path is unchanged. The local path is the `RQ/SLM/unsloth/` package.
@@ -29,17 +29,25 @@ uv sync --frozen --python 3.12 --extra local-gpu
 
 All entrypoints use module invocation.
 
+### Probe the host
+
+```bash
+python -m RQ.SLM.unsloth.probe --output .omo/evidence/unsloth/gpu-profile.json
+```
+
+Read-only capture of live host facts (nvidia-smi, `/proc`, disk usage, and a torch BF16/CUDA capability check). It never allocates GPU memory, loads a model, or mutates device state. On any capture failure it writes `{"valid": false, "error": ...}` and exits non-zero, which the preflight step then rejects.
+
 ### Preflight
 
 ```bash
 python -m RQ.SLM.unsloth.preflight \
   --config RQ/SLM/unsloth/configs/qwen3_6_27b.yml \
   --host-profile RQ/SLM/configs/hosts/blackwell-rtx-pro-6000.yml \
-  --probe-json <captured-probe.json> --cached-bytes 0 \
+  --probe-json .omo/evidence/unsloth/gpu-profile.json --cached-bytes 0 \
   --output .omo/evidence/unsloth/preflight.json
 ```
 
-Preflight validates live Blackwell facts before GPU allocation.
+Preflight validates the captured Blackwell facts before GPU allocation: it fails closed if free VRAM is below the observed budget, a compute process already holds the GPU, or the post-download disk reserve cannot be preserved.
 
 ### Template inspection and smoke training
 
@@ -82,6 +90,7 @@ Inference flags are `--config`, `--adapter`, `--data-source {local,hub}`, `--res
 | `unsloth/train.py` | training, manifest, adapter validation |
 | `unsloth/infer.py` | BF16 PEFT evaluation and verification |
 | `unsloth/memory.py` | isolated memory qualification |
+| `unsloth/probe.py` | read-only host-fact capture (writes the preflight probe JSON) |
 | `unsloth/preflight.py` | live host preflight |
 | `unsloth/adapter.py` | adapter contract validation |
 | `unsloth/results.py` | result schema and finalization |

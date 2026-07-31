@@ -20,6 +20,7 @@ Two paths coexist here. They share no configs and never import each other. Confu
 | `config.py` | validated config + host profile load; rejects non-BF16/quant/flash-attn/left-pad/packing |
 | `data.py` | split load, row validation, chat rendering, canonical hashing |
 | `runtime.py` | lazy Unsloth/TRL constructors, response-only mask |
+| `probe.py` | read-only host-fact capture → probe JSON that `preflight` consumes |
 | `preflight.py` | read-only host-fact validation before allocation |
 | `memory.py` (+`_memory_worker.py`, `_memory_types.py`) | per-length qualification, child-isolated |
 | `adapter.py` | CPU-only content-addressed adapter validation |
