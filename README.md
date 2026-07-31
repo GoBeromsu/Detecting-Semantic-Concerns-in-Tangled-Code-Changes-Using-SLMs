@@ -30,11 +30,16 @@ This repository contains the complete implementation and analysis for detecting 
 │
 ├── RQ/                          # Research Questions - Models and Analysis
 │   ├── GPT/                    # GPT-4.1 inference pipeline
-│   ├── SLM/                    # Small Language Models (Qwen3-14B)
-│   │   ├── configs/            # Model and training configurations
-│   │   ├── train.py            # LoRA fine-tuning script
-│   │   ├── infer.py            # Inference script
-│   │   └── convert_to_gguf.py  # GGUF conversion for deployment
+│   ├── SLM/                    # Small Language Models (see RQ/SLM/README.md)
+│   │   ├── configs/            # Legacy configs + local host profile
+│   │   │   └── hosts/          # Recorded facts for the local GPU host
+│   │   ├── unsloth/            # Current Qwen3.6-27B BF16 LoRA package
+│   │   │   ├── configs/qwen3_6_27b.yml
+│   │   │   ├── {config,data,runtime,train,infer,memory,preflight}.py
+│   │   │   └── {adapter,results,generation,infer_options}.py
+│   │   ├── train.py            # Legacy: Qwen3-14B LoRA fine-tuning
+│   │   ├── infer.py            # Legacy: inference script
+│   │   └── convert_to_gguf.py  # Legacy: GGUF conversion for deployment
 │   ├── analysis/               # Unified analysis scripts
 │   │   ├── config.yaml         # Single source of truth for all RQs
 │   │   ├── run.py              # Main analysis runner
@@ -44,7 +49,7 @@ This repository contains the complete implementation and analysis for detecting 
 │   │   └── RQ4/                # Inference Efficiency
 │   └── main.py
 │
-├── results/                     # Generated outputs
+├── results/                     # Generated outputs only, never hand-edited
 │   ├── analysis/               # Analysis results by RQ
 │   │   ├── RQ1/
 │   │   ├── RQ2/
@@ -52,7 +57,8 @@ This repository contains the complete implementation and analysis for detecting 
 │   │   └── RQ4/
 │   ├── gpt/                    # GPT-4.1 inference results
 │   ├── Qwen/                   # Qwen3-14B inference results
-│   └── Qwen3-14B-LoRA/         # Fine-tuned model results
+│   ├── Qwen3-14B-LoRA/         # Fine-tuned Qwen3-14B results (paper)
+│   └── Qwen3.6-27B-LoRA/       # Fine-tuned Qwen3.6-27B results (timestamped runs)
 │
 ├── visual_eval/                 # Interactive Streamlit dashboard
 │   ├── components.py
@@ -60,9 +66,9 @@ This repository contains the complete implementation and analysis for detecting 
 │   ├── session.py
 │   └── setup.py
 │
-├── scripts/                     # HPC deployment scripts
-│   ├── setup_env.sh
-│   ├── run_training.sh
+├── scripts/                     # Deployment scripts
+│   ├── setup_env.sh                  # HPC (Stanage) environment setup
+│   ├── run_training.sh               # HPC legacy training
 │   ├── run_lora_pipeline.sh
 │   ├── run_infer_huggingface.sh
 │   └── run_gguf_conversion.sh
@@ -127,12 +133,34 @@ Analyzes how factors influence inference latency:
 - **GPT-4.1**: OpenAI API baseline (zero-shot)
 - **Qwen3-14B**: Base SLM for comparison
 - **Qwen3-14B-LoRA**: Fine-tuned SLM with LoRA (rank=32, alpha=48)
+- **Qwen3.6-27B-LoRA**: Current fine-tuning target, BF16 LoRA with an unmerged PEFT adapter (rank=32, alpha=48, dropout=0.05)
+
+The reported paper results come from the legacy Qwen3-14B path (`train.py` -> `infer.py` -> `convert_to_gguf.py`) on Sheffield Stanage SLURM. That path is unchanged. The Qwen3.6-27B path is separate: it trains through Unsloth, evaluates through Transformers and PEFT, and produces no merged model and no GGUF. The Stanage A100/H100 allocation is no longer accessible, so the 27B work targets a single local Blackwell workstation GPU instead and HPC execution is out of scope for it.
 
 ### Dataset
 
-- **Train**: `tangled_ccs_dataset_train.csv` (80% split)
-- **Test**: `tangled_ccs_dataset_test.csv` (20% split)
+- **Train**: `tangled_ccs_dataset_train.csv` (80% split, 1400 validated rows)
+- **Test**: `tangled_ccs_dataset_test.csv` (20% split, 350 rows)
 - Based on Conventional Commits Specification (CCS)
+- The 27B path pins `Berom0227/tangled-ccs-commits` at revision `234e8cb034bace7f6fa2a87e73e8c86bc0b04a7d` and drops the single train row that exceeds 16384 tokens, leaving **1399 retained rows**
+
+### Qwen3.6-27B workflow
+
+Full instructions, exact flags, and evidence requirements live in [`RQ/SLM/README.md`](RQ/SLM/README.md). In short:
+
+- Model `Qwen/Qwen3.6-27B` pinned at revision `6a9e13bd6fc8f0983b9b99948120bc37f49c13e9`, text tower only, configured by `RQ/SLM/unsloth/configs/qwen3_6_27b.yml`.
+- BF16 end to end. No quantization: 4-bit, 8-bit, and `adamw_8bit` are rejected by config validation, as are `flash_attention_2`, left padding, packing, and `device_map: auto`.
+- Response-only supervision: loss is masked to the assistant turn, recorded in the manifest as `objective: response_only_json_eos`.
+- Inference requires a real pad token that differs from the EOS token; if they match, the run stops rather than padding with EOS.
+
+```bash
+uv sync --frozen --python 3.12 --extra local-gpu
+uv run pytest __test__/ -q
+```
+
+Phase A (CPU) is complete and covered by the test suite. Phase B is not done: loading the model, memory qualification, and training all allocate the entire GPU on a workstation that also drives a display. Full training refuses to start until `python -m RQ.SLM.unsloth.memory` records `approved_16384` qualification evidence whose config, host profile, and measurement hashes still match on disk.
+
+`results/` contains generated output only. Regenerate it by re-running the step that produced it rather than editing files by hand.
 
 ### Utilities
 
