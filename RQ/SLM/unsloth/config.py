@@ -65,6 +65,7 @@ class TrainingConfig:
     seed: int
     logging_steps: int
     save_strategy: str
+    save_total_limit: int
     eval_strategy: str
     max_seq_length: int
     packing: bool
@@ -266,7 +267,7 @@ def _parse_config(root: Mapping[str, JsonValue]) -> UnslothConfig:
         ModelConfig(model.text("id"), model.text("revision"), model.boolean("text_only"), model.text("dataset_id"), model.text("dataset_revision")),
         PrecisionConfig(precision.boolean("load_in_16bit"), precision.boolean("load_in_4bit"), precision.boolean("load_in_8bit")),
         LoraConfig(lora.integer("rank"), lora.integer("alpha"), lora.number("dropout"), lora.text("bias"), lora.strings("target_modules"), lora.text("exclude_modules"), lora.text("use_gradient_checkpointing")),
-        TrainingConfig(training.text("optim"), training.number("learning_rate"), training.integer("num_train_epochs"), training.integer("per_device_train_batch_size"), training.integer("gradient_accumulation_steps"), training.number("warmup_ratio"), training.text("lr_scheduler_type"), training.integer("seed"), training.integer("logging_steps"), training.text("save_strategy"), training.text("eval_strategy"), training.integer("max_seq_length"), training.boolean("packing"), training.text("padding_side")),
+        TrainingConfig(training.text("optim"), training.number("learning_rate"), training.integer("num_train_epochs"), training.integer("per_device_train_batch_size"), training.integer("gradient_accumulation_steps"), training.number("warmup_ratio"), training.text("lr_scheduler_type"), training.integer("seed"), training.integer("logging_steps"), training.text("save_strategy"), training.integer("save_total_limit"), training.text("eval_strategy"), training.integer("max_seq_length"), training.boolean("packing"), training.text("padding_side")),
         TechnicalConfig(technical.text("attn_implementation"), technical.text("device_map")),
         DataConfig(data.boolean("drop_rows_over_max_seq_length")),
         MaskingConfig(masking.text("instruction_part"), masking.text("response_part")),

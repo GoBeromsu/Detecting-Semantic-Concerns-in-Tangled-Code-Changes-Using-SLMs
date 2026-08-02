@@ -107,6 +107,24 @@ def test_run_config_when_parsed_uses_the_pinned_config_maximum() -> None:
     assert config.training.max_seq_length == 16384
 
 
+def test_checkpoint_dir_when_derived_from_a_run_timestamp_is_a_sibling_of_adapter_dir() -> None:
+    # Given: the run-directory helpers keyed by the same timestamp.
+    from RQ.SLM.unsloth.train import _adapter_dir, _checkpoint_dir, load_run_config, parse_args
+
+    config = load_run_config(parse_args(()))
+    timestamp = "20260101000000"
+
+    # When: both directories for one run are derived.
+    adapter_dir = _adapter_dir(config, timestamp)
+    checkpoint_dir = _checkpoint_dir(config, timestamp)
+
+    # Then: checkpoints never land inside the directory validate_adapter() walks.
+    assert checkpoint_dir != adapter_dir
+    assert checkpoint_dir.parent == adapter_dir.parent
+    assert checkpoint_dir.name == "checkpoints"
+    assert adapter_dir.name == "adapter"
+
+
 @pytest.mark.parametrize(
     ("qualification", "raises"),
     (
@@ -329,6 +347,7 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
     trainer = FakeTrainer()
     evidence_dir = tmp_path / "qualification"
     captured: list[tuple[Path, Path | None, str]] = []
+    captured_checkpoint_dirs: list[Path] = []
 
     def build_manifest_after_save(
         config: UnslothConfig, provenance: RunProvenance, evidence: ManifestEvidence
@@ -364,9 +383,10 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
 
     def trainer_factory(
         runtime_value: FakeRuntime, examples: Sequence[RenderedExample], config: UnslothConfig,
-        adapter_dir: Path, max_steps: int | None,
+        output_dir: Path, max_steps: int | None,
     ) -> FakeTrainer:
-        _ = runtime_value, examples, config, adapter_dir, max_steps
+        _ = runtime_value, examples, config, max_steps
+        captured_checkpoint_dirs.append(output_dir)
         return trainer
 
     def write_manifest(adapter_dir: Path, manifest: RunManifest) -> Path:
@@ -405,6 +425,16 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
     assert captured and captured[0][0].is_dir()
     assert captured[0][1] == evidence_dir
     assert captured[0][2] == "full"
+
+    # Then: the trainer's checkpoint output_dir is a sibling of adapter_dir, never adapter_dir
+    # itself — build_manifest()/validate_adapter() would reject checkpoint-* subdirectories
+    # found inside the adapter directory they walk.
+    adapter_dir = captured[0][0]
+    assert len(captured_checkpoint_dirs) == 1
+    checkpoint_dir = captured_checkpoint_dirs[0]
+    assert checkpoint_dir != adapter_dir
+    assert checkpoint_dir.parent == adapter_dir.parent
+    assert checkpoint_dir.name == "checkpoints"
 
 
 def test_adapter_path_when_written_atomically_contains_the_validated_directory(

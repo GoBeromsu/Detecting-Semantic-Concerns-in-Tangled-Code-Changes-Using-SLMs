@@ -91,6 +91,7 @@ def build_sft_kwargs(
         "dataset_text_field": "text",
         "packing": False,
         "save_strategy": config.training.save_strategy,
+        "save_total_limit": config.training.save_total_limit,
         "eval_strategy": config.training.eval_strategy,
         "seed": config.training.seed,
         "report_to": "wandb",

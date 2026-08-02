@@ -75,6 +75,8 @@ def test_runtime_builders_when_using_pinned_config_preserve_required_settings() 
     assert sft_kwargs["max_length"] == 16384
     assert sft_kwargs["dataset_text_field"] == "text"
     assert sft_kwargs["packing"] is False
+    assert sft_kwargs["save_strategy"] == "epoch"
+    assert sft_kwargs["save_total_limit"] == 2
 
 
 def test_runtime_module_when_imported_has_no_heavy_module_imports() -> None:

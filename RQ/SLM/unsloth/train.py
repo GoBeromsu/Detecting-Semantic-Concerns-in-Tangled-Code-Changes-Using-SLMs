@@ -145,7 +145,7 @@ def _adapter_identity(config: UnslothConfig, evidence: ManifestEvidence) -> dict
         "model": {"id": config.model.id, "revision": config.model.revision, "text_only": config.model.text_only, "dataset_id": config.model.dataset_id, "dataset_revision": config.model.dataset_revision},
         "precision": {"load_in_16bit": config.precision.load_in_16bit, "load_in_4bit": config.precision.load_in_4bit, "load_in_8bit": config.precision.load_in_8bit},
         "lora": {"rank": config.lora.rank, "alpha": config.lora.alpha, "dropout": config.lora.dropout, "bias": config.lora.bias, "target_modules": list(config.lora.target_modules), "exclude_modules": config.lora.exclude_modules, "use_gradient_checkpointing": config.lora.use_gradient_checkpointing},
-        "training": {"optim": config.training.optim, "learning_rate": config.training.learning_rate, "num_train_epochs": config.training.num_train_epochs, "per_device_train_batch_size": config.training.per_device_train_batch_size, "gradient_accumulation_steps": config.training.gradient_accumulation_steps, "warmup_ratio": config.training.warmup_ratio, "lr_scheduler_type": config.training.lr_scheduler_type, "seed": config.training.seed, "logging_steps": config.training.logging_steps, "save_strategy": config.training.save_strategy, "eval_strategy": config.training.eval_strategy, "max_seq_length": config.training.max_seq_length, "packing": config.training.packing, "padding_side": config.training.padding_side},
+        "training": {"optim": config.training.optim, "learning_rate": config.training.learning_rate, "num_train_epochs": config.training.num_train_epochs, "per_device_train_batch_size": config.training.per_device_train_batch_size, "gradient_accumulation_steps": config.training.gradient_accumulation_steps, "warmup_ratio": config.training.warmup_ratio, "lr_scheduler_type": config.training.lr_scheduler_type, "seed": config.training.seed, "logging_steps": config.training.logging_steps, "save_strategy": config.training.save_strategy, "save_total_limit": config.training.save_total_limit, "eval_strategy": config.training.eval_strategy, "max_seq_length": config.training.max_seq_length, "packing": config.training.packing, "padding_side": config.training.padding_side},
         "technical": {"attn_implementation": config.technical.attn_implementation, "device_map": config.technical.device_map}, "data": {"drop_rows_over_max_seq_length": config.data.drop_rows_over_max_seq_length},
         "masking": {"instruction_part": config.masking.instruction_part, "response_part": config.masking.response_part}, "output": {"adapter_dir_root": config.output.adapter_dir_root},
         "hub": {"adapter_repo": config.hub.adapter_repo, "merged_repo": config.hub.merged_repo, "gguf_repo": config.hub.gguf_repo}, "wandb": {"project": config.wandb.project, "experiment_name": config.wandb.experiment_name},
@@ -316,6 +316,13 @@ def _adapter_dir(config: UnslothConfig, timestamp: str) -> Path:
     return Path(config.output.adapter_dir_root) / timestamp / "adapter"
 
 
+def _checkpoint_dir(config: UnslothConfig, timestamp: str) -> Path:
+    # Epoch checkpoints must land outside adapter_dir: build_manifest()/validate_adapter()
+    # require every entry under adapter_dir to be a regular file (only "evidence/" is a
+    # permitted subdirectory), so mid-run checkpoint-* directories would break both.
+    return Path(config.output.adapter_dir_root) / timestamp / "checkpoints"
+
+
 def _upload_adapter(adapter_dir: Path, config: UnslothConfig) -> None:
     hub = importlib.import_module("huggingface_hub")
     if not isinstance(hub, HubModule):
@@ -348,8 +355,10 @@ def run(arguments: RunArguments) -> None:
     prepared = render_training_rows(train_rows, runtime.tokenizer, max_seq_length)
     if evidence_dir is not None:
         write_overflow_evidence(prepared.examples, prepared.excluded_rows, evidence_dir)
-    adapter_dir = _adapter_dir(config, datetime.now(UTC).strftime("%Y%m%d%H%M%S"))
-    trainer = create_trainer(runtime, prepared.examples, config, adapter_dir, arguments.max_steps)
+    timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
+    adapter_dir = _adapter_dir(config, timestamp)
+    checkpoint_dir = _checkpoint_dir(config, timestamp)
+    trainer = create_trainer(runtime, prepared.examples, config, checkpoint_dir, arguments.max_steps)
     trainer.train()
     trainer.save_model(str(adapter_dir))
     runtime.tokenizer.save_pretrained(str(adapter_dir))

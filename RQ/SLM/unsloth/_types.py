@@ -137,6 +137,7 @@ class SftKwargs(TypedDict):
     dataset_text_field: str
     packing: bool
     save_strategy: str
+    save_total_limit: int
     eval_strategy: str
     seed: int
     report_to: str

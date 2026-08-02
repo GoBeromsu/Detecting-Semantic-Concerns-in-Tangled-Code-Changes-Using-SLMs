@@ -41,7 +41,8 @@ training:
   lr_scheduler_type: "linear"
   seed: 42
   logging_steps: 100
-  save_strategy: "no"
+  save_strategy: "epoch"
+  save_total_limit: 2
   eval_strategy: "no"
   max_seq_length: 16384
   packing: false
