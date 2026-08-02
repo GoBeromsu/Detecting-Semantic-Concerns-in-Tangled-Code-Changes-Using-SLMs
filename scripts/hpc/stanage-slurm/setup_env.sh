@@ -11,7 +11,7 @@
 #SBATCH --error=logs/setup_env_%j.err
 
 # Sheffield HPC Stanage - Centralized Environment Setup
-# - Uses scripts/environment.yml for base Conda env
+# - Uses scripts/hpc/stanage-slurm/environment.yml for base Conda env
 # - Uses uv and pyproject.toml extras (.[hpc]) for application deps
 # - Installs CUDA-specific PyTorch separately to avoid conflicts
 # - Keeps flash-attn install explicit with --no-build-isolation
@@ -35,7 +35,7 @@ module load CMake/3.26.3-GCCcore-12.3.0
 
 if ! conda env list | grep -q "venv"; then
     echo "[INFO] Creating new conda env 'venv'..."
-    conda env create -f "$REPO_DIR/scripts/environment.yml"
+    conda env create -f "$REPO_DIR/scripts/hpc/stanage-slurm/environment.yml"
 fi
 source activate venv
 

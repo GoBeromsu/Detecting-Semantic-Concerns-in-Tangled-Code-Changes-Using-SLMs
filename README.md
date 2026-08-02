@@ -67,11 +67,12 @@ This repository contains the complete implementation and analysis for detecting 
 │   └── setup.py
 │
 ├── scripts/                     # Deployment scripts
-│   ├── setup_env.sh                  # HPC (Stanage) environment setup
-│   ├── run_training.sh               # HPC legacy training
-│   ├── run_lora_pipeline.sh
-│   ├── run_infer_huggingface.sh
-│   └── run_gguf_conversion.sh
+│   └── hpc/stanage-slurm/            # Frozen Sheffield Stanage SLURM scripts (14B paper results)
+│       ├── setup_env.sh                  # HPC (Stanage) environment setup
+│       ├── run_training.sh               # HPC legacy training
+│       ├── run_lora_pipeline.sh
+│       ├── run_infer_huggingface.sh
+│       └── run_gguf_conversion.sh
 │
 ├── utils/                       # Shared utilities
 │   ├── eval.py                 # Evaluation metrics

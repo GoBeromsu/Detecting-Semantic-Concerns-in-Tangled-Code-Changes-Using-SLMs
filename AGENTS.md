@@ -20,7 +20,7 @@ Concern-is-All-You-Need/
 ├── datasets/                 # 3-stage dataset pipeline — see datasets/AGENTS.md
 ├── utils/                    # eval.py prompt.py model.py llms/ (lazy-import facade)
 ├── visual_eval/              # Streamlit dashboard components
-├── scripts/                  # LEGACY Stanage HPC SLURM *.sh + environment.yml
+├── scripts/hpc/stanage-slurm/ # FROZEN Stanage HPC SLURM *.sh + environment.yml (14B paper results)
 ├── results/                  # GENERATED outputs only (timestamped) — never hand-edit
 ├── supplementary/            # paper's extended result CSVs
 └── __test__/                 # pytest (CPU-only); unsloth/ subtree + fixtures/
@@ -55,5 +55,5 @@ python RQ/analysis/run.py --rq 1 # analysis dispatcher
 - Do NOT trust `CLAUDE.md` — stale: says analysis entry is `main.py` (actual `run.py`), calls RQ2 "efficiency" (actual RQ2 = commit-message impact, RQ4 = efficiency), and omits the `unsloth/` 27B path entirely. This AGENTS.md + README are authoritative.
 - LoRA config is rank=32, alpha=48 (CLAUDE.md's rank=64/alpha=128 is wrong).
 - `results/` is generated output — regenerate via runs, never hand-edit.
-- Legacy 14B files (`RQ/SLM/train.py`, `infer.py`, `convert_to_gguf.py`) + 8 `scripts/*.sh` are hash-locked in `__test__/fixtures/slm/protected-files.sha256`. Keep byte-identical.
+- Legacy 14B files (`RQ/SLM/train.py`, `infer.py`, `convert_to_gguf.py`) + 8 `scripts/hpc/stanage-slurm/*.sh` are hash-locked in `__test__/fixtures/slm/protected-files.sha256`. Keep byte-identical.
 - Multiple `.venv` dirs may exist — use the root one via `uv`.
