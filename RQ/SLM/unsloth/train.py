@@ -14,8 +14,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Final, Literal, Never, Protocol, TypeAlias, runtime_checkable
 
-if __package__ is None:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    __package__ = "RQ.SLM.unsloth"
 
 from RQ.SLM.unsloth._memory_types import (
     JSON_DECODER,

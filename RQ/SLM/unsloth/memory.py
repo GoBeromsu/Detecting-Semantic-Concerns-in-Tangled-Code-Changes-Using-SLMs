@@ -9,6 +9,10 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Final, assert_never
 
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    __package__ = "RQ.SLM.unsloth"
+
 from RQ.SLM.unsloth._memory_types import (
     DEFAULT_LENGTHS,
     ChildRequest,

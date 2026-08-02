@@ -15,9 +15,9 @@ from pathlib import Path
 from typing import Protocol, override, runtime_checkable
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    __package__ = "RQ.SLM.unsloth"
 
 from RQ.SLM.unsloth.results import (
     CONTEXT_SWEEP,

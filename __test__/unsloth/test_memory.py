@@ -329,3 +329,16 @@ main(("--help",))
     # Then: the operator can inspect the contract without a GPU stack.
     assert completed.returncode == 0, completed.stderr
     assert "--child-length" not in completed.stdout
+
+
+def test_help_when_invoked_directly_is_available_without_unsloth() -> None:
+    # Given: the directly executable memory-qualification path on this CPU-only host.
+    command = (sys.executable, str(REPO_ROOT / "RQ/SLM/unsloth/memory.py"), "--help")
+
+    # When: the file is launched as a bare script, not via -m.
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+
+    # Then: the package bootstrap resolves RQ.SLM.unsloth without a ModuleNotFoundError.
+    assert result.returncode == 0, result.stderr
+    assert "ModuleNotFoundError" not in result.stderr
+    assert "--lengths" in result.stdout

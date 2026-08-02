@@ -252,3 +252,16 @@ main(("--help",))
     # Then: help is available before the GPU-only stack is imported.
     assert completed.returncode == 0, completed.stderr
     assert "--verify-only" in completed.stdout
+
+
+def test_help_when_invoked_directly_is_available_without_unsloth() -> None:
+    # Given: the directly executable inference path on this CPU-only host.
+    command = (sys.executable, str(REPO_ROOT / "RQ/SLM/unsloth/infer.py"), "--help")
+
+    # When: the file is launched as a bare script, not via -m.
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+
+    # Then: the package bootstrap resolves RQ.SLM.unsloth without a ModuleNotFoundError.
+    assert result.returncode == 0, result.stderr
+    assert "ModuleNotFoundError" not in result.stderr
+    assert "--verify-only" in result.stdout
