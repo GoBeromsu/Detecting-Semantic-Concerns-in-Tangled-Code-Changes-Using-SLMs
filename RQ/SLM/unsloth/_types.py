@@ -143,6 +143,7 @@ class SftKwargs(TypedDict):
     report_to: str
     gradient_checkpointing: bool
     use_cache: bool
+    run_name: NotRequired[str]
     max_steps: NotRequired[int]
 
 

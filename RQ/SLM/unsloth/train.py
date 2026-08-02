@@ -139,13 +139,15 @@ def _adapter_template(root: Path) -> str:
         _adapter_fail("chat_template.jinja", f"cannot read ({error})")
 
 
-def _adapter_identity(config: UnslothConfig, evidence: ManifestEvidence) -> dict[str, JsonValue]:
+def _adapter_identity(
+    config: UnslothConfig, evidence: ManifestEvidence, report_to: str
+) -> dict[str, JsonValue]:
     excluded: list[JsonValue] = [{"index": row.index, "hash": row.row_hash, "token_length": row.token_length} for row in evidence.excluded_rows]
     effective: dict[str, JsonValue] = {
         "model": {"id": config.model.id, "revision": config.model.revision, "text_only": config.model.text_only, "dataset_id": config.model.dataset_id, "dataset_revision": config.model.dataset_revision},
         "precision": {"load_in_16bit": config.precision.load_in_16bit, "load_in_4bit": config.precision.load_in_4bit, "load_in_8bit": config.precision.load_in_8bit},
         "lora": {"rank": config.lora.rank, "alpha": config.lora.alpha, "dropout": config.lora.dropout, "bias": config.lora.bias, "target_modules": list(config.lora.target_modules), "exclude_modules": config.lora.exclude_modules, "use_gradient_checkpointing": config.lora.use_gradient_checkpointing},
-        "training": {"optim": config.training.optim, "learning_rate": config.training.learning_rate, "num_train_epochs": config.training.num_train_epochs, "per_device_train_batch_size": config.training.per_device_train_batch_size, "gradient_accumulation_steps": config.training.gradient_accumulation_steps, "warmup_ratio": config.training.warmup_ratio, "lr_scheduler_type": config.training.lr_scheduler_type, "seed": config.training.seed, "logging_steps": config.training.logging_steps, "save_strategy": config.training.save_strategy, "save_total_limit": config.training.save_total_limit, "eval_strategy": config.training.eval_strategy, "max_seq_length": config.training.max_seq_length, "packing": config.training.packing, "padding_side": config.training.padding_side},
+        "training": {"optim": config.training.optim, "learning_rate": config.training.learning_rate, "num_train_epochs": config.training.num_train_epochs, "per_device_train_batch_size": config.training.per_device_train_batch_size, "gradient_accumulation_steps": config.training.gradient_accumulation_steps, "warmup_ratio": config.training.warmup_ratio, "lr_scheduler_type": config.training.lr_scheduler_type, "seed": config.training.seed, "logging_steps": config.training.logging_steps, "report_to": report_to, "save_strategy": config.training.save_strategy, "save_total_limit": config.training.save_total_limit, "eval_strategy": config.training.eval_strategy, "max_seq_length": config.training.max_seq_length, "packing": config.training.packing, "padding_side": config.training.padding_side},
         "technical": {"attn_implementation": config.technical.attn_implementation, "device_map": config.technical.device_map}, "data": {"drop_rows_over_max_seq_length": config.data.drop_rows_over_max_seq_length},
         "masking": {"instruction_part": config.masking.instruction_part, "response_part": config.masking.response_part}, "output": {"adapter_dir_root": config.output.adapter_dir_root},
         "hub": {"adapter_repo": config.hub.adapter_repo, "merged_repo": config.hub.merged_repo, "gguf_repo": config.hub.gguf_repo}, "wandb": {"project": config.wandb.project, "experiment_name": config.wandb.experiment_name},
@@ -169,7 +171,12 @@ def _adapter_artifacts(root: Path, provenance: RunProvenance) -> tuple[Path, ...
     return tuple(sorted(paths, key=lambda path: path.relative_to(root).as_posix()))
 
 
-def build_manifest(config: UnslothConfig, provenance: RunProvenance, evidence: ManifestEvidence) -> RunManifest:
+def build_manifest(
+    config: UnslothConfig,
+    provenance: RunProvenance,
+    evidence: ManifestEvidence,
+    report_to: str,
+) -> RunManifest:
     root = evidence.adapter_dir
     if provenance.run_mode == "full" and not provenance.git_clean:
         _adapter_fail("git.clean", "full publication requires a clean Git worktree")
@@ -190,7 +197,7 @@ def build_manifest(config: UnslothConfig, provenance: RunProvenance, evidence: M
         _adapter_copy(profile, destination / "host_profile.yml", "host_profile")
         for name in FULL_ADAPTER_EVIDENCE[1:]:
             _adapter_copy(qualification / name, destination / name, f"qualification.{name}")
-    identity = _adapter_identity(config, evidence)
+    identity = _adapter_identity(config, evidence, report_to)
     _adapter_write_atomic(destination / "training_identity.json", (json.dumps(identity, sort_keys=True, separators=(",", ":")) + "\n").encode())
     captured: dict[str, JsonValue] = {"sha": provenance.git_sha, "clean": provenance.git_clean, "run_mode": provenance.run_mode}
     _adapter_write_atomic(destination / "provenance.json", (json.dumps(captured, sort_keys=True, separators=(",", ":")) + "\n").encode())
@@ -358,7 +365,14 @@ def run(arguments: RunArguments) -> None:
     timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     adapter_dir = _adapter_dir(config, timestamp)
     checkpoint_dir = _checkpoint_dir(config, timestamp)
-    trainer = create_trainer(runtime, prepared.examples, config, checkpoint_dir, arguments.max_steps)
+    report_to = "none" if arguments.smoke else "wandb"
+    run_name = None if arguments.smoke else f"{config.wandb.experiment_name}-{timestamp}"
+    if not arguments.smoke:
+        os.environ["WANDB_PROJECT"] = config.wandb.project
+    trainer = create_trainer(
+        runtime, prepared.examples, config, checkpoint_dir,
+        report_to=report_to, run_name=run_name, max_steps=arguments.max_steps,
+    )
     trainer.train()
     trainer.save_model(str(adapter_dir))
     runtime.tokenizer.save_pretrained(str(adapter_dir))
@@ -371,6 +385,7 @@ def run(arguments: RunArguments) -> None:
             arguments.host_profile, None if arguments.smoke else evidence_dir,
             prepared.excluded_rows, len(prepared.examples),
         ),
+        report_to,
     ))
     verify_adapter(adapter_dir, arguments.config)
     if arguments.verify_adapter_path_file is not None:

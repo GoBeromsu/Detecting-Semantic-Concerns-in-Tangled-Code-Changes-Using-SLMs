@@ -45,7 +45,16 @@ def test_runtime_builders_when_using_pinned_config_preserve_required_settings() 
     # When: pure constructor arguments are derived without ML imports.
     model_kwargs = build_model_load_kwargs(config, device_index=0, bf16_dtype="bf16")
     peft_kwargs = build_peft_kwargs(config)
-    sft_kwargs = build_sft_kwargs(config, output_dir=Path("adapter"), max_steps=None)
+    smoke_kwargs = build_sft_kwargs(
+        config, output_dir=Path("adapter"), max_steps=None, report_to="none", run_name=None
+    )
+    sft_kwargs = build_sft_kwargs(
+        config,
+        output_dir=Path("adapter"),
+        max_steps=None,
+        report_to="wandb",
+        run_name="qwen3.6-27b-semantic-concern-slm-unsloth-lora-20260101000000",
+    )
 
     # Then: all pinned loading, LoRA, and SFT policy is explicit.
     assert model_kwargs == {
@@ -77,6 +86,10 @@ def test_runtime_builders_when_using_pinned_config_preserve_required_settings() 
     assert sft_kwargs["packing"] is False
     assert sft_kwargs["save_strategy"] == "epoch"
     assert sft_kwargs["save_total_limit"] == 2
+    assert sft_kwargs["report_to"] == "wandb"
+    assert sft_kwargs.get("run_name") == "qwen3.6-27b-semantic-concern-slm-unsloth-lora-20260101000000"
+    assert smoke_kwargs["report_to"] == "none"
+    assert "run_name" not in smoke_kwargs
 
 
 def test_runtime_module_when_imported_has_no_heavy_module_imports() -> None:
@@ -266,6 +279,8 @@ def test_runtime_factories_when_injected_with_modules_use_response_only_markers(
         train_dataset=({"text": "row"},),
         config=config,
         output_dir=Path("out"),
+        report_to="wandb",
+        run_name="qwen3.6-27b-semantic-concern-slm-unsloth-lora-20260101000000",
     )
 
     # Then: SFTConfig owns data formatting; SFTTrainer receives only its upstream contract.
@@ -278,6 +293,10 @@ def test_runtime_factories_when_injected_with_modules_use_response_only_markers(
     assert sft_configurations[0]["max_length"] == 16384
     assert sft_configurations[0]["dataset_text_field"] == "text"
     assert sft_configurations[0]["packing"] is False
+    assert sft_configurations[0]["report_to"] == "wandb"
+    assert sft_configurations[0]["run_name"] == (
+        "qwen3.6-27b-semantic-concern-slm-unsloth-lora-20260101000000"
+    )
     assert dataset_rows == [[{"text": "row"}]]
     assert tuple(trainer_datasets[0].column_names) == ("text",)
     assert trainer_tokenizers == [tokenizer]

@@ -236,6 +236,8 @@ python -m RQ.SLM.unsloth.train --smoke --max-steps 5 --evidence-dir "$EVIDENCE_D
 
 - Requires neither `HF_HUB_TOKEN`/`WANDB_API_KEY` nor `--host-profile` (the full-run
   credential/qualification gate is skipped when `--smoke` is set).
+- Trains with `report_to="none"` — no wandb run is created and no `WANDB_API_KEY` is read, so
+  this step is safe to run on a host with no wandb credentials configured.
 - **This is the step that writes `$EVIDENCE_DIR/overflow-rows.json`** (row-1326 exclusion,
   1399 retained — see §6). Passing the same `$EVIDENCE_DIR` here pre-populates the file the
   full run will require to already exist.
@@ -271,6 +273,10 @@ Preconditions the code itself enforces before touching the GPU:
 - `qualification.json.status == "approved_16384"` and `approved_max_seq_length == 16384`,
   hash-bound to the current `config.yml` and `host_profile.yml` bytes.
 - `HF_HUB_TOKEN` and `WANDB_API_KEY` present in the shell environment (§2).
+- The wandb run for this training appears in project
+  `Untangling-Multi-Concern-Commits-with-Small-Language-Models` with run name
+  `qwen3.6-27b-semantic-concern-slm-unsloth-lora-<timestamp>` (the same UTC timestamp used for
+  the adapter and checkpoint directories).
 - Git provenance is computed twice, but only one call gates anything: at launch it's captured
   for informational purposes only (the result is discarded, `_ = _provenance("full")` — nothing
   enforces on it); the tree is re-derived and **enforced** only after training completes, right
