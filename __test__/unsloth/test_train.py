@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import os
 import subprocess
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -348,13 +349,20 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
     evidence_dir = tmp_path / "qualification"
     captured: list[tuple[Path, Path | None, str]] = []
     captured_checkpoint_dirs: list[Path] = []
+    captured_report_to: list[str] = []
+    captured_run_names: list[str | None] = []
+    captured_manifest_report_to: list[str] = []
 
     def build_manifest_after_save(
-        config: UnslothConfig, provenance: RunProvenance, evidence: ManifestEvidence
+        config: UnslothConfig,
+        provenance: RunProvenance,
+        evidence: ManifestEvidence,
+        report_to: str = "wandb",
     ) -> RunManifest:
         _ = config
         assert trainer.saved is True
         captured.append((evidence.adapter_dir, evidence.qualification_dir, provenance.run_mode))
+        captured_manifest_report_to.append(report_to)
         return {
             "schema_version": 2, "run_mode": "full", "git": {"sha": "a" * 40, "clean": True},
             "identity": {}, "hashes": {"artifacts": {}, "template_sha256": "a" * 64},
@@ -383,10 +391,12 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
 
     def trainer_factory(
         runtime_value: FakeRuntime, examples: Sequence[RenderedExample], config: UnslothConfig,
-        output_dir: Path, max_steps: int | None,
+        output_dir: Path, report_to: str, run_name: str | None, max_steps: int | None,
     ) -> FakeTrainer:
         _ = runtime_value, examples, config, max_steps
         captured_checkpoint_dirs.append(output_dir)
+        captured_report_to.append(report_to)
+        captured_run_names.append(run_name)
         return trainer
 
     def write_manifest(adapter_dir: Path, manifest: RunManifest) -> Path:
@@ -417,24 +427,144 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
         "--config", str(REPO_ROOT / "RQ/SLM/unsloth/configs/qwen3_6_27b.yml"), "--host-profile", str(tmp_path / "host.yml"),
         "--evidence-dir", str(evidence_dir),
     ))
+    monkeypatch.delenv("WANDB_PROJECT", raising=False)
 
     # When: the trainer completes its adapter save in a full run.
+    # Then (finally): WANDB_PROJECT is set directly by the code under test, not via
+    # monkeypatch, so it cannot be auto-undone — pop it even if an assertion below fails,
+    # or it leaks into later tests.
+    try:
+        train_unsloth.run(arguments)
+
+        # Then: manifest capture receives the saved directory and full qualification evidence.
+        assert captured and captured[0][0].is_dir()
+        assert captured[0][1] == evidence_dir
+        assert captured[0][2] == "full"
+
+        # Then: the trainer's checkpoint output_dir is a sibling of adapter_dir, never
+        # adapter_dir itself — build_manifest()/validate_adapter() would reject checkpoint-*
+        # subdirectories found inside the adapter directory they walk.
+        adapter_dir = captured[0][0]
+        assert len(captured_checkpoint_dirs) == 1
+        checkpoint_dir = captured_checkpoint_dirs[0]
+        assert checkpoint_dir != adapter_dir
+        assert checkpoint_dir.parent == adapter_dir.parent
+        assert checkpoint_dir.name == "checkpoints"
+
+        # Then: a full run reports to wandb under a timestamped run name, targets the
+        # configured wandb project via the environment HF Trainer's WandbCallback reads, and
+        # echoes report_to into the manifest identity next to logging_steps.
+        assert captured_report_to == ["wandb"]
+        assert captured_manifest_report_to == ["wandb"]
+        assert len(captured_run_names) == 1
+        run_name = captured_run_names[0]
+        assert run_name is not None
+        assert run_name.startswith("qwen3.6-27b-semantic-concern-slm-unsloth-lora-")
+        assert os.environ["WANDB_PROJECT"] == (
+            "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
+        )
+    finally:
+        os.environ.pop("WANDB_PROJECT", None)
+
+
+def test_run_when_smoke_training_reports_to_none_without_wandb_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: a smoke run, which must stay credential-free and never touch wandb.
+    from RQ.SLM.unsloth import train as train_unsloth
+    from RQ.SLM.unsloth._types import ManifestEvidence, RenderedExample, RunManifest, RunProvenance, TokenizerLike
+    from RQ.SLM.unsloth.config import UnslothConfig
+    from RQ.SLM.unsloth.data import DatasetRow
+
+    class FakeTokenizer:
+        chat_template: str = "{{ messages }}"
+
+        def save_pretrained(self, save_directory: str) -> None:
+            _ = save_directory
+
+    class FakeRuntime:
+        tokenizer: FakeTokenizer
+
+        def __init__(self) -> None:
+            self.tokenizer = FakeTokenizer()
+
+    class FakeTrainer:
+        def train(self) -> None:
+            return None
+
+        def save_model(self, output_dir: str) -> None:
+            _ = Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    trainer = FakeTrainer()
+    captured_report_to: list[str] = []
+    captured_run_names: list[str | None] = []
+
+    def runtime(config: UnslothConfig, device_index: int) -> FakeRuntime:
+        _ = config, device_index
+        return FakeRuntime()
+
+    def split(source: Literal["local", "hub"], name: str) -> tuple[DatasetRow, ...]:
+        _ = source, name
+        return ()
+
+    def render(
+        rows: Sequence[DatasetRow], tokenizer: TokenizerLike, maximum: int
+    ) -> train_unsloth.PreparedTrainingData:
+        _ = rows, tokenizer, maximum
+        return train_unsloth.PreparedTrainingData((), ())
+
+    def trainer_factory(
+        runtime_value: FakeRuntime, examples: Sequence[RenderedExample], config: UnslothConfig,
+        output_dir: Path, report_to: str, run_name: str | None, max_steps: int | None,
+    ) -> FakeTrainer:
+        _ = runtime_value, examples, config, output_dir, max_steps
+        captured_report_to.append(report_to)
+        captured_run_names.append(run_name)
+        return trainer
+
+    def build_manifest_smoke(
+        config: UnslothConfig,
+        provenance: RunProvenance,
+        evidence: ManifestEvidence,
+        report_to: str = "wandb",
+    ) -> RunManifest:
+        _ = config, provenance, evidence, report_to
+        return {
+            "schema_version": 2, "run_mode": "smoke", "git": {"sha": "a" * 40, "clean": True},
+            "identity": {}, "hashes": {"artifacts": {}, "template_sha256": "a" * 64},
+        }
+
+    def write_manifest(adapter_dir: Path, manifest: RunManifest) -> Path:
+        _ = manifest
+        return adapter_dir / "run_manifest.json"
+
+    def verified(adapter_dir: Path, config: Path) -> None:
+        _ = adapter_dir, config
+
+    def provenance(run_mode: Literal["full", "smoke"]) -> RunProvenance:
+        return RunProvenance("a" * 40, True, run_mode)
+
+    monkeypatch.setattr(train_unsloth, "create_runtime", runtime)
+    monkeypatch.setattr(train_unsloth, "load_split", split)
+    monkeypatch.setattr(train_unsloth, "render_training_rows", render)
+    monkeypatch.setattr(train_unsloth, "create_trainer", trainer_factory)
+    monkeypatch.setattr(train_unsloth, "build_manifest", build_manifest_smoke)
+    monkeypatch.setattr(train_unsloth, "write_manifest", write_manifest)
+    monkeypatch.setattr(train_unsloth, "verify_adapter", verified)
+    monkeypatch.setattr(train_unsloth, "_provenance", provenance)
+    monkeypatch.delenv("WANDB_PROJECT", raising=False)
+    arguments = train_unsloth.parse_args((
+        "--config", str(REPO_ROOT / "RQ/SLM/unsloth/configs/qwen3_6_27b.yml"), "--smoke",
+    ))
+
+    # When: the smoke entrypoint runs without qualification evidence or credentials.
     train_unsloth.run(arguments)
 
-    # Then: manifest capture receives the saved directory and full qualification evidence.
-    assert captured and captured[0][0].is_dir()
-    assert captured[0][1] == evidence_dir
-    assert captured[0][2] == "full"
-
-    # Then: the trainer's checkpoint output_dir is a sibling of adapter_dir, never adapter_dir
-    # itself — build_manifest()/validate_adapter() would reject checkpoint-* subdirectories
-    # found inside the adapter directory they walk.
-    adapter_dir = captured[0][0]
-    assert len(captured_checkpoint_dirs) == 1
-    checkpoint_dir = captured_checkpoint_dirs[0]
-    assert checkpoint_dir != adapter_dir
-    assert checkpoint_dir.parent == adapter_dir.parent
-    assert checkpoint_dir.name == "checkpoints"
+    # Then: the smoke run never asks HF Trainer's WandbCallback to activate and never
+    # touches the wandb project environment variable.
+    assert captured_report_to == ["none"]
+    assert captured_run_names == [None]
+    assert "WANDB_PROJECT" not in os.environ
 
 
 def test_adapter_path_when_written_atomically_contains_the_validated_directory(

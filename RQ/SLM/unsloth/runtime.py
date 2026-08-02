@@ -74,7 +74,11 @@ def build_peft_kwargs(config: UnslothConfig) -> PeftKwargs:
 
 
 def build_sft_kwargs(
-    config: UnslothConfig, output_dir: Path, max_steps: int | None
+    config: UnslothConfig,
+    output_dir: Path,
+    max_steps: int | None,
+    report_to: str,
+    run_name: str | None,
 ) -> SftKwargs:
     kwargs: SftKwargs = {
         "output_dir": str(output_dir),
@@ -94,10 +98,12 @@ def build_sft_kwargs(
         "save_total_limit": config.training.save_total_limit,
         "eval_strategy": config.training.eval_strategy,
         "seed": config.training.seed,
-        "report_to": "wandb",
+        "report_to": report_to,
         "gradient_checkpointing": False,
         "use_cache": False,
     }
+    if run_name is not None:
+        kwargs["run_name"] = run_name
     if max_steps is not None:
         kwargs["max_steps"] = max_steps
     return kwargs
@@ -145,6 +151,8 @@ def create_trainer(
     train_dataset: Sequence[RenderedExample],
     config: UnslothConfig,
     output_dir: Path,
+    report_to: str,
+    run_name: str | None,
     max_steps: int | None = None,
 ) -> TrainerLike:
     """Lazily construct TRL and mask loss to the assistant response only."""
@@ -152,7 +160,9 @@ def create_trainer(
     templates = importlib.import_module("unsloth.chat_templates")
     if not isinstance(trl, TrlModule) or not isinstance(templates, TemplateModule):
         raise RuntimeDependencyError("local TRL or Unsloth template runtime is unavailable")
-    arguments = trl.SFTConfig(**build_sft_kwargs(config, output_dir, max_steps))
+    arguments = trl.SFTConfig(
+        **build_sft_kwargs(config, output_dir, max_steps, report_to, run_name)
+    )
     trainer = trl.SFTTrainer(
         model=runtime.model,
         args=arguments,

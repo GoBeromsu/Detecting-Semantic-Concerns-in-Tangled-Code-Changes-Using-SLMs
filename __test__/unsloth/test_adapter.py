@@ -146,7 +146,8 @@ def test_build_manifest_when_full_run_is_dirty_rejects(tmp_path: Path) -> None:
     # When/Then: full publication refuses dirty Git even though smoke validation permits it.
     with pytest.raises(ContractError, match="git.clean"):
         _ = build_manifest(
-            load_unsloth_config(CONFIG_PATH), RunProvenance("a" * 40, False, "full"), evidence
+            load_unsloth_config(CONFIG_PATH), RunProvenance("a" * 40, False, "full"), evidence,
+            report_to="wandb",
         )
 
 

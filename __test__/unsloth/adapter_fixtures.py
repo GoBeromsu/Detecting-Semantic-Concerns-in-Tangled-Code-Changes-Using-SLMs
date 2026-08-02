@@ -87,6 +87,7 @@ def write_contract(root: Path, *, tokenizer_form: TokenizerForm = "json") -> dic
             root, CONFIG_PATH, "{{ messages }}", None, None,
             (ExcludedRow(1326, EXCLUDED_HASH, 16816),), 1399,
         ),
+        report_to="none",
     )
     _ = write_manifest(root, manifest)
     return load_json(root / "run_manifest.json")

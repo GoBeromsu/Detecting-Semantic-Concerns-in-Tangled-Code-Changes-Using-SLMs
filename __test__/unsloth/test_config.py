@@ -95,7 +95,7 @@ def test_load_config_when_canonical_parses_locked_training_values() -> None:
     assert training.warmup_ratio == 0.1
     assert training.lr_scheduler_type == "linear"
     assert training.seed == 42
-    assert training.logging_steps == 100
+    assert training.logging_steps == 10
     assert training.save_strategy == "epoch"
     assert training.save_total_limit == 2
     assert training.eval_strategy == "no"

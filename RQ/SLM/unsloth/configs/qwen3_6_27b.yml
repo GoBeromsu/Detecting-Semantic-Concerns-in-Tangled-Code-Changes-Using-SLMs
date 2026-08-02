@@ -40,7 +40,7 @@ training:
   warmup_ratio: 0.1
   lr_scheduler_type: "linear"
   seed: 42
-  logging_steps: 100
+  logging_steps: 10
   save_strategy: "epoch"
   save_total_limit: 2
   eval_strategy: "no"
