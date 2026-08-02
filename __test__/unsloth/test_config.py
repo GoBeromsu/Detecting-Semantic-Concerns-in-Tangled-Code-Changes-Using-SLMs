@@ -9,7 +9,6 @@ import pytest
 from RQ.SLM.unsloth.config import (
     ApprovedDeviation,
     ConfigurationError,
-    SweepOverrides,
     budget_vram_mib,
     load_config,
     load_host_profile,
@@ -112,7 +111,6 @@ def test_load_config_when_canonical_parses_data_and_masking_markers() -> None:
     assert config.data.drop_rows_over_max_seq_length is True
     assert config.masking.instruction_part == "<|im_start|>user\n"
     assert config.masking.response_part == "<|im_start|>assistant\n<think>\n\n</think>\n\n"
-    assert config.masking.enable_thinking is False
 
 
 def test_load_config_when_canonical_parses_locked_destinations_and_reserve() -> None:
@@ -127,21 +125,6 @@ def test_load_config_when_canonical_parses_locked_destinations_and_reserve() -> 
     assert config.wandb.project == "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
     assert config.wandb.experiment_name == "qwen3.6-27b-semantic-concern-slm-unsloth-lora"
     assert config.disk.min_free_reserve_gib == 15
-
-
-def test_load_config_when_sweep_overrides_are_supplied_changes_only_three_fields() -> None:
-    # Given: all three legacy sweep overrides differ from file defaults.
-    overrides = SweepOverrides(learning_rate=1e-4, lora_rank=16, lora_alpha=24)
-
-    # When: overrides are applied after parsing.
-    config = load_config(CONFIG_PATH, overrides=overrides)
-
-    # Then: only the supported sweep surfaces change.
-    assert config.training.learning_rate == 1e-4
-    assert config.lora.rank == 16
-    assert config.lora.alpha == 24
-    assert config.lora.dropout == 0.05
-    assert config.training.num_train_epochs == 5
 
 
 def test_load_config_when_created_returns_deeply_frozen_values() -> None:

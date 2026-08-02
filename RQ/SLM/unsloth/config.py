@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Final, NamedTuple, Never, Protocol, override
 
@@ -26,13 +26,6 @@ class ConfigurationError(Exception):
 @dataclass(frozen=True, slots=True)
 class ApprovedDeviation:
     max_seq_length: int
-
-
-@dataclass(frozen=True, slots=True)
-class SweepOverrides:
-    learning_rate: float | None = None
-    lora_rank: int | None = None
-    lora_alpha: int | None = None
 
 
 class ModelConfig(NamedTuple):
@@ -90,7 +83,6 @@ class DataConfig(NamedTuple):
 class MaskingConfig(NamedTuple):
     instruction_part: str
     response_part: str
-    enable_thinking: bool
 
 
 class OutputConfig(NamedTuple):
@@ -277,19 +269,13 @@ def _parse_config(root: Mapping[str, JsonValue]) -> UnslothConfig:
         TrainingConfig(training.text("optim"), training.number("learning_rate"), training.integer("num_train_epochs"), training.integer("per_device_train_batch_size"), training.integer("gradient_accumulation_steps"), training.number("warmup_ratio"), training.text("lr_scheduler_type"), training.integer("seed"), training.integer("logging_steps"), training.text("save_strategy"), training.text("eval_strategy"), training.integer("max_seq_length"), training.boolean("packing"), training.text("padding_side")),
         TechnicalConfig(technical.text("attn_implementation"), technical.text("device_map")),
         DataConfig(data.boolean("drop_rows_over_max_seq_length")),
-        MaskingConfig(masking.text("instruction_part"), masking.text("response_part"), masking.boolean("enable_thinking")),
+        MaskingConfig(masking.text("instruction_part"), masking.text("response_part")),
         OutputConfig(output.text("adapter_dir_root")),
         HubConfig(hub.text("adapter_repo"), hub.text("merged_repo"), hub.text("gguf_repo")),
         WandbConfig(wandb.text("project"), wandb.text("experiment_name")),
         DiskConfig(disk.integer("min_free_reserve_gib")),
         _Section(root, "").strings("tags"), LABELS,
     )
-
-
-def _apply_overrides(config: UnslothConfig, overrides: SweepOverrides | None) -> UnslothConfig:
-    if overrides is None:
-        return config
-    return replace(config, training=replace(config.training, learning_rate=config.training.learning_rate if overrides.learning_rate is None else overrides.learning_rate), lora=replace(config.lora, rank=config.lora.rank if overrides.lora_rank is None else overrides.lora_rank, alpha=config.lora.alpha if overrides.lora_alpha is None else overrides.lora_alpha))
 
 
 def _validate(config: UnslothConfig, deviation: ApprovedDeviation | None) -> None:
@@ -310,6 +296,8 @@ def _validate(config: UnslothConfig, deviation: ApprovedDeviation | None) -> Non
         exclusion = re.compile(config.lora.exclude_modules)
     except re.error as error:
         raise ConfigurationError("must be a valid regex", "lora.exclude_modules") from error
+    # mtp (multi-token-prediction head) and visual (vision branch) receive no gradient
+    # under response-only text supervision, so LoRA must exclude both.
     if exclusion.fullmatch("model.mtp.q_proj") is None or exclusion.fullmatch("model.visual.q_proj") is None:
         _fail("must exclude both mtp and visual modules", "lora.exclude_modules")
     approved_length = None if deviation is None else deviation.max_seq_length
@@ -317,8 +305,8 @@ def _validate(config: UnslothConfig, deviation: ApprovedDeviation | None) -> Non
         _fail("requires an exact ApprovedDeviation", "training.max_seq_length")
 
 
-def load_config(path: Path, overrides: SweepOverrides | None = None, approved_deviation: ApprovedDeviation | None = None) -> UnslothConfig:
-    configured = _apply_overrides(_parse_config(_load_yaml(path)), overrides)
+def load_config(path: Path, approved_deviation: ApprovedDeviation | None = None) -> UnslothConfig:
+    configured = _parse_config(_load_yaml(path))
     _validate(configured, approved_deviation)
     return configured
 

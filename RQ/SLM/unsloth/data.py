@@ -252,6 +252,7 @@ def load_split(source: DatasetSource, split: str, data_dir: Path = LOCAL_DATA_DI
 
 def render_response_only(tokenizer: ResponseOnlyTokenizer, messages: Sequence[ChatMessage]) -> ResponseOnlyExample:
     """Mask the rendered assistant scaffold and supervise canonical JSON plus EOS."""
+    # Invariant: thinking is always disabled; the response must be pure JSON+EOS.
     prompt = tokenizer.apply_chat_template(messages[:-1], tokenize=False, add_generation_prompt=True, enable_thinking=False)
     text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, enable_thinking=False)
     prompt_ids = tuple(tokenizer(prompt, add_special_tokens=False)["input_ids"])

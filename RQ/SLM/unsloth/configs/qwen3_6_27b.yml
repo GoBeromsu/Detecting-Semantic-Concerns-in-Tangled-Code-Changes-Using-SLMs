@@ -57,7 +57,6 @@ data:
 masking:
   instruction_part: "<|im_start|>user\n"
   response_part: "<|im_start|>assistant\n<think>\n\n</think>\n\n"
-  enable_thinking: false
 
 output:
   adapter_dir_root: "outputs/unsloth/Qwen3.6-27B-LoRA"

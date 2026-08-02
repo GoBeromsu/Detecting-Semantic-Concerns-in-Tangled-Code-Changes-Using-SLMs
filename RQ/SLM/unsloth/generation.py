@@ -229,6 +229,7 @@ def load_backend(request: PeftLoadRequest) -> PeftBackend:
 
 
 def _render_prompt(tokenizer: RuntimeTokenizer, request: GenerationRequest) -> str:
+    # Invariant: thinking is always disabled; the response must be pure JSON+EOS.
     rendered = tokenizer.apply_chat_template(({"role": "system", "content": request.system_prompt}, {"role": "user", "content": request.commit}), tokenize=False, add_generation_prompt=True, enable_thinking=False)
     if not rendered.endswith(NON_THINKING_TAIL):
         raise GenerationError("template", "missing Qwen non-thinking scaffold")
