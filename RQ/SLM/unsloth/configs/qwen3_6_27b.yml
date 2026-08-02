@@ -1,0 +1,83 @@
+model:
+  id: "Qwen/Qwen3.6-27B"
+  revision: "6a9e13bd6fc8f0983b9b99948120bc37f49c13e9"
+  text_only: true
+  dataset_id: "Berom0227/tangled-ccs-commits"
+  dataset_revision: "234e8cb034bace7f6fa2a87e73e8c86bc0b04a7d"
+
+precision:
+  load_in_16bit: true
+  load_in_4bit: false
+  load_in_8bit: false
+
+lora:
+  rank: 32
+  alpha: 48
+  dropout: 0.05
+  bias: "none"
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "in_proj_qkv"
+    - "in_proj_z"
+    - "in_proj_b"
+    - "in_proj_a"
+    - "out_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  exclude_modules: "(?:.*\\.)?(?:mtp|visual)(?:\\..*)?"
+  use_gradient_checkpointing: "unsloth"
+
+training:
+  optim: "adamw_torch"
+  learning_rate: 5.0e-5
+  num_train_epochs: 5
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8
+  warmup_ratio: 0.1
+  lr_scheduler_type: "linear"
+  seed: 42
+  logging_steps: 100
+  save_strategy: "epoch"
+  save_total_limit: 2
+  eval_strategy: "no"
+  max_seq_length: 16384
+  packing: false
+  padding_side: "right"
+
+technical:
+  attn_implementation: "sdpa"
+  device_map: "cuda:0"
+
+data:
+  drop_rows_over_max_seq_length: true
+
+masking:
+  instruction_part: "<|im_start|>user\n"
+  response_part: "<|im_start|>assistant\n<think>\n\n</think>\n\n"
+
+output:
+  adapter_dir_root: "outputs/unsloth/Qwen3.6-27B-LoRA"
+
+hub:
+  adapter_repo: "Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter"
+  merged_repo: "Berom0227/Semantic-Concern-SLM-Qwen3.6-27B"
+  gguf_repo: "Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-gguf"
+
+wandb:
+  project: "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
+  experiment_name: "qwen3.6-27b-semantic-concern-slm-unsloth-lora"
+
+disk:
+  min_free_reserve_gib: 15
+
+tags:
+  - "qwen3.6-27b"
+  - "unsloth"
+  - "bf16"
+  - "lora"
+  - "commit-analysis"
+  - "software-engineering"

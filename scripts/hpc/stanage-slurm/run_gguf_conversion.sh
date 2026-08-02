@@ -55,7 +55,7 @@ export LLAMA_CPP_DIR="$FASTDATA_BASE/llama.cpp"
 if [ ! -d "$LLAMA_CPP_DIR" ]; then
     echo "❌ llama.cpp not found at $LLAMA_CPP_DIR"
     echo "Please run setup_env.sh first to build llama.cpp:"
-    echo "sbatch scripts/setup_env.sh"
+    echo "sbatch scripts/hpc/stanage-slurm/setup_env.sh"
     exit 1
 else
     echo "✅ llama.cpp found at $LLAMA_CPP_DIR"
@@ -70,7 +70,7 @@ if [ -z "$PROJECT_ROOT" ]; then
     echo ""
     echo "💡 Try:"
     echo "  cd /path/to/Concern-is-All-You-Need"
-    echo "  sbatch scripts/run_gguf_conversion.sh"
+    echo "  sbatch scripts/hpc/stanage-slurm/run_gguf_conversion.sh"
     exit 1
 fi
 

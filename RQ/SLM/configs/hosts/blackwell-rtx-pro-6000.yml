@@ -1,0 +1,23 @@
+hostname: "dcs33979"
+ssh_target: "beomsu@blackwell.tailee178.ts.net"
+gpu_name: "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition"
+gpu_count: 1
+compute_capability: "12.0"
+vram_total_mib: 97887
+vram_free_observed_mib: 96793
+known_display_processes: ["Xorg", "gnome-shell", "rustdesk", "obs"]
+power_cap_w: 300
+ecc: "disabled"
+persistence_mode: "disabled"
+driver_version: "595.71.05"
+cuda_toolkit: "12.8"
+cuda_path: "/usr/local/cuda-12.8"
+ram_gib: 31
+swap_mib: 980
+cpu: "i9-12900K"
+cpu_threads: 24
+disk_free_gib: 108
+os: "Ubuntu 22.04.5"
+kernel: "6.8.0"
+python_system: "3.10.12"
+notes: "budget VRAM against vram_free_observed_mib not total; tolerate the 4 display processes; do not change ECC/persistence/power cap."

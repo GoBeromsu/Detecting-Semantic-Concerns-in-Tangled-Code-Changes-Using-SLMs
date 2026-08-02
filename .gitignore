@@ -9,6 +9,12 @@ models/llama.cpp
 results/
 CLAUDE.md
 wandb/
+outputs/
+*.safetensors
+*.bin
+*.gguf
+**/llama.cpp/build/
+**/llama.cpp/build-*/
 
 .claude/
 # C extensions
