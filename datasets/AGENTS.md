@@ -17,11 +17,11 @@ Stage 3: asserts repo-disjointness, per-type uniformity, exact per-count row cou
 Other scripts (`analyze_token_distribution`, `concern_token_boxplot`, `analyze_colocation`, `compare_synthetic_vs_real_tangled`, `audit_combination_coverage`, `verify_hf_sync`, plot_*) are diagnostics — not part of the build chain.
 
 ## Invariants (assertion boundaries — scripts fail loudly)
-- `SEED=42`, `MAX_TOKENS=12288`, 7 types, concern counts 1–5.
+- `SEED=43`, `MAX_TOKENS=12288`, 7 types, concern counts 1–5.
 - Train **1400** rows (280/count, 21 repos), Test **350** (70/count, 15 repos).
 - Per-type uniformity 0.00pp deviation; train/test repo sets disjoint.
 - `PINNED_TRAIN_REPO="camunda/zeebe"`.
-- Note: the 27B path (`RQ/SLM/unsloth/`) further drops train row 1326 → 1399; that exclusion lives there, NOT here.
+- Note: the 27B path (`RQ/SLM/unsloth/`) retains all 1400 train rows — no token-overflow exclusion exists there.
 
 ## Conventions
 - CSV columns `types` and `shas` are **JSON-encoded** — parse with `json.loads`, not as plain strings.

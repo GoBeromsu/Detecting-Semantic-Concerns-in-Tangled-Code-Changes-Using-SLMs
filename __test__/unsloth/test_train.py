@@ -14,9 +14,6 @@ from pydantic import TypeAdapter
 
 REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[2]
 TRAIN_PATH: Final[Path] = REPO_ROOT / "RQ/SLM/unsloth/train.py"
-EXPECTED_HASH: Final[str] = (
-    "fc26be9a7f99e5f0d7db53cc53714dfd0c512a269fb3bd22ea3e7bdc12b742ba"
-)
 
 
 def _write_approved_qualification(
@@ -80,18 +77,16 @@ def test_cli_when_parsed_converts_paths_and_exposes_local_run_controls() -> None
     assert arguments.verify_adapter_path_file == Path("adapter-path.txt")
 
 
-def test_overflow_validation_when_default_uses_only_pinned_row_identity() -> None:
-    # Given: the observed default overflow and its expected retained row count.
+def test_overflow_validation_when_default_requires_zero_exclusions() -> None:
+    # Given: the observed default overflow — no row exceeds the 16,384-token budget.
     from RQ.SLM.unsloth._types import ExcludedRow
     from RQ.SLM.unsloth.train import TrainingDataError, validate_exclusions
 
-    expected = ExcludedRow(index=1326, row_hash=EXPECTED_HASH, token_length=16816)
-
-    # When/Then: only that rendered row is admitted at the default 16,384-token limit.
-    validate_exclusions((expected,), final_count=1399, max_seq_length=16384)
+    # When/Then: only a fully-retained 1,400-row split is admitted at the default limit.
+    validate_exclusions((), final_count=1400, max_seq_length=16384)
     with pytest.raises(TrainingDataError):
         validate_exclusions(
-            (expected, ExcludedRow(index=1, row_hash="unexpected", token_length=17000)),
+            (ExcludedRow(index=1, row_hash="unexpected", token_length=17000),),
             final_count=1398,
             max_seq_length=16384,
         )

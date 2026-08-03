@@ -43,7 +43,7 @@ import pandas as pd
 # generation logic only draws from stdlib `random` - numpy is seeded too so
 # any future numpy-based sampling added to this pipeline stays reproducible
 # under the same single SEED, matching the rest of the pipeline's convention.
-SEED = 42
+SEED = 43
 
 # Concern-type taxonomy (post style/perf->refactor remap, chore dropped)
 TYPES: List[str] = ["feat", "fix", "refactor", "test", "docs", "build", "ci"]

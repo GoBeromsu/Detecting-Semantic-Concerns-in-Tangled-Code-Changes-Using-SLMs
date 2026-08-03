@@ -30,7 +30,7 @@ DatasetSource: TypeAlias = Literal["hub", "local"]
 
 DATASET_COLUMNS: Final[tuple[str, ...]] = ("commit_message", "diff", "concern_count", "shas", "types", "repo")
 HUB_DATASET_ID: Final[str] = "Berom0227/tangled-ccs-commits"
-HUB_DATASET_REVISION: Final[str] = "234e8cb034bace7f6fa2a87e73e8c86bc0b04a7d"
+HUB_DATASET_REVISION: Final[str] = "65b09af76f3e9badf4a28bf7a641b1d2930a26b5"
 SPLIT_ROW_COUNTS: Final[Mapping[str, int]] = MappingProxyType({"train": 1400, "test": 350})
 LOCAL_DATA_DIR: Final[Path] = Path(__file__).parents[3] / "datasets" / "data"
 COMMIT_TYPE_SET: Final[frozenset[str]] = frozenset(COMMIT_TYPES)

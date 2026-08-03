@@ -11,7 +11,6 @@ from __test__.unsloth.adapter_fixtures import (
     BASE,
     CONFIG_PATH,
     DATASET_REVISION,
-    EXCLUDED_HASH,
     MODEL_REVISION,
     TARGETS,
     artifact_hashes,
@@ -35,7 +34,7 @@ def test_validate_adapter_when_contract_is_complete_returns_frozen_report(
     # Then: the pinned adapter report remains immutable.
     assert report.base_model == BASE
     assert report.model_revision == MODEL_REVISION
-    assert report.training_rows == 1399
+    assert report.training_rows == 1400
     field_name = "training_rows"
     with pytest.raises(FrozenInstanceError):
         setattr(report, field_name, 1)
@@ -49,7 +48,7 @@ def test_validate_adapter_when_manifest_is_training_output_accepts(tmp_path: Pat
     report = validate_adapter(tmp_path, CONFIG_PATH)
 
     # Then: the copied config and actual tokenizer template are content-addressed.
-    assert report.training_rows == 1399
+    assert report.training_rows == 1400
     assert manifest["run_mode"] == "smoke"
     hashes = manifest["hashes"]
     assert isinstance(hashes, dict)
@@ -117,8 +116,8 @@ def test_validate_adapter_when_required_file_is_missing_rejects(tmp_path: Path, 
 
 @pytest.mark.parametrize(
     ("field", "value"),
-    (("merged", False), ("training_rows", 1399), ("model_revision", MODEL_REVISION),
-     ("dataset_revision", DATASET_REVISION), ("excluded_sha256", EXCLUDED_HASH)),
+    (("merged", False), ("training_rows", 1400), ("model_revision", MODEL_REVISION),
+     ("dataset_revision", DATASET_REVISION), ("excluded_sha256", "a" * 64)),
 )
 def test_validate_adapter_when_manifest_contains_legacy_flat_field_rejects(
     tmp_path: Path, field: str, value: str | int | bool
@@ -138,7 +137,7 @@ def test_validate_adapter_when_manifest_contains_legacy_flat_field_rejects(
     ("field", "value"),
     (("git", {"sha": "", "clean": True}),
      ("model", {"id": BASE, "revision": "wrong"}),
-     ("dataset", {"id": "wrong", "revision": DATASET_REVISION, "final_row_count": 1399}),
+     ("dataset", {"id": "wrong", "revision": DATASET_REVISION, "final_row_count": 1400}),
      ("hashes", {"config_sha256": "x", "template_sha256": "b" * 64,
                   "host_profile_sha256": None, "excluded_rows": []}),
      ("seed", 41), ("objective", "wrong"), ("packing", True),
@@ -166,7 +165,7 @@ ManifestSection = Literal["git", "model", "identity", "hashes"]
     (("git", "sha", ""), ("git", "clean", "yes"),
      ("model", "id", "wrong"), ("model", "revision", "wrong"),
      ("model", "dataset_id", "wrong"), ("model", "dataset_revision", "wrong"),
-     ("identity", "final_row_count", 1400), ("identity", "packing", True),
+     ("identity", "final_row_count", 1401), ("identity", "packing", True),
      ("identity", "merged_model", True), ("hashes", "artifacts", {}),
      ("hashes", "template_sha256", "x" * 64)),
 )

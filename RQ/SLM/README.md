@@ -16,7 +16,7 @@ The pinned config is `RQ/SLM/unsloth/configs/qwen3_6_27b.yml`; the host profile 
 - Qwen/Qwen3.6-27B is text-only, BF16, SDPA, unmerged LoRA (rank 32, alpha 48, dropout 0.05).
 - The config owns the 16384 maximum sequence length; no CLI can override it. Config validation rejects an unapproved deviation.
 - Training is right-padded, unpacked, response-only JSON+EOS supervision.
-- The 1400-row train split excludes exactly row 1326 (`fc26be9a7f99e5f0d7db53cc53714dfd0c512a269fb3bd22ea3e7bdc12b742ba`, 16816 tokens), retaining 1399 rows.
+- Under the Qwen3.6-27B tokenizer at `max_seq_length=16384`, zero rows overflow the budget in either split; the 1400-row train split retains all 1400 rows.
 - Generation requires a real pad token distinct from EOS. BF16/CUDA checks and Outlines 1.3.2 guards remain active.
 
 Install the local GPU extra on Linux x86_64:

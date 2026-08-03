@@ -12,7 +12,6 @@ import pytest
 from __test__.unsloth.adapter_fixtures import (
     BASE,
     CONFIG_PATH,
-    EXCLUDED_HASH,
     MODEL_REVISION,
     load_json,
     safetensors_payload,
@@ -35,7 +34,7 @@ def test_validate_adapter_when_smoke_contract_is_complete_returns_frozen_report(
     # Then: smoke evidence validates without claiming publication-clean provenance.
     assert report.base_model == BASE
     assert report.model_revision == MODEL_REVISION
-    assert report.training_rows == 1399
+    assert report.training_rows == 1400
     field_name = "training_rows"
     with pytest.raises(FrozenInstanceError):
         setattr(report, field_name, 1)
@@ -134,13 +133,13 @@ def test_validate_adapter_when_full_model_shard_is_present_rejects(tmp_path: Pat
 def test_build_manifest_when_full_run_is_dirty_rejects(tmp_path: Path) -> None:
     # Given: a saved adapter whose full-run provenance reports a dirty worktree.
     from RQ.SLM.unsloth.train import build_manifest
-    from RQ.SLM.unsloth._types import ExcludedRow, ManifestEvidence, RunProvenance
+    from RQ.SLM.unsloth._types import ManifestEvidence, RunProvenance
     from RQ.SLM.unsloth.config import load_unsloth_config
 
     write_adapter_files(tmp_path)
     evidence = ManifestEvidence(
         tmp_path, CONFIG_PATH, "{{ messages }}", None, None,
-        (ExcludedRow(1326, EXCLUDED_HASH, 16816),), 1399,
+        (), 1400,
     )
 
     # When/Then: full publication refuses dirty Git even though smoke validation permits it.
@@ -165,7 +164,7 @@ def test_cli_when_valid_adapter_writes_json_report_atomically(tmp_path: Path) ->
 
     # Then: it succeeds without ML imports and leaves no partial output behind.
     assert completed.returncode == 0, completed.stderr
-    assert load_json(output_path)["training_rows"] == 1399
+    assert load_json(output_path)["training_rows"] == 1400
     assert not tuple(tmp_path.glob(".report.json.*"))
 
 

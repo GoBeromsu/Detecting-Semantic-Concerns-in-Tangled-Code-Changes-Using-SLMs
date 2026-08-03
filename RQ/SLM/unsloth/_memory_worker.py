@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from RQ.SLM.unsloth.data import ChatExample, DatasetRow
 
 
-EXCLUDED_ROW_INDEX: Final[int] = 1326
 IGNORE_LABEL: Final[int] = -100
 
 
@@ -182,9 +181,7 @@ def select_supervised_json_row(
     requested_length: int,
     build_messages: Callable[[DatasetRow], ChatExample],
 ) -> ProbeBatch:
-    for index, row in enumerate(rows):
-        if index == EXCLUDED_ROW_INDEX:
-            continue
+    for row in rows:
         rendered = render_response_only(tokenizer, build_messages(row)["messages"])
         if len(rendered.input_ids) <= requested_length:
             return ProbeBatch(requested_length, rendered.input_ids, rendered.labels)
