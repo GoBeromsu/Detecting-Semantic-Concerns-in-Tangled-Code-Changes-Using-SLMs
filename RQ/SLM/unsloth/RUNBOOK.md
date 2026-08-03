@@ -35,11 +35,12 @@ All qualification/template/overflow/preflight evidence lives in one directory
 - [ ] `pytest __test__/unsloth/` green (all 14 files).
 - [ ] `pytest __test__/` green (legacy 14B contract untouched).
 - [ ] `basedpyright RQ/SLM/unsloth/` reports 0 errors / 0 warnings.
-- [ ] `git status --short --branch` clean on a branch that contains commit `41263f4` (wandb
-      project/run-name wiring) — currently `feat/wandb-run-wiring`. The earlier
-      `feat/unsloth-qwen36-27b-local-lora` branch was merged into `main` via PR #11 (`d96bd91`)
-      but does **not** contain `41263f4`; training from it lands the wandb run in the wrong
-      project with an auto-generated name (see §9).
+- [ ] `git status --short --branch` clean on `main`. As of PR #13, `main` carries both the
+      wandb project/run-name wiring (`41263f4`) and the SEED=43 dataset regeneration
+      (`efeca02`). Any older branch or checkout is wrong in one of two ways: without `41263f4`
+      the wandb run lands in the wrong project with an auto-generated name (see §9); without
+      `efeca02` the local CSVs still hold the seed-42 rows, one of which overflows 16384, so
+      `train.py` aborts with `TrainingDataError` before training anything (see §6).
 
 **Go/no-go:** all four green → proceed to host session. Any red → stop, fix, re-run; do not ssh.
 
@@ -57,8 +58,9 @@ Then on the host:
 ```bash
 ssh beomsu@blackwell.tailee178.ts.net
 cd <repo>
-git fetch && git checkout feat/wandb-run-wiring
-git merge-base --is-ancestor 41263f4 HEAD && echo "wandb wiring present"  # must print the message
+git fetch && git checkout main && git pull
+git merge-base --is-ancestor 41263f4 HEAD && echo "wandb wiring present"   # must print
+git merge-base --is-ancestor efeca02 HEAD && echo "seed-43 dataset present" # must print
 git status --porcelain        # must be EMPTY — full training refuses to publish otherwise
 uv sync
 ```
