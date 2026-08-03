@@ -52,7 +52,7 @@ EXPECTED: Final[Mapping[str, SplitExpectation]] = {
         per_type=150,
         per_k=70,
         per_k_type_factor=10,
-        coverage={1: (7, 7), 2: (21, 21), 3: (29, 35), 4: (33, 35), 5: (20, 21)},
+        coverage={1: (7, 7), 2: (21, 21), 3: (32, 35), 4: (30, 35), 5: (21, 21)},
     ),
 }
 
@@ -61,15 +61,14 @@ EXPECTED: Final[Mapping[str, SplitExpectation]] = {
 MISSING_TEST_COMBINATIONS: Final[frozenset[frozenset[str]]] = frozenset(
     frozenset(combo)
     for combo in (
-        ("build", "ci", "test"),
-        ("build", "feat", "fix"),
-        ("build", "feat", "test"),
-        ("ci", "docs", "test"),
-        ("docs", "fix", "refactor"),
-        ("feat", "refactor", "test"),
-        ("build", "feat", "fix", "refactor"),
-        ("build", "fix", "refactor", "test"),
-        ("build", "ci", "feat", "fix", "refactor"),
+        ("build", "ci", "docs"),
+        ("build", "docs", "test"),
+        ("ci", "feat", "fix"),
+        ("build", "ci", "docs", "fix"),
+        ("build", "ci", "fix", "test"),
+        ("build", "feat", "refactor", "test"),
+        ("ci", "docs", "fix", "refactor"),
+        ("docs", "feat", "refactor", "test"),
     )
 )
 

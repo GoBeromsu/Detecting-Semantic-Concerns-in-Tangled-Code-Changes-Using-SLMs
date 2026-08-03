@@ -64,11 +64,6 @@ FULL_ADAPTER_EVIDENCE: Final[tuple[str, ...]] = (
     "host_profile.yml", "template-inspection.json", "overflow-rows.json",
     "measurements.jsonl", "qualification.json", "preflight.json",
 )
-EXPECTED_EXCLUDED_ROW: Final[tuple[int, str, int]] = (
-    1326,
-    "fc26be9a7f99e5f0d7db53cc53714dfd0c512a269fb3bd22ea3e7bdc12b742ba",
-    16816,
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -236,9 +231,8 @@ def validate_exclusions(
 ) -> None:
     if max_seq_length != DEFAULT_MAX_SEQ_LENGTH:
         return
-    expected = ExcludedRow(*EXPECTED_EXCLUDED_ROW)
-    if tuple(excluded_rows) != (expected,) or final_count != 1399:
-        raise TrainingDataError("default overflow evidence does not match the approved row")
+    if tuple(excluded_rows) or final_count != 1400:
+        raise TrainingDataError("default overflow evidence must retain all 1,400 rows with none excluded")
 
 
 def render_training_rows(

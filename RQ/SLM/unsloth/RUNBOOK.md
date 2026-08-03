@@ -12,8 +12,9 @@
 Owner-run, step-by-step. Every command below is copy-pasted from the actual `argparse`
 definitions in `RQ/SLM/unsloth/{train,infer,infer_options,memory,probe,preflight}.py` —
 no invented flags. Invoke everything as a module (`python -m RQ.SLM.unsloth.<name>`); the
-flat-script bootstrap bugs in `train.py`/`infer.py`/`memory.py`'s self-relaunch are being
-fixed in a parallel lane and do not affect `-m` invocation.
+flat-script bootstrap bugs in `train.py`/`infer.py`/`memory.py`'s self-relaunch (bare
+`python RQ/SLM/unsloth/<name>.py` dying with `ModuleNotFoundError`) were fixed for all three
+files in commit `893f2ad` and do not affect `-m` invocation either way.
 
 Set once per session:
 
@@ -34,7 +35,11 @@ All qualification/template/overflow/preflight evidence lives in one directory
 - [ ] `pytest __test__/unsloth/` green (all 14 files).
 - [ ] `pytest __test__/` green (legacy 14B contract untouched).
 - [ ] `basedpyright RQ/SLM/unsloth/` reports 0 errors / 0 warnings.
-- [ ] `git status --short --branch` clean on `feat/unsloth-qwen36-27b-local-lora`.
+- [ ] `git status --short --branch` clean on a branch that contains commit `41263f4` (wandb
+      project/run-name wiring) — currently `feat/wandb-run-wiring`. The earlier
+      `feat/unsloth-qwen36-27b-local-lora` branch was merged into `main` via PR #11 (`d96bd91`)
+      but does **not** contain `41263f4`; training from it lands the wandb run in the wrong
+      project with an auto-generated name (see §9).
 
 **Go/no-go:** all four green → proceed to host session. Any red → stop, fix, re-run; do not ssh.
 
@@ -52,7 +57,8 @@ Then on the host:
 ```bash
 ssh beomsu@blackwell.tailee178.ts.net
 cd <repo>
-git fetch && git checkout feat/unsloth-qwen36-27b-local-lora
+git fetch && git checkout feat/wandb-run-wiring
+git merge-base --is-ancestor 41263f4 HEAD && echo "wandb wiring present"  # must print the message
 git status --porcelain        # must be EMPTY — full training refuses to publish otherwise
 uv sync
 ```
@@ -92,9 +98,22 @@ tmux new -s qwen27b       # first time
 tmux attach -t qwen27b    # after any disconnect/reconnect
 ```
 
-- Detach without killing anything inside (training keeps running): `Ctrl-b d`.
-- Open a second window in the same session for monitoring (§9) without touching the training
-  pane: `Ctrl-b c`. Switch windows: `Ctrl-b n` / `Ctrl-b p`.
+On first creation, build the run layout: left pane for running the phase commands, right
+column stacked with a GPU monitor on top and a CPU monitor below:
+
+```bash
+tmux split-window -h -l '38%'   # right column (~38% width); tmux ≥ 3.1 — on older, -p 38
+tmux split-window -v -l '50%'   # split the right column top/bottom; on older, -p 50
+tmux select-pane -t 0           # back to the left (run) pane
+```
+
+- Top-right pane: `nvtop` — or `watch -n 30 nvidia-smi` if nvtop is absent (installs are out
+  of scope on this host).
+- Bottom-right pane: `htop` — or `top` if absent.
+- Move between panes: `Ctrl-b o`, or `Ctrl-b` + arrow keys.
+- Detach without killing anything inside (training keeps running): `Ctrl-b d`. Reattach with
+  `tmux attach -t qwen27b` — the panes come back exactly as they were; never start a second
+  session with the same name mid-run.
 
 **Go/no-go:** `tmux` present; session created or reattached; the shell about to run a GPU-phase
 command is inside a tmux pane (`echo $TMUX` non-empty). If not, `tmux new -s qwen27b` first —
@@ -218,9 +237,9 @@ standalone "dry render" mode — the file is only written as a side effect of an
 `trainer.train()` call (smoke or full) invoked with `--evidence-dir`. That happens in the next
 step. Both invocations enforce, unconditionally, at the default 16384 sequence length:
 
-> exactly row index **1326** excluded (hash `fc26be9a7f99e5f0d7db53cc53714dfd0c512a269fb3bd22ea3e7bdc12b742ba`, token length `16816`), **1399** rows retained.
+> zero rows exceed the 16384-token budget (empty exclusion list), **1400** rows retained.
 
-Any other count raises `TrainingDataError` and stops the run before it trains anything.
+Any overflow raises `TrainingDataError` and stops the run before it trains anything.
 
 **Go/no-go:** Owner authorization for this phase confirmed? `template-inspection.json` exists and is non-empty. Proceed to smoke train.
 
@@ -238,8 +257,8 @@ python -m RQ.SLM.unsloth.train --smoke --max-steps 5 --evidence-dir "$EVIDENCE_D
   credential/qualification gate is skipped when `--smoke` is set).
 - Trains with `report_to="none"` — no wandb run is created and no `WANDB_API_KEY` is read, so
   this step is safe to run on a host with no wandb credentials configured.
-- **This is the step that writes `$EVIDENCE_DIR/overflow-rows.json`** (row-1326 exclusion,
-  1399 retained — see §6). Passing the same `$EVIDENCE_DIR` here pre-populates the file the
+- **This is the step that writes `$EVIDENCE_DIR/overflow-rows.json`** (empty exclusion list,
+  1400 retained — see §6). Passing the same `$EVIDENCE_DIR` here pre-populates the file the
   full run will require to already exist.
 - Cannot claim qualification evidence even if `--host-profile`/`--evidence-dir` point at a
   qualified directory — `run_manifest.json`'s `qualification_dir` is forced to `None` for
@@ -248,7 +267,7 @@ python -m RQ.SLM.unsloth.train --smoke --max-steps 5 --evidence-dir "$EVIDENCE_D
   the run raises, no upload is attempted (smoke never uploads regardless).
 - Saved under `outputs/unsloth/Qwen3.6-27B-LoRA/<UTC-timestamp>/adapter/`.
 
-**Go/no-go:** Owner authorization for this phase confirmed? Exit 0, `run_manifest.json` written, `$EVIDENCE_DIR/overflow-rows.json` shows `"final_row_count": 1399` and exactly the row-1326 entry. Any mismatch → stop; do not proceed to full training with bad overflow evidence.
+**Go/no-go:** Owner authorization for this phase confirmed? Exit 0, `run_manifest.json` written, `$EVIDENCE_DIR/overflow-rows.json` shows `"final_row_count": 1400` and an empty exclusion list. Any mismatch → stop; do not proceed to full training with bad overflow evidence.
 
 ---
 
@@ -308,19 +327,26 @@ Everything here is read-only observation. Nothing should write into the repo tre
 training runs — the post-training git-clean re-check (§8, step 2) blocks manifest + upload if
 the tree goes dirty mid-run.
 
-- **wandb** — project `Untangling-Multi-Concern-Commits-with-Small-Language-Models`, run name
-  `qwen3.6-27b-semantic-concern-slm-unsloth-lora` (both from `configs/qwen3_6_27b.yml`). The
-  run URL is printed to stdout when the Trainer starts; it's also under that project in the
-  wandb web UI.
-- **GPU** — in the second tmux window (§3, `Ctrl-b c`), read-only:
-
-  ```bash
-  watch -n 30 nvidia-smi
-  ```
-
+- **wandb** — project `Untangling-Multi-Concern-Commits-with-Small-Language-Models` (from
+  `configs/qwen3_6_27b.yml`, set into `WANDB_PROJECT` before trainer construction), run name
+  `qwen3.6-27b-semantic-concern-slm-unsloth-lora-<timestamp>` — `<experiment_name>-<timestamp>`,
+  the same UTC timestamp used for the adapter and checkpoint directories (§8, §10). The run URL
+  is printed to stdout when the Trainer starts; it's also under that project in the wandb web
+  UI. This only applies to full training — smoke training passes `report_to="none"` and creates
+  no wandb run at all (§7).
+- **GPU / CPU** — in the right-hand monitor panes of the §3 layout, read-only: `nvtop`
+  (top-right; fallback `watch -n 30 nvidia-smi`) and `htop` (bottom-right; fallback `top`).
+- **ETA from observed steps** — the step count is fixed up front: 1400 rows / effective batch
+  8 → 175 optimizer steps per epoch, 875 total over 5 epochs, with a checkpoint at each epoch
+  boundary (steps 175/350/525/700/875). Once the Trainer log has passed step ~30, take the
+  mean seconds-per-step from the recent `logging_steps: 10` windows and project
+  `remaining ≈ (875 − current_step) × s_per_step`. The a-priori model for this host puts
+  s_per_step around 96–168 s (≈ 23–41 h of pure training; ~27.8B params × ~8 FLOPs/param/token
+  × ~26.5M tokens at 40–70 effective TFLOPS under the 300 W Max-Q cap). A measured value far
+  outside that band is a signal to check thermals/power first, not a better ETA.
 - **Training log** — `train.py` has no built-in log-file writer; Trainer's console output
-  (loss/step every `logging_steps: 100`) only goes to the tmux pane's stdout/stderr. To get
-  something taillable from the second window, redirect at launch instead of relying on
+  (loss/step every `logging_steps: 10`) only goes to the tmux pane's stdout/stderr. To get
+  something taillable from outside the run pane, redirect at launch instead of relying on
   scrollback, e.g.:
 
   ```bash
@@ -330,7 +356,7 @@ the tree goes dirty mid-run.
     2>&1 | tee "$HOME/qwen27b-train-$(date -u +%Y%m%dT%H%M%SZ).log"
   ```
 
-  then, from the second window: `tail -f "$HOME/qwen27b-train-<timestamp>.log"`. (`outputs/` is
+  then, from any other pane: `tail -f "$HOME/qwen27b-train-<timestamp>.log"`. (`outputs/` is
   gitignored, so a log written under it wouldn't dirty the tree either, but keeping it under
   `$HOME` keeps the repo tree untouched with certainty and needs no extra reasoning about what's
   ignored.)
@@ -482,7 +508,7 @@ Any of the following → **stop, report, do not improvise on the host**:
 
 1. **Template and overflow evidence are two separate commands, not one.** The plan's step 5
    assumed `--inspect-template --evidence-dir` produces both the template inspection *and* the
-   row-1326 overflow evidence. In the actual code, `--inspect-template` only writes
+   token-overflow evidence. In the actual code, `--inspect-template` only writes
    `template-inspection.json` and returns early; `overflow-rows.json` is only ever written as a
    side effect of a real `trainer.train()` call (smoke or full) given `--evidence-dir`. The
    runbook splits this into §6 (template) and §7 (smoke, which produces overflow evidence).

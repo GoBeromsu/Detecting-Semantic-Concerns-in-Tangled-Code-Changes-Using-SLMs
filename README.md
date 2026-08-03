@@ -143,7 +143,7 @@ The reported paper results come from the legacy Qwen3-14B path (`train.py` -> `i
 - **Train**: `tangled_ccs_dataset_train.csv` (80% split, 1400 validated rows)
 - **Test**: `tangled_ccs_dataset_test.csv` (20% split, 350 rows)
 - Based on Conventional Commits Specification (CCS)
-- The 27B path pins `Berom0227/tangled-ccs-commits` at revision `234e8cb034bace7f6fa2a87e73e8c86bc0b04a7d` and drops the single train row that exceeds 16384 tokens, leaving **1399 retained rows**
+- The 27B path pins `Berom0227/tangled-ccs-commits` at revision `65b09af76f3e9badf4a28bf7a641b1d2930a26b5`; under the Qwen3.6-27B tokenizer at `max_seq_length=16384`, zero rows overflow the budget, so all **1400 train rows** are retained
 
 ### Qwen3.6-27B workflow
 

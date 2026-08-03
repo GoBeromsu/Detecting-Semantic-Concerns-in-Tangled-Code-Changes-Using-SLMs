@@ -51,7 +51,7 @@ def test_load_config_when_canonical_parses_locked_model_and_precision() -> None:
     assert config.model.revision == "6a9e13bd6fc8f0983b9b99948120bc37f49c13e9"
     assert config.model.text_only is True
     assert config.model.dataset_id == "Berom0227/tangled-ccs-commits"
-    assert config.model.dataset_revision == "234e8cb034bace7f6fa2a87e73e8c86bc0b04a7d"
+    assert config.model.dataset_revision == "65b09af76f3e9badf4a28bf7a641b1d2930a26b5"
     assert config.precision.load_in_16bit is True
     assert config.precision.load_in_4bit is False
     assert config.precision.load_in_8bit is False

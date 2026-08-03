@@ -29,7 +29,7 @@ Two paths coexist here. They share no configs and never import each other. Confu
 | `_types.py` | shared Protocols/TypedDicts/aliases (import symbols from HERE, not re-export modules) |
 
 ### Invariants (enforced in code — do not weaken)
-- 1400 → **1399** retained rows: index 1326 (>16384 tokens) is excluded. Any other count at 16384 is an error.
+- **1400** retained rows: zero rows exceed 16384 tokens under the Qwen3.6-27B tokenizer, so the exclusion list is empty. Any other count at 16384 is an error.
 - Response-only supervision: labels = JSON object + EOS only; manifest `objective: response_only_json_eos`.
 - pad token real AND ≠ EOS, else hard fail (no EOS-pad fallback).
 - BF16 throughout; rank 32 / alpha 48 / dropout 0.05; 12 targets; `mtp|visual` excluded.

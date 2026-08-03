@@ -21,7 +21,7 @@ from ._types import ContractError, JsonValue, RunMode
 
 BASE_MODEL: Final[str] = "Qwen/Qwen3.6-27B"
 MODEL_REVISION: Final[str] = "6a9e13bd6fc8f0983b9b99948120bc37f49c13e9"
-DATASET_REVISION: Final[str] = "234e8cb034bace7f6fa2a87e73e8c86bc0b04a7d"
+DATASET_REVISION: Final[str] = "65b09af76f3e9badf4a28bf7a641b1d2930a26b5"
 SCHEMA_VERSION: Final[int] = 2
 EVIDENCE_DIR: Final[str] = "evidence"
 COMMON_EVIDENCE: Final[tuple[str, ...]] = ("config.yml", "template.txt", "training_identity.json", "provenance.json")
@@ -184,8 +184,8 @@ def _validate_identity(root: Path, identity: Mapping[str, JsonValue]) -> None:
             _fail(f"adapter_config.{field}", "does not match effective training identity")
     if adapter.get("peft_type") != "LORA" or adapter.get("task_type") != "CAUSAL_LM":
         _fail("adapter_config", "must be an unmerged causal LoRA adapter")
-    excluded = [{"index": 1326, "hash": "fc26be9a7f99e5f0d7db53cc53714dfd0c512a269fb3bd22ea3e7bdc12b742ba", "token_length": 16816}]
-    if model.get("id") != BASE_MODEL or model.get("revision") != MODEL_REVISION or identity.get("final_row_count") != 1399 or identity.get("excluded_rows") != excluded or training.get("packing") is not False or identity.get("objective") != "response_only_json_eos" or identity.get("packing") is not False or identity.get("merged_model") is not False:
+    excluded: list[JsonValue] = []
+    if model.get("id") != BASE_MODEL or model.get("revision") != MODEL_REVISION or identity.get("final_row_count") != 1400 or identity.get("excluded_rows") != excluded or training.get("packing") is not False or identity.get("objective") != "response_only_json_eos" or identity.get("packing") is not False or identity.get("merged_model") is not False:
         _fail("identity", "does not match the pinned unmerged training contract")
 
 
@@ -217,7 +217,7 @@ def validate_adapter(root: Path, config_path: Path | None = None) -> AdapterRepo
         if _sha256(config_path) != _sha256(root / EVIDENCE_DIR / "config.yml"):
             _fail("config_sha256", "selected config bytes differ from captured config")
     tokenizer_files = ("tokenizer.json", "tokenizer_config.json") if (root / "tokenizer.json").is_file() else ("vocab.json", "merges.txt", "tokenizer_config.json")
-    return AdapterReport(BASE_MODEL, MODEL_REVISION, DATASET_REVISION, 1399, ("adapter_config.json", "adapter_model.safetensors"), tokenizer_files, "run_manifest.json")
+    return AdapterReport(BASE_MODEL, MODEL_REVISION, DATASET_REVISION, 1400, ("adapter_config.json", "adapter_model.safetensors"), tokenizer_files, "run_manifest.json")
 
 
 def _write_report(path: Path, report: AdapterReport) -> None:

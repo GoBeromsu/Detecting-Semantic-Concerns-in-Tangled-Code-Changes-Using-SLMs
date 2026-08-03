@@ -8,7 +8,6 @@ from typing import Final, Literal
 
 from RQ.SLM.unsloth.train import build_manifest, write_manifest
 from RQ.SLM.unsloth._types import (
-    ExcludedRow,
     JsonValue,
     ManifestEvidence,
     RunProvenance,
@@ -20,13 +19,12 @@ REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[2]
 CONFIG_PATH: Final[Path] = REPO_ROOT / "RQ/SLM/unsloth/configs/qwen3_6_27b.yml"
 BASE: Final[str] = "Qwen/Qwen3.6-27B"
 MODEL_REVISION: Final[str] = "6a9e13bd6fc8f0983b9b99948120bc37f49c13e9"
-DATASET_REVISION: Final[str] = "234e8cb034bace7f6fa2a87e73e8c86bc0b04a7d"
+DATASET_REVISION: Final[str] = "65b09af76f3e9badf4a28bf7a641b1d2930a26b5"
 TARGETS: Final[tuple[str, ...]] = (
     "q_proj", "k_proj", "v_proj", "o_proj", "in_proj_qkv", "in_proj_z",
     "in_proj_b", "in_proj_a", "out_proj", "gate_proj", "up_proj", "down_proj",
 )
 EXCLUSION: Final[str] = r"(?:.*\.)?(?:mtp|visual)(?:\..*)?"
-EXCLUDED_HASH: Final[str] = "fc26be9a7f99e5f0d7db53cc53714dfd0c512a269fb3bd22ea3e7bdc12b742ba"
 TokenizerForm = Literal["json", "bpe"]
 TOKENIZER_FILES: Final[dict[TokenizerForm, tuple[tuple[str, str], ...]]] = {
     "json": (("tokenizer.json", "{}"),),
@@ -85,7 +83,7 @@ def write_contract(root: Path, *, tokenizer_form: TokenizerForm = "json") -> dic
         RunProvenance("a" * 40, False, "smoke"),
         ManifestEvidence(
             root, CONFIG_PATH, "{{ messages }}", None, None,
-            (ExcludedRow(1326, EXCLUDED_HASH, 16816),), 1399,
+            (), 1400,
         ),
         report_to="none",
     )
