@@ -14,6 +14,9 @@ set -euo pipefail
 
 HOST="${HOST:-blackwell}"
 SESSION="${SESSION:-qwen27b}"
+# RECREATE=1 rebuilds an existing session with the current layout. The host script still
+# refuses while any pane is busy, so this cannot take down a running job.
+RECREATE="${RECREATE:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -23,9 +26,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # so a value can never terminate the command it is embedded in.
 q_session="$(printf '%q' "$SESSION")"
 q_repo_dir="$(printf '%q' "${REPO_DIR:-}")"
+q_recreate="$(printf '%q' "$RECREATE")"
 
 echo "[INFO] Setting up tmux session '$SESSION' on $HOST ..."
-ssh "$HOST" bash -s -- "$q_session" "$q_repo_dir" < "$SCRIPT_DIR/tmux_session.sh"
+ssh "$HOST" bash -s -- "$q_session" "$q_repo_dir" "$q_recreate" < "$SCRIPT_DIR/tmux_session.sh"
 
 echo "[INFO] Attaching to '$SESSION' on $HOST ..."
 exec ssh -t "$HOST" tmux attach -t "$q_session"
