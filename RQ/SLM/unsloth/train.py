@@ -76,6 +76,7 @@ class RunArguments(argparse.Namespace):
     config: Path = DEFAULT_CONFIG_PATH; dataset_source: Literal["local", "hub"] = "local"
     smoke: bool = False; max_steps: int | None = None; inspect_template: bool = False
     evidence_dir: Path | None = None; verify_adapter: Path | None = None; host_profile: Path | None = None; verify_adapter_path_file: Path | None = None
+    no_wandb: bool = False
 
 
 @runtime_checkable
@@ -210,6 +211,13 @@ def parse_args(argv: Sequence[str] | None = None) -> RunArguments:
     _ = parser.add_argument("--verify-adapter", type=Path)
     _ = parser.add_argument("--host-profile", type=Path)
     _ = parser.add_argument("--verify-adapter-path-file", type=Path)
+    _ = parser.add_argument(
+        "--no-wandb",
+        action="store_true",
+        help="train without Weights & Biases: drops WANDB_API_KEY from the required credentials "
+        "and reports to nothing. Opt-in by design — a full run silently losing its training "
+        "curves is not recoverable after the fact.",
+    )
     arguments = RunArguments()
     _ = parser.parse_args(argv, namespace=arguments)
     return arguments
@@ -294,8 +302,15 @@ def write_overflow_evidence(examples: Sequence[RenderedExample], excluded_rows: 
     _write_evidence(evidence_dir, "overflow-rows.json", {"final_row_count": len(examples), "excluded_rows": excluded})
 
 
-def require_full_credentials(environment: Mapping[str, str]) -> None:
-    missing = tuple(name for name in ("HF_HUB_TOKEN", "WANDB_API_KEY") if not environment.get(name))
+def require_full_credentials(environment: Mapping[str, str], *, wandb: bool = True) -> None:
+    """Reject a full run missing the credentials its completion path will need.
+
+    HF_HUB_TOKEN is unconditional: `_upload_adapter` runs automatically once verification
+    passes, so a missing token is only discovered after the whole run is spent. WANDB_API_KEY is
+    required only when the run actually reports to it — see `--no-wandb`.
+    """
+    required = ("HF_HUB_TOKEN", "WANDB_API_KEY") if wandb else ("HF_HUB_TOKEN",)
+    missing = tuple(name for name in required if not environment.get(name))
     if missing:
         raise TrainingDataError(f"missing credentials: {', '.join(missing)}")
 
@@ -368,7 +383,7 @@ def run(arguments: RunArguments) -> None:
         raise TrainingDataError("--inspect-template requires --evidence-dir")
     if not arguments.smoke and not arguments.inspect_template:
         evidence_dir = require_qualification_evidence(arguments, config.training.max_seq_length)
-        require_full_credentials(os.environ)
+        require_full_credentials(os.environ, wandb=not arguments.no_wandb)
         require_publishable(config)
     runtime = create_runtime(config, 0)
     if arguments.inspect_template:
@@ -384,9 +399,13 @@ def run(arguments: RunArguments) -> None:
     timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     adapter_dir = _adapter_dir(config, timestamp)
     checkpoint_dir = _checkpoint_dir(config, timestamp)
-    report_to = "none" if arguments.smoke else "wandb"
-    run_name = None if arguments.smoke else f"{config.wandb.experiment_name}-{timestamp}"
-    if not arguments.smoke:
+    # A smoke run never reports; a full run reports unless --no-wandb opted out. `report_to`
+    # is carried into the manifest and the adapter identity, so which of the two a run used is
+    # recoverable from its artifacts rather than from whoever typed the command.
+    tracked = not arguments.smoke and not arguments.no_wandb
+    report_to = "wandb" if tracked else "none"
+    run_name = f"{config.wandb.experiment_name}-{timestamp}" if tracked else None
+    if tracked:
         os.environ["WANDB_PROJECT"] = config.wandb.project
     trainer = create_trainer(
         runtime, prepared.examples, config, checkpoint_dir,

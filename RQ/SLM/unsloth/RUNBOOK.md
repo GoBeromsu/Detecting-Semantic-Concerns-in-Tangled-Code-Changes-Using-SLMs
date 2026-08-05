@@ -35,7 +35,7 @@ Re-verify these before booking a session; the values are point-in-time, not stan
 
 | Blocker | Blocks | Action |
 |---|---|---|
-| `WANDB_API_KEY` absent from `.env` | §8 (`require_full_credentials`, `train.py:304-305`) | obtain the key and export it (§2) |
+| `WANDB_API_KEY` absent from `.env` | §8 **only if the run reports to wandb** | either obtain the key and export it (§2), or launch with `--no-wandb` and accept no training curves |
 | ~~Hub repo `Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter` absent~~ | — | **cleared 2026-08-05**: created public, matching its nine sibling repos; `require_publishable()` verified PASS against the live Hub |
 | `t_infer` unbounded | §8 launch decision (§8a) | run the §7a canary after smoke |
 
@@ -99,16 +99,22 @@ in the environment of the shell that launches training:
 
 ```bash
 read -rs HF_HUB_TOKEN && export HF_HUB_TOKEN     # no file written, no shell history
-read -rs WANDB_API_KEY && export WANDB_API_KEY
-echo "${HF_HUB_TOKEN:+set}" "${WANDB_API_KEY:+set}"   # both must print "set"
+read -rs WANDB_API_KEY && export WANDB_API_KEY   # skip when launching with --no-wandb
+echo "${HF_HUB_TOKEN:+set}" "${WANDB_API_KEY:+set}"   # must print "set" for each one you need
 ```
 
 Or, if the host repo already holds a `.env` you trust: `set -a; source .env; set +a`.
 
-Full training hard-fails without both tokens. §4–§7 need neither.
+`HF_HUB_TOKEN` is never optional for full training: `_upload_adapter()` runs automatically once
+verification passes (§8), so a missing token is only discovered after the whole run is spent.
+`WANDB_API_KEY` is required only when the run reports to wandb — pass `--no-wandb` to drop both
+the requirement and the reporting. That opt-out is deliberately explicit rather than
+"skip it if the key happens to be absent": a full run is multi-hour and single-shot, and
+silently losing its training curves cannot be repaired afterwards. §4–§7 need neither token.
 
 **Go/no-go:** hostname confirmed, branch clean, `uv sync --extra local-gpu` clean, the import
-line printing `True`, `--base` present in `infer --help`, both tokens exported.
+line printing `True`, `--base` present in `infer --help`, and every token the chosen launch mode
+needs exported (`HF_HUB_TOKEN` always; `WANDB_API_KEY` unless `--no-wandb`).
 
 ---
 
@@ -406,6 +412,11 @@ python -m RQ.SLM.unsloth.train \
   --host-profile "$HOST_PROFILE"
 ```
 
+Add `--no-wandb` if `WANDB_API_KEY` is not in the environment; the run then trains with
+`report_to="none"` and creates no wandb run, and §9's wandb monitoring does not apply. The
+manifest records `report_to` either way, so which mode a finished adapter was trained under is
+recoverable from its artifacts.
+
 (`--config` defaults to `$CONFIG`; omit `--smoke`/`--max-steps` for the real run — 5 epochs,
 batch 1 × grad-accum 8, seq 16384, BF16, SDPA, per `configs/qwen3_6_27b.yml`.)
 
@@ -414,7 +425,7 @@ Preconditions the code itself enforces before touching the GPU:
   `measurements.jsonl`, `qualification.json` (§5–§7) **and** `preflight.json` (§4).
 - `qualification.json.status == "approved_16384"` and `approved_max_seq_length == 16384`,
   hash-bound to the current `config.yml` and `host_profile.yml` bytes.
-- `HF_HUB_TOKEN` and `WANDB_API_KEY` present in the environment (§2).
+- `HF_HUB_TOKEN` present in the environment, plus `WANDB_API_KEY` unless `--no-wandb` (§2).
 - `require_publishable()` — clean Git worktree, and `HfApi.repo_info()` resolves
   `Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter`.
 
@@ -495,7 +506,8 @@ post-training git-clean re-check (§8, step 2) blocks manifest + upload if the t
 - **wandb** — project `Untangling-Multi-Concern-Commits-with-Small-Language-Models`, run name
   `qwen3.6-27b-semantic-concern-slm-unsloth-lora-<timestamp>` (same UTC timestamp as the adapter
   and checkpoint directories). The run URL is printed to stdout when the Trainer starts. Full
-  training only — smoke creates no wandb run (§7).
+  training only — smoke creates no wandb run (§7), and neither does a `--no-wandb` run (§8), for
+  which the tee'd log below is the only progress signal.
 - **GPU / CPU** — the right-hand monitor panes from §3.
 - **ETA from observed steps** — 1400 rows / effective batch 8 → 175 optimizer steps per epoch,
   875 total over 5 epochs, checkpoints at 175/350/525/700/875. Once past step ~30, take the mean
