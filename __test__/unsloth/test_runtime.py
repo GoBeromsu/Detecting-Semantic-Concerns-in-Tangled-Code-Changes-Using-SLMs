@@ -82,6 +82,10 @@ def test_runtime_builders_when_using_pinned_config_preserve_required_settings() 
     assert peft_kwargs["exclude_modules"] == "(?:.*\\.)?(?:mtp|visual)(?:\\..*)?"
     assert peft_kwargs["random_state"] == 42
     assert peft_kwargs["autocast_adapter_dtype"] is False
+    # Unsloth forwards this into LoraConfig, so it reaches adapter_config.json and the published
+    # adapter records the base commit it was trained against. Without it PEFT writes null there
+    # and validate_adapter rejects the run against its own pinned identity.
+    assert peft_kwargs["revision"] == model_kwargs["revision"]
     # Vision stays on so the explicit target list reaches PEFT verbatim rather than being
     # narrowed by Unsloth's dense-attention-only regex; the load is text_only regardless.
     assert peft_kwargs["finetune_vision_layers"] is True

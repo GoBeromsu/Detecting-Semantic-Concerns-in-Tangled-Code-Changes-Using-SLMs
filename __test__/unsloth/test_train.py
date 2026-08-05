@@ -783,3 +783,34 @@ def test_help_when_invoked_directly_is_available_without_unsloth() -> None:
     assert "--dataset-source" in result.stdout
     assert "--inspect-template" in result.stdout
 
+
+
+def test_drop_trainer_pickle_when_saving_removes_only_the_trainer_pickle(tmp_path: Path) -> None:
+    # Given: an adapter directory as Trainer.save_model() leaves it — the adapter weights plus
+    # the training_args.bin pickle it always writes.
+    from RQ.SLM.unsloth.train import _drop_trainer_pickle
+
+    _ = (tmp_path / "training_args.bin").write_bytes(b"pickled TrainingArguments")
+    _ = (tmp_path / "adapter_model.safetensors").write_bytes(b"weights")
+    _ = (tmp_path / "adapter_config.json").write_text("{}", encoding="utf-8")
+
+    # When: the directory is prepared for the manifest.
+    _drop_trainer_pickle(tmp_path)
+
+    # Then: the pickle is gone before anything hashes or publishes it, and nothing else moved.
+    assert not (tmp_path / "training_args.bin").exists()
+    assert {path.name for path in tmp_path.iterdir()} == {
+        "adapter_model.safetensors",
+        "adapter_config.json",
+    }
+
+
+def test_drop_trainer_pickle_when_the_pickle_is_absent_is_a_no_op(tmp_path: Path) -> None:
+    # Given: a directory a future Trainer left without the pickle.
+    from RQ.SLM.unsloth.train import _drop_trainer_pickle
+
+    _ = (tmp_path / "adapter_config.json").write_text("{}", encoding="utf-8")
+
+    # When/Then: preparing it neither fails nor invents work.
+    _drop_trainer_pickle(tmp_path)
+    assert {path.name for path in tmp_path.iterdir()} == {"adapter_config.json"}
