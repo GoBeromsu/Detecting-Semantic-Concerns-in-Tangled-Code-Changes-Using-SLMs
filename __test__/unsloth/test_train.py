@@ -418,9 +418,16 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
 
     class FakeTokenizer:
         chat_template: str = "{{ messages }}"
+        # Real tokenizers carry this and save_pretrained persists whatever it holds at call
+        # time, so a fake without it cannot show which value the published artifact receives.
+        padding_side: str = "right"
+
+        def __init__(self) -> None:
+            self.padding_side_at_save: str | None = None
 
         def save_pretrained(self, save_directory: str) -> None:
             _ = save_directory
+            self.padding_side_at_save = self.padding_side
 
     class FakeRuntime:
         tokenizer: FakeTokenizer
@@ -473,9 +480,12 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
         _ = environment
         captured_wandb_required.append(wandb)
 
+    runtimes: list[FakeRuntime] = []
+
     def runtime(config: UnslothConfig, device_index: int) -> FakeRuntime:
         _ = config, device_index
-        return FakeRuntime()
+        runtimes.append(FakeRuntime())
+        return runtimes[-1]
 
     def split(source: Literal["local", "hub"], name: str) -> tuple[DatasetRow, ...]:
         _ = source, name
@@ -591,6 +601,13 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
 
         # Then: the upload destination was proven reachable, not discovered after training.
         assert probed_repos == ["Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter"]
+
+        # Then: the published tokenizer_config.json carries the padding side a reloader needs,
+        # while the object the trainer still holds keeps the one causal SFT needs. Asserting
+        # only the final value would pass on a save that never flipped at all.
+        assert len(runtimes) == 1
+        assert runtimes[0].tokenizer.padding_side_at_save == "left"
+        assert runtimes[0].tokenizer.padding_side == "right"
     finally:
         os.environ.pop("WANDB_PROJECT", None)
 
@@ -606,9 +623,16 @@ def test_run_when_smoke_training_reports_to_none_without_wandb_credentials(
 
     class FakeTokenizer:
         chat_template: str = "{{ messages }}"
+        # Real tokenizers carry this and save_pretrained persists whatever it holds at call
+        # time, so a fake without it cannot show which value the published artifact receives.
+        padding_side: str = "right"
+
+        def __init__(self) -> None:
+            self.padding_side_at_save: str | None = None
 
         def save_pretrained(self, save_directory: str) -> None:
             _ = save_directory
+            self.padding_side_at_save = self.padding_side
 
     class FakeRuntime:
         tokenizer: FakeTokenizer

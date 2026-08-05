@@ -341,6 +341,31 @@ def _drop_trainer_pickle(adapter_dir: Path) -> None:
         pickle_path.unlink()
 
 
+def _save_tokenizer_for_inference(tokenizer: TokenizerLike, adapter_dir: Path) -> None:
+    """Persist the tokenizer with the padding side inference wants, not the one training used.
+
+    save_pretrained() writes whatever padding_side is live at call time into
+    tokenizer_config.json, and ours is still "right" here — correct for causal SFT, and
+    re-asserted by Unsloth itself during get_peft_model(). But this directory is published,
+    so the value it carries becomes the default for everyone who reloads the adapter, and
+    right-padding a batched generate() silently corrupts the output. Unsloth's own LoRA save
+    flips to "left" around this exact call and reverts afterwards (unsloth/save.py:1038-1046);
+    doing the same here makes the artifact match the convention its loader assumes.
+
+    This project's own inference is unaffected either way — it takes the tokenizer from the
+    base repo rather than the adapter, and generates one prompt at a time, so nothing is ever
+    padded. The fix is for whoever reloads the published adapter without knowing that.
+    """
+    training_padding_side = tokenizer.padding_side
+    tokenizer.padding_side = "left"
+    try:
+        tokenizer.save_pretrained(str(adapter_dir))
+    finally:
+        # The trainer holds this same object, so leaving it flipped would change how any
+        # later training step pads.
+        tokenizer.padding_side = training_padding_side
+
+
 def _checkpoint_dir(config: UnslothConfig, timestamp: str) -> Path:
     # Epoch checkpoints must land outside adapter_dir: build_manifest()/validate_adapter()
     # require every entry under adapter_dir to be a regular file (only "evidence/" is a
@@ -431,7 +456,7 @@ def run(arguments: RunArguments) -> None:
     )
     trainer.train()
     trainer.save_model(str(adapter_dir))
-    runtime.tokenizer.save_pretrained(str(adapter_dir))
+    _save_tokenizer_for_inference(runtime.tokenizer, adapter_dir)
     _drop_trainer_pickle(adapter_dir)
     run_mode: Literal["full", "smoke"] = "smoke" if arguments.smoke else "full"
     _ = write_manifest(adapter_dir, build_manifest(
