@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -200,6 +200,13 @@ def write_manifest(adapter_dir: Path, manifest: RunManifest) -> Path:
     return path
 
 
+_NO_WANDB_HELP: Final = (
+    "train without Weights & Biases: drops WANDB_API_KEY from the required credentials and "
+    + "reports to nothing. Opt-out by design — a full run is multi-hour and single-shot, and "
+    + "silently losing its training curves cannot be repaired afterwards."
+)
+
+
 def parse_args(argv: Sequence[str] | None = None) -> RunArguments:
     parser = argparse.ArgumentParser(description=__doc__)
     _ = parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
@@ -214,9 +221,7 @@ def parse_args(argv: Sequence[str] | None = None) -> RunArguments:
     _ = parser.add_argument(
         "--no-wandb",
         action="store_true",
-        help="train without Weights & Biases: drops WANDB_API_KEY from the required credentials "
-        "and reports to nothing. Opt-in by design — a full run silently losing its training "
-        "curves is not recoverable after the fact.",
+        help=_NO_WANDB_HELP,
     )
     arguments = RunArguments()
     _ = parser.parse_args(argv, namespace=arguments)
@@ -340,7 +345,9 @@ def _hub_client() -> HubClient:
     # exactly that hook. The structural check therefore rejected every real install while
     # hasattr(hub, "HfApi") was True, and since every test substitutes this whole function,
     # nothing caught it: the gate that exists to save a multi-hour run always failed closed.
-    factory = getattr(hub, "HfApi", None)
+    # Typed as returning `object` rather than left as Any: the isinstance below is what
+    # establishes the type, so nothing between here and there should be silently trusted.
+    factory: Callable[..., object] | None = getattr(hub, "HfApi", None)
     if factory is None:
         raise TrainingDataError("huggingface_hub does not expose HfApi")
     client = factory(token=os.environ["HF_HUB_TOKEN"])
