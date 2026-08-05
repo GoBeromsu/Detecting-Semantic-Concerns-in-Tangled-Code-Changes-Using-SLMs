@@ -214,3 +214,9 @@ cython_debug/
 .codex/
 output/
 datasets/data/legacy/
+
+# Unsloth writes compiled kernels into the CWD on every model load, so this appears during
+# §5/§6/§7 and again mid-§8. Full training checks for a clean worktree twice — once at launch
+# and once after training, right before build_manifest — so leaving it untracked would burn a
+# multi-hour run at the second check, after the GPU work is already spent.
+unsloth_compiled_cache/
