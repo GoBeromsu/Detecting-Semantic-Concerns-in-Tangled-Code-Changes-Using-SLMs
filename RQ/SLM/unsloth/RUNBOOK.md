@@ -36,8 +36,8 @@ Re-verify these before booking a session; the values are point-in-time, not stan
 | Blocker | Blocks | Action |
 |---|---|---|
 | `WANDB_API_KEY` absent from `.env` | §8 (`require_full_credentials`, `train.py:304-305`) | obtain the key and export it (§2) |
-| Hub repo `Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter` absent (404 @ 2026-08-03) | §8's unconditional post-train upload | create the repo before launching §8 |
-| `t_infer` unbounded | §8 launch decision (§8a) | run the §7a measurement after smoke |
+| Hub repo `Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter` absent (404 @ 2026-08-03) | §8 — `require_publishable()` probes `repo_info()` before the runtime is created, so §8 refuses to start | create the repo before launching §8 |
+| `t_infer` unbounded | §8 launch decision (§8a) | run the §7a canary after smoke |
 
 Host tuning is available this session (the workstation is otherwise idle), so swap and memory
 pressure are **setup items, not gates** — see §4a.
@@ -46,7 +46,7 @@ pressure are **setup items, not gates** — see §4a.
 
 ## 1. Preconditions (on Mac, before ssh)
 
-- [ ] `pytest __test__/unsloth/` green (all 14 files).
+- [ ] `pytest __test__/unsloth/` green (all 12 test files).
 - [ ] `pytest __test__/` green (legacy 14B contract untouched).
 - [ ] `basedpyright RQ/SLM/unsloth/` reports 0 errors / 0 warnings.
 - [ ] `git status --short --branch` clean on `main`, carrying both `41263f4` (wandb
@@ -74,7 +74,23 @@ git fetch && git checkout main && git pull
 git merge-base --is-ancestor 41263f4 HEAD && echo "wandb wiring present"   # must print
 git merge-base --is-ancestor efeca02 HEAD && echo "seed-43 dataset present" # must print
 git status --porcelain        # must be EMPTY — full training refuses to publish otherwise
-uv sync
+uv sync --extra local-gpu     # NOT plain `uv sync` — see below
+```
+
+**The `--extra local-gpu` is load-bearing.** Every GPU dependency (`torch`, `unsloth`, `peft`,
+`trl`, `outlines`) lives in that optional extra, gated on `sys_platform == 'linux' and
+platform_machine == 'x86_64'`. Plain `uv sync` installs **none** of them, and because the ML
+stack is imported lazily, §3's go/no-go and §4's zero-GPU probe both still pass — the first
+failure would be §5, well after the point where a fail-fast check should have caught it.
+
+Prove the stack actually imports before spending a session on it:
+
+```bash
+uv run python -c "import torch, unsloth, peft, trl, outlines; print(torch.__version__, torch.cuda.is_available())"
+# must print a cu128 build and True
+
+python -m RQ.SLM.unsloth.infer --help | grep -- --base
+# must print — proves the host checkout carries §12's two-arm CLI, not an older single-arm one
 ```
 
 Credentials — **`train.py` reads `os.environ` directly and never calls `load_dotenv()`**
@@ -91,7 +107,8 @@ Or, if the host repo already holds a `.env` you trust: `set -a; source .env; set
 
 Full training hard-fails without both tokens. §4–§7 need neither.
 
-**Go/no-go:** hostname confirmed, branch clean, `uv sync` clean, both tokens exported.
+**Go/no-go:** hostname confirmed, branch clean, `uv sync --extra local-gpu` clean, the import
+line printing `True`, `--base` present in `infer --help`, both tokens exported.
 
 ---
 
@@ -102,25 +119,36 @@ An ssh drop **outside tmux kills the training process**; it is a normal child of
 with nothing to reparent it. Every GPU-phase command (§5, §6, §7, §7a, §8, §12) must run inside
 tmux. §4 is quick and zero-GPU — bare ssh is fine.
 
-```bash
-tmux new -s qwen27b       # first time
-tmux attach -t qwen27b    # after any disconnect/reconnect
-```
-
-On first creation, build the run layout — left pane for phase commands, right column stacked
-with a GPU monitor over a CPU monitor:
+One command from a cold laptop creates the session (if absent) and attaches to it:
 
 ```bash
-tmux split-window -h -l '38%'   # right column; tmux ≥ 3.1 — on older, -p 38
-tmux split-window -v -l '50%'   # split it top/bottom; on older, -p 50
-tmux select-pane -t 0           # back to the left (run) pane
+./scripts/blackwell/attach.sh          # run on the Mac, not the host
 ```
 
-- Top-right: `nvtop` — or `watch -n 30 nvidia-smi` if absent (installs are out of scope here).
-- Bottom-right: `htop` — or `top` if absent.
-- Move between panes: `Ctrl-b o` or `Ctrl-b` + arrows. Detach: `Ctrl-b d` (training keeps
-  running). Reattach: `tmux attach -t qwen27b`; never start a second session with the same name
-  mid-run.
+It ssh's to the `blackwell` alias twice on purpose: once non-interactively to pipe
+`scripts/blackwell/tmux_session.sh` to the host and build the session detached, then once with
+`-t` to attach, which needs a real tty.
+
+The session `qwen27b` holds three windows:
+
+| Window | Contents |
+|--------|----------|
+| `run`  | shell in the repo — phase commands (§5, §6, §7, §7a, §8, §12) |
+| `run2` | second shell in the repo — `--verify-only`, `git status`, log tails |
+| `mon`  | `nvtop` (top pane) over `htop` (bottom pane) |
+
+`tmux_session.sh` fails fast before creating anything if `tmux`, `nvtop`, or `htop` is missing
+(it prints the exact `sudo apt install -y <pkg>` line) or if the repo directory is wrong. It
+defaults to `REPO_DIR=$HOME/Concern-is-All-You-Need`; if the host checkout lives elsewhere,
+export `REPO_DIR` and it is forwarded over ssh.
+
+**It is idempotent and never touches an existing session** — re-running `attach.sh` mid-training
+detects `qwen27b`, leaves it alone, and attaches. That is the property that makes it safe to run
+after a dropped link without thinking about it.
+
+- Switch windows: `Ctrl-b 0/1/2` or `Ctrl-b w`. Move between panes: `Ctrl-b o` or `Ctrl-b` +
+  arrows. Detach: `Ctrl-b d` (training keeps running). Reattach: `./scripts/blackwell/attach.sh`;
+  never start a second session with the same name mid-run.
 
 **Go/no-go:** the shell about to run a GPU-phase command has non-empty `$TMUX`.
 
@@ -287,65 +315,83 @@ python -m RQ.SLM.unsloth.train --smoke --max-steps 5 --evidence-dir "$EVIDENCE_D
 
 **Go/no-go:** exit 0, `run_manifest.json` written, `overflow-rows.json` shows `"final_row_count": 1400` and an empty exclusion list. Any mismatch → stop; do not run §8 on bad overflow evidence.
 
-### 7a. `t_infer` measurement (owner-run, immediately after §7)
+### 7a. `t_infer` canary (owner-run, immediately after §7)
+
+This does double duty: it bounds `t_infer` for §8a **and** it is the fail-fast canary for §12.
+It runs the real `run_evaluation()` — the same adapter load, prompt render, constrained decode,
+CSV contract, and failure sidecar §12 uses — just narrowed to 11 rows of one cell. If §12 is
+going to break on this host, it breaks here, in three minutes, instead of eleven hours later.
 
 **There is no CLI subset for this**, by design: `infer.py` always runs the fixed canonical sweep
 (contexts, message conditions and row count are constants in `results.py:26-28`), and
 `infer_options.py` exposes no `--limit` or `--contexts`. No such flag will be added — the
-minimal-flag posture is an invariant. So this is an owner-run snippet against the package's own
-generation API, recorded by hand like `cached_bytes` in §4.
+minimal-flag posture is an invariant. So the narrowing is done by constructing
+`EvaluationOptions` directly, which is the same frozen dataclass the CLI builds.
 
-Run it from the repo root inside tmux by pasting into `uv run python -`, or save under `$TMPDIR`
-and run `uv run python "$TMPDIR/t_infer_bench.py"` — never write scratch files into the repo
-tree, which must stay clean for §8's manifest check.
+Run it from the repo root inside tmux by pasting into `uv run python -`, or save it under
+`/tmp` and run `uv run python /tmp/t_infer_bench.py` — never write scratch files into the repo
+tree, which must stay clean for §8's manifest check. `output_root` points outside the repo for
+the same reason.
 
-The only value you supply by hand is the adapter directory from §7. Everything else comes from
-the pinned config and the canonical split, so the timed generation is exactly the work
-`msg0/12288_zs.csv`'s first row does — same prompt, same context, same seed.
+The only value you supply by hand is the adapter directory from §7.
 
 ```python
 # owner-run, in the repo venv on the host, inside tmux (§3)
-import time
+import csv
+import tempfile
 from pathlib import Path
 
-import pandas as pd
-
-from RQ.SLM.unsloth.config import load_config
-from RQ.SLM.unsloth.data import load_split
-from RQ.SLM.unsloth.generation import GenerationRequest, PeftLoadRequest, load_backend
-from RQ.main import add_truncated_commits
-from utils.prompt import get_prompt_by_type
+from RQ.SLM.unsloth.data import LOCAL_DATA_DIR
+from RQ.SLM.unsloth.generation import MAX_NEW_TOKENS
+from RQ.SLM.unsloth.infer import run_evaluation
+from RQ.SLM.unsloth.infer_options import EvaluationOptions
 
 ADAPTER_DIR = Path("outputs/unsloth/Qwen3.6-27B-LoRA/<UTC-timestamp>/adapter")  # from §7
 
-config = load_config(Path("RQ/SLM/unsloth/configs/qwen3_6_27b.yml"))
-rows = load_split("local", "test")                       # 350 canonical test rows
-frame = pd.DataFrame([dict(row.as_mapping()) for row in rows])
-commit = str(add_truncated_commits(                      # same render as §12 msg0/12288
-    frame, context_window=12288, include_message=False
-)["truncated_commit"].tolist()[0])
-system_prompt = get_prompt_by_type("Zero-shot", False)
-
-backend = load_backend(PeftLoadRequest(
-    model_id=config.model.id,
-    revision=config.model.revision,
+outcome = run_evaluation(EvaluationOptions(
+    config_path=Path("RQ/SLM/unsloth/configs/qwen3_6_27b.yml"),
     adapter_path=ADAPTER_DIR,
-    max_seq_length=config.training.max_seq_length,
+    data_source="local",
+    data_dir=LOCAL_DATA_DIR,
+    contexts=(12288,),            # msg1/12288 is the worst cell on both axes — see below
+    message_conditions=(True,),
+    seed=42,                      # identical to §12: seed = 42 + row_index
+    temperature=0.3,
+    max_new_tokens=MAX_NEW_TOKENS,
+    limit=11,                     # row 0 is the discarded warm-up
+    resume=False,
+    output_root=Path(tempfile.gettempdir()) / "t_infer",   # never inside the repo tree
+    run_directory=None,
 ))
 
-elapsed = []
-for index in range(11):                                  # index 0 is the discarded warm-up
-    started = time.perf_counter()
-    _ = backend.generate(GenerationRequest(system_prompt, commit, seed=42))
-    elapsed.append(time.perf_counter() - started)
+with outcome.result_files[0].open(newline="", encoding="utf-8") as handle:
+    elapsed = [float(row["inference_time"]) for row in csv.DictReader(handle)]
 slowest = max(elapsed[1:])
-print("slowest_of_10", slowest, "bound", 2 * slowest, "t_infer_hours", 3500 * 2 * slowest / 3600)
+print("rows", len(elapsed), "failures", outcome.failure_count)
+print("slowest_of_10", slowest, "bound", 2 * slowest, "t_infer_hours", 7000 * 2 * slowest / 3600)
 ```
 
-`seed=42` reproduces §12's row 0 exactly (`options.seed + row_index`). Record
-`bound = 2 × slowest_of_10` and `t_infer = 3500 × bound` (3,500 = the sweep size).
+Record `bound = 2 × slowest_of_10` and `t_infer = 7000 × bound`. **7,000, not 3,500** — §12 runs
+the sweep twice, once for the LoRA adapter and once for the unadapted base model.
 
-**Go/no-go:** `bound` and `t_infer` recorded → carry into §8a. Cannot run or raises → `t_infer` stays unbounded ⇒ **§8 NO-GO**; do not substitute an estimate.
+**Why `msg1/12288` specifically.** It is the worst cell on both axes at once, so a clean result
+here bounds every other cell:
+
+- *Latency* — the longest prompt in the sweep, so `slowest_of_10` is an upper bound for all ten
+  cells, not a mid-range sample.
+- *Prompt budget* — the only place `validate_prompt_budget()` could plausibly fire.
+  `add_truncated_commits()` truncates the rendered commit to the context window, so the prompt is
+  bounded by `12288 + len(system_prompt) + 128 max_new_tokens` against `max_seq_length: 16384`,
+  and the with-message system prompt is the longer of the two. The margin is expected to be
+  comfortable — the seed-43 datasets were regenerated precisely so no row overflows the Qwen
+  budget (`efeca02`) — so this is confirming an invariant that should already hold, not
+  discovering one. If it *does* fire, `failures.jsonl` names the offending rows and §12 is a
+  no-go until the dataset is re-examined.
+
+**Go/no-go:** `outcome.failure_count == 0`, `len(elapsed) == 11`, and `bound`/`t_infer` recorded
+→ carry into §8a. Any failure count above zero means §12 will bleed rows on this host — diagnose
+from `failures.jsonl` before proceeding. Cannot run or raises → `t_infer` stays unbounded ⇒
+**§8 NO-GO**; do not substitute an estimate.
 
 ---
 
@@ -369,11 +415,15 @@ Preconditions the code itself enforces before touching the GPU:
 - `qualification.json.status == "approved_16384"` and `approved_max_seq_length == 16384`,
   hash-bound to the current `config.yml` and `host_profile.yml` bytes.
 - `HF_HUB_TOKEN` and `WANDB_API_KEY` present in the environment (§2).
+- `require_publishable()` — clean Git worktree, and `HfApi.repo_info()` resolves
+  `Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter`.
 
-Git provenance is computed twice but only the second call gates: at launch it is captured and
-discarded (`_ = _provenance("full")`, informational); the tree is re-derived and **enforced**
-after training completes, right before `build_manifest`. So a tree that goes dirty mid-run still
-burns the whole training run, then has its manifest refused. Keep the tree untouched throughout.
+Git provenance is checked twice, and **both calls now gate**. At launch, `require_publishable()`
+refuses a dirty worktree and an unreachable adapter repo before the runtime is created — the two
+publication preconditions that were otherwise only discovered after training finished. The tree
+is then re-derived and enforced again after training completes, right before `build_manifest`, so
+a tree that goes dirty *mid-run* still burns the training run and has its manifest refused. Keep
+the tree untouched throughout.
 
 **What happens automatically on completion**, all inside this one invocation, in order:
 1. `trainer.train()` — one checkpoint per epoch into a *separate* `<timestamp>/checkpoints/`
@@ -394,12 +444,15 @@ Check immediately before launching, in order:
 
 1. **Publication** — owner authorization to publish, and the Hub repo actually exists (§0). The
    upload is the unconditional last step of this same invocation, so a no-go here is a no-go on
-   the whole run; a repo that does not exist fails *after* the multi-hour training.
-2. **Disk** — `df_free − P ≥ 15 GiB`, where `P = missing_model_bytes + 3 × checkpoint_size +
-   adapter_size + upload_staging`. The `3` is `save_total_limit: 2` plus one, because
+   the whole run. `require_publishable()` now probes both the clean worktree and `repo_info()`
+   for the adapter repo *before* the runtime is created, so a missing repo costs seconds rather
+   than the whole training run — but it is still cheaper to confirm it here than to be bounced.
+2. **Disk** — `df_free − P ≥ 15 GiB`, where `P = missing_model_bytes + 6 × checkpoint_size +
+   adapter_size + upload_staging`. The `6` is `save_total_limit: 5` plus one, because
    transformers 5.5.0 writes the new checkpoint *before* rotating. Checkpoints are LoRA-sized,
-   not 51.8 GiB base weights. (2026-08-03: model fully cached, 102.5 GiB available — a > 68 GiB
-   margin.)
+   not 51.8 GiB base weights — with 5 epochs and `save_strategy: "epoch"`, the limit of 5 keeps
+   every epoch's checkpoint, so nothing is ever actually rotated away. (2026-08-03: model fully
+   cached, 102.5 GiB available — a > 68 GiB margin.)
 3. **Wall-clock** — the session budget is 2박3일; pass rules use the conservative **60 h**, with
    the remaining ~6 h as slack. Project:
 
@@ -411,8 +464,9 @@ Check immediately before launching, in order:
 
    Only in the fallback branch, where the long-context allowance is unevidenced, apply the floor
    `t_step_effective = max(t_step × L, 168 s/step)` (the §9 upper band).
-   **Pass iff `T_total ≤ 60 h`. Any operand unbounded ⇒ NO-GO** — in particular `t_infer` (§7a)
-   and `t_upload` (`adapter_bytes ÷ measured uplink throughput`).
+   **Pass iff `T_total ≤ 60 h`. Any operand unbounded ⇒ NO-GO** — in particular `t_infer` (§7a,
+   which counts **both** §12 arms: 7,000 generations, not 3,500) and `t_upload`
+   (`adapter_bytes ÷ measured uplink throughput`).
 
 **Fail ⇒ NO-GO + escalate.** Never autonomously reduce `num_train_epochs`, shorten
 `max_seq_length`, or change batching to fit the window. Present the projection and wait.
@@ -472,8 +526,9 @@ post-training git-clean re-check (§8, step 2) blocks manifest + upload if the t
 
 ## 10. Checkpointing & crash recovery
 
-`save_strategy: "epoch"` with `save_total_limit: 2` — one checkpoint per epoch, auto-pruned to
-the 2 most recent. Checkpoints do **not** land inside the final adapter directory:
+`save_strategy: "epoch"` with `save_total_limit: 5` — one checkpoint per epoch, and with
+`num_train_epochs: 5` the limit is never actually reached, so all five survive. Checkpoints do
+**not** land inside the final adapter directory:
 
 ```
 outputs/unsloth/Qwen3.6-27B-LoRA/<UTC-timestamp>/checkpoints/checkpoint-<step>/   # Trainer output_dir
@@ -526,48 +581,100 @@ python -m RQ.SLM.unsloth.adapter --adapter-dir <adapter_dir> --config "$CONFIG" 
 
 ## 12. Inference
 
-Run inside tmux (§3).
+Run inside tmux (§3). **This phase has two arms, and both are required** — the experiment is a
+paired base-vs-LoRA ablation on the same seed-43 split, so a LoRA number without its base
+counterpart answers nothing.
 
 ```bash
+# arm 1 — the fine-tuned adapter
 python -m RQ.SLM.unsloth.infer --adapter <adapter_dir> --config "$CONFIG"
+
+# arm 2 — the same sweep against the unadapted base tower
+python -m RQ.SLM.unsloth.infer --base --config "$CONFIG"
 ```
 
-`--adapter` is required unless `--verify-only` is used. `--data-source`/`--data` (`local` default
-or `hub`) selects the test split source; `--output` (default `results`) is the results root.
+Exactly one of `--adapter` or `--base` is required unless `--verify-only` is used; supplying both
+or neither is refused before any GPU work, so a mistyped adapter path can never silently degrade
+into a base run and be written up as a fine-tuned result. `--data-source`/`--data` (`local`
+default or `hub`) selects the test split source; `--output` (default `results`) is the results
+root.
 
 The canonical sweep is **fixed in code**, not flag-configurable: contexts
-`[12288, 8192, 4096, 2048, 1024]` × message conditions `(without, with)` = 10 result files,
-`seed=42`, `temperature=0.3`, `max_new_tokens=128`. `validate_adapter()` re-runs first; if it
-fails, inference never loads the model.
+`[12288, 8192, 4096, 2048, 1024]` × message conditions `(without, with)` = 10 result files per
+arm, `seed=42`, `temperature=0.3`, `max_new_tokens=128`. On the adapter arm `validate_adapter()`
+re-runs first; if it fails, inference never loads the model. The base arm skips that check
+entirely — there is no adapter to validate.
+
+The two arms write to separate model trees, so neither can overwrite the other:
 
 ```
-results/Qwen3.6-27B-LoRA/<run-timestamp>/msg0/{12288,8192,4096,2048,1024}_zs.csv
-results/Qwen3.6-27B-LoRA/<run-timestamp>/msg1/{12288,8192,4096,2048,1024}_zs.csv
-results/Qwen3.6-27B-LoRA/<run-timestamp>/failures.jsonl
+results/Qwen3.6-27B-LoRA/<run-timestamp>/msg{0,1}/{12288,8192,4096,2048,1024}_zs.csv
+results/Qwen3.6-27B-LoRA/<run-timestamp>/{failures.jsonl,run_identity.json}
+results/Qwen3.6-27B/<run-timestamp>/msg{0,1}/{12288,8192,4096,2048,1024}_zs.csv
+results/Qwen3.6-27B/<run-timestamp>/{failures.jsonl,run_identity.json}
 ```
 
-Resume an interrupted run:
+**A failed row costs one row, not the run.** A typed `GenerationError`/`ModelOutputError` is
+appended to `failures.jsonl` and the sweep continues to the next row. The process exits `1` and
+prints the resume command when any row failed, so a non-zero exit here means "gaps to fill", not
+"start over".
+
+Resume — re-attempts exactly the rows missing from each CSV, keyed by SHA rather than by row
+count, so it fills gaps left by skipped failures instead of assuming an unbroken prefix. It is
+safe to run repeatedly: a regenerated row is appended at the end of its CSV, so resume matches
+rows by SHA membership rather than by position and a cell repaired by one resume is still read
+correctly by the next. Each repaired cell is then rewritten back into test-split order via an
+atomic `os.replace`, so a finished CSV always reads in source order — downstream analysis pairs
+models by row position (`RQ/analysis/compare_models.py`), and a permanently appended row would
+compare one model's row against another model's commit:
 
 ```bash
 python -m RQ.SLM.unsloth.infer --adapter <adapter_dir> --config "$CONFIG" \
-  --resume --run-directory <results/Qwen3.6-27B-LoRA/<run-timestamp>>
+  --resume --run-directory results/Qwen3.6-27B-LoRA/<run-timestamp>
 ```
 
-GPU-free completeness check after the fact:
+Resume requires `--run-directory` and an existing `failures.jsonl` in it, so it can never
+silently mint a fresh timestamped directory and half-populate it. It also refuses a run directory
+belonging to the *other* arm: both arms share a SHA order, so without that check a `--base`
+resume would append cleanly into the LoRA tree and blend two models into one CSV undetectably.
+
+Beyond the arm name, resume compares a `run_identity.json` written when the run started. It
+digests the adapter's file contents, the config bytes, the ordered test SHAs, and every sweep
+parameter (`seed`, `temperature`, `max_new_tokens`, contexts, message conditions). Every LoRA
+checkpoint maps to the same tree name, so the arm check alone cannot see the likelier mistake —
+resuming against a *different* one of the five checkpoints `save_total_limit: 5` leaves on disk
+(§10), or against an edited config. Either would blend two experiments into one CSV that still
+finalizes as canonical. If resume reports an identity mismatch, do not delete the file to force
+it through: point `--adapter`/`--config` back at the exact inputs the run started with, or start
+a fresh run.
+
+In the other direction, a *fresh* run refuses any directory that already holds a
+`run_identity.json` or a result CSV, and tells you to use `--resume`. It does not refuse a
+directory that merely exists: a process killed between creating the directory and writing its
+first sidecar leaves an empty shell that holds no results, and re-running the same command
+simply reinitializes it. Nothing is ever deleted to make that happen.
+
+GPU-free completeness check, run once per arm after the fact:
 
 ```bash
-python -m RQ.SLM.unsloth.infer --verify-only --output <results/Qwen3.6-27B-LoRA/<run-timestamp>>
+python -m RQ.SLM.unsloth.infer --verify-only --output results/Qwen3.6-27B-LoRA/<run-timestamp>
+python -m RQ.SLM.unsloth.infer --verify-only --output results/Qwen3.6-27B/<run-timestamp>
 ```
 
-This requires exactly 350 successful rows per file and an empty `failures.jsonl`, or it raises
-`FinalizationError`.
+This requires all ten files present with exactly 350 semantically valid rows each, or it raises
+`FinalizationError`. It requires `failures.jsonl` to **exist** but does not require it to be
+empty: the sidecar is append-only provenance, so a transient failure that a later `--resume`
+regenerated successfully must not permanently disqualify the run. The 350-rows-per-file check is
+the stronger gate and is what actually certifies completeness.
 
 **Scheduling:** start §12 only when the remaining window covers `t_infer` alone (earlier tail
-components have already elapsed), and only once `t_infer` is bounded (§7a). Unlike training, an
-interrupted sweep **is** resumable, so an overrun here defers cleanly: stop, record, continue in
-a later authorized session.
+components have already elapsed), and only once `t_infer` is bounded (§7a) — remembering that
+§7a's `t_infer` already counts **both** arms. Unlike training, an interrupted sweep **is**
+resumable, so an overrun here defers cleanly: stop, record, continue in a later authorized
+session.
 
-**Go/no-go:** all 10 CSVs present, `failures.jsonl` empty, `--verify-only` exits 0.
+**Go/no-go:** both arms have all 10 CSVs at 350 rows, both `--verify-only` invocations exit 0,
+and any rows recorded in either `failures.jsonl` have since been regenerated by `--resume`.
 
 ---
 

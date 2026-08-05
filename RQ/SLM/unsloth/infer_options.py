@@ -29,7 +29,7 @@ class InferenceRunError(Exception):
 @dataclass(frozen=True, slots=True)
 class EvaluationOptions:
     config_path: Path
-    adapter_path: Path
+    adapter_path: Path | None
     data_source: DatasetSource
     data_dir: Path
     contexts: tuple[int, ...]
@@ -52,6 +52,7 @@ class VerifyOptions:
 class ParsedArguments(Protocol):
     config: Path
     adapter: Path | None
+    base: bool
     data_source: DatasetSource
     resume: bool
     verify_only: bool
@@ -60,9 +61,14 @@ class ParsedArguments(Protocol):
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Evaluate Qwen3.6 PEFT adapter via Transformers")
+    parser = argparse.ArgumentParser(description="Evaluate Qwen3.6 base or PEFT adapter via Transformers")
     _ = parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     _ = parser.add_argument("--adapter", type=Path)
+    _ = parser.add_argument(
+        "--base",
+        action="store_true",
+        help="evaluate the unadapted base model; mutually exclusive with --adapter",
+    )
     _ = parser.add_argument("--data-source", "--data", choices=("local", "hub"), default="local")
     _ = parser.add_argument("--resume", action="store_true")
     _ = parser.add_argument("--run-directory", type=Path)
@@ -84,8 +90,9 @@ def parse_command(arguments: Sequence[str] | None = None) -> EvaluationOptions |
         raise InferenceRunError("argparse did not return the configured option shape")
     if parsed.verify_only:
         return VerifyOptions(run_directory=parsed.output)
-    if parsed.adapter is None:
-        raise InferenceRunError("--adapter is required unless --verify-only is used")
+    # Require an explicit mode: a mistyped --adapter path must never degrade into a base run.
+    if (parsed.adapter is not None) == parsed.base:
+        raise InferenceRunError("exactly one of --adapter or --base is required unless --verify-only is used")
     if parsed.resume and parsed.run_directory is None:
         parser.error("--resume requires --run-directory")
     return EvaluationOptions(

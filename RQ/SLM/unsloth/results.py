@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+from collections import defaultdict, deque
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -27,6 +28,7 @@ CONTEXT_SWEEP: Final[list[int]] = [12288, 8192, 4096, 2048, 1024]
 MESSAGE_CONDITIONS: Final[tuple[bool, bool]] = (False, True)
 EXPECTED_SUCCESSFUL_ROWS: Final[int] = 350
 FAILURES_SIDECAR_NAME: Final[str] = "failures.jsonl"
+IDENTITY_FILE_NAME: Final[str] = "run_identity.json"
 
 
 class _JsonDecoder(Protocol):
@@ -135,6 +137,11 @@ def format_run_timestamp(started_at: datetime | None = None) -> str:
     return instant.strftime(TIMESTAMP_FORMAT)
 
 
+def result_path_in_run(run_directory: Path, context_len: int, with_message: bool) -> Path:
+    """Locate one result cell inside an already-resolved run directory."""
+    return run_directory / ("msg1" if with_message else "msg0") / f"{context_len}_zs.csv"
+
+
 def build_result_path(
     model_display_name: str,
     started_at: datetime,
@@ -143,13 +150,10 @@ def build_result_path(
     results_root: Path = RESULTS_ROOT,
 ) -> Path:
     """Build the exact legacy result path without touching the filesystem."""
-    message_directory = "msg1" if with_message else "msg0"
-    return (
-        results_root
-        / model_display_name
-        / format_run_timestamp(started_at)
-        / message_directory
-        / f"{context_len}_zs.csv"
+    return result_path_in_run(
+        results_root / model_display_name / format_run_timestamp(started_at),
+        context_len,
+        with_message,
     )
 
 
@@ -214,71 +218,124 @@ def _produced_shas(row: ProducedRow, row_index: int) -> tuple[str, ...]:
     raise SourceOrderError("shas must be an array of strings", row_index)
 
 
-def validate_source_order(
+def completed_source_rows(
     expected_shas: Sequence[Sequence[str]], produced_rows: Sequence[ProducedRow]
-) -> None:
-    """Require produced rows to retain source length and exact SHA order."""
-    if len(expected_shas) != len(produced_rows):
+) -> tuple[int, ...]:
+    """Report which source row each produced row is, in the order the file holds them.
+
+    Gaps are legitimate: a row whose generation failed is externalized to the sidecar and
+    skipped, so a partial file holds a subsequence rather than a prefix.
+
+    Rows are matched by SHA membership, not by position. Result rows are appended, so a row
+    that ``--resume`` regenerates lands at the *end* of the file rather than back in its
+    source slot. Demanding source order would therefore reject a file this program itself
+    wrote and strand the run: the second resume of a cell that a first resume repaired would
+    raise instead of finishing it, with no recovery short of hand-sorting the CSV.
+
+    Completion is reported as source *indices*, not as SHA values. Two source rows may carry
+    the same SHA tuple; keying on the value would let one produced row mark both complete, so
+    a resume would skip the un-produced twin forever and the cell could never reach 350. Each
+    produced row therefore claims exactly one index, lowest first, and a row matching no
+    unclaimed source row is rejected as foreign.
+
+    Indices are returned in file order rather than as a set, so a caller can also tell whether
+    the file is still sorted by source order — which resume needs in order to repair it.
+    """
+    if len(produced_rows) > len(expected_shas):
         raise SourceOrderError(
-            f"length mismatch: expected {len(expected_shas)}, found {len(produced_rows)}"
+            f"length mismatch: expected at most {len(expected_shas)}, found {len(produced_rows)}"
         )
-    for index, (expected, produced) in enumerate(
-        zip(expected_shas, produced_rows, strict=True)
-    ):
-        if tuple(expected) != _produced_shas(produced, index):
-            raise SourceOrderError("SHA order mismatch", index)
+    unclaimed: dict[tuple[str, ...], deque[int]] = defaultdict(deque)
+    for index, shas in enumerate(expected_shas):
+        unclaimed[tuple(shas)].append(index)
+    completed: list[int] = []
+    for index, produced in enumerate(produced_rows):
+        available = unclaimed[_produced_shas(produced, index)]
+        if not available:
+            raise SourceOrderError("row does not match any unclaimed source row", index)
+        completed.append(available.popleft())
+    return tuple(completed)
 
 
 def expected_result_paths(run_directory: Path) -> tuple[Path, ...]:
     """Return all ten required result paths in deterministic sweep order."""
     return tuple(
-        run_directory
-        / ("msg1" if with_message else "msg0")
-        / f"{context_len}_zs.csv"
+        result_path_in_run(run_directory, context_len, with_message)
         for with_message in MESSAGE_CONDITIONS
         for context_len in CONTEXT_SWEEP
     )
 
 
-def _successful_row_count(path: Path) -> int:
+def _expected_shas(run_directory: Path) -> tuple[tuple[str, ...], ...]:
+    """Recover the source SHA order a run was started against."""
+    path = run_directory / IDENTITY_FILE_NAME
+    if not path.is_file():
+        raise FinalizationError("run identity is missing", path)
+    try:
+        identity = JSON_DECODER.decode(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise FinalizationError("run identity is not valid JSON", path) from error
+    if not isinstance(identity, dict):
+        raise FinalizationError("run identity is not an object", path)
+    rows = identity.get("ordered_test_shas")
+    if not isinstance(rows, list):
+        raise FinalizationError("run identity has no ordered_test_shas", path)
+    expected: list[tuple[str, ...]] = []
+    for shas in rows:
+        if not isinstance(shas, list) or not all(isinstance(sha, str) for sha in shas):
+            raise FinalizationError("ordered_test_shas is malformed", path)
+        expected.append(tuple(sha for sha in shas if isinstance(sha, str)))
+    return tuple(expected)
+
+
+def _successful_row_count(path: Path, expected_shas: Sequence[Sequence[str]]) -> int:
     if not path.is_file():
         raise FinalizationError("missing result file", path)
     with path.open(newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
         if reader.fieldnames != DEFAULT_DF_COLUMNS:
             raise FinalizationError("columns do not match DEFAULT_DF_COLUMNS", path)
-        count = 0
-        for row in reader:
-            try:
-                _ = parse_model_output(row["predicted_types"])
-                _ = parse_model_output(json.dumps({"types": json.loads(row["actual_types"])}))
-                _ = _produced_shas(row, count)
-                inference_time = float(row["inference_time"])
-            except (KeyError, TypeError, ValueError, json.JSONDecodeError, ModelOutputError, SourceOrderError) as error:
-                raise FinalizationError("semantic CSV row validation failed", path) from error
-            if not math.isfinite(inference_time) or inference_time < 0:
-                raise FinalizationError("semantic CSV row validation failed", path)
-            count += 1
-    if count != EXPECTED_SUCCESSFUL_ROWS:
+        rows = tuple(reader)
+    try:
+        claimed = completed_source_rows(expected_shas, rows)
+    except SourceOrderError as error:
+        raise FinalizationError("rows do not match the run's test split", path) from error
+    # Certification must not depend on a resume having survived long enough to re-sort the
+    # file. Downstream analysis pairs models by CSV row position, so a cell left in append
+    # order after a repair would compare one model's row against another model's commit.
+    if claimed != tuple(range(len(rows))):
+        raise FinalizationError("rows are not in test-split order", path)
+    for row in rows:
+        try:
+            _ = parse_model_output(row["predicted_types"])
+            _ = parse_model_output(json.dumps({"types": json.loads(row["actual_types"])}))
+            inference_time = float(row["inference_time"])
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError, ModelOutputError) as error:
+            raise FinalizationError("semantic CSV row validation failed", path) from error
+        if not math.isfinite(inference_time) or inference_time < 0:
+            raise FinalizationError("semantic CSV row validation failed", path)
+    if len(rows) != EXPECTED_SUCCESSFUL_ROWS:
         raise FinalizationError(
-            f"expected {EXPECTED_SUCCESSFUL_ROWS} successful rows, found {count}", path
+            f"expected {EXPECTED_SUCCESSFUL_ROWS} successful rows, found {len(rows)}", path
         )
-    return count
+    return len(rows)
 
 
-def finalize_run(
-    run_directory: Path, unresolved_failure_count: int
-) -> CanonicalRun:
-    """Certify a run only after every completeness gate succeeds."""
-    if unresolved_failure_count != 0:
-        raise FinalizationError(
-            f"unresolved failure count is {unresolved_failure_count}"
-        )
+def finalize_run(run_directory: Path) -> CanonicalRun:
+    """Certify a run from the data itself: ten complete, semantically valid result files.
+
+    The failure sidecar is append-only provenance, not a gate. Gating on an empty sidecar
+    would permanently disqualify a run in which a transient failure was later re-generated
+    successfully on resume; ``_successful_row_count`` is the stronger, self-evident check.
+
+    Row order is checked here rather than trusted: ``run_identity.json`` records the split the
+    run was started against, so certification can prove each cell holds exactly that split in
+    that order without depending on some earlier resume having survived to re-sort it.
+    """
     failure_path = run_directory / FAILURES_SIDECAR_NAME
     if not failure_path.is_file():
         raise FinalizationError("failure history sidecar is missing", failure_path)
-    if failure_path.read_text(encoding="utf-8"):
-        raise FinalizationError("failure history contains unresolved failures", failure_path)
+    expected_shas = _expected_shas(run_directory)
     result_files = expected_result_paths(run_directory)
-    successful_rows = sum(_successful_row_count(path) for path in result_files)
+    successful_rows = sum(_successful_row_count(path, expected_shas) for path in result_files)
     return CanonicalRun(run_directory, result_files, successful_rows)

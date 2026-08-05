@@ -80,6 +80,7 @@ class RunArguments(argparse.Namespace):
 
 class HubClient(Protocol):
     def upload_folder(self, *, folder_path: str, repo_id: str, repo_type: str) -> None: ...
+    def repo_info(self, *, repo_id: str, repo_type: str) -> object: ...
 
 
 class HubFactory(Protocol):
@@ -324,11 +325,31 @@ def _checkpoint_dir(config: UnslothConfig, timestamp: str) -> Path:
     return Path(config.output.adapter_dir_root) / timestamp / "checkpoints"
 
 
-def _upload_adapter(adapter_dir: Path, config: UnslothConfig) -> None:
+def _hub_client() -> HubClient:
     hub = importlib.import_module("huggingface_hub")
     if not isinstance(hub, HubModule):
         raise TrainingDataError("huggingface_hub does not expose HfApi")
-    _ = hub.HfApi(token=os.environ["HF_HUB_TOKEN"]).upload_folder(
+    return hub.HfApi(token=os.environ["HF_HUB_TOKEN"])
+
+
+def require_publishable(config: UnslothConfig) -> None:
+    """Reject the cheap publication preconditions before any GPU time is spent.
+
+    Both are otherwise only discovered after training completes — a dirty worktree by
+    build_manifest(), a missing repository by the upload itself — which costs the whole run.
+    """
+    if not _provenance("full").git_clean:
+        raise TrainingDataError("full publication requires a clean Git worktree")
+    try:
+        _ = _hub_client().repo_info(repo_id=config.hub.adapter_repo, repo_type="model")
+    except Exception as error:
+        raise TrainingDataError(
+            f"hub repository is not reachable: {config.hub.adapter_repo} ({error})"
+        ) from error
+
+
+def _upload_adapter(adapter_dir: Path, config: UnslothConfig) -> None:
+    _ = _hub_client().upload_folder(
         folder_path=str(adapter_dir), repo_id=config.hub.adapter_repo, repo_type="model"
     )
 
@@ -344,7 +365,7 @@ def run(arguments: RunArguments) -> None:
     if not arguments.smoke and not arguments.inspect_template:
         evidence_dir = require_qualification_evidence(arguments, config.training.max_seq_length)
         require_full_credentials(os.environ)
-        _ = _provenance("full")
+        require_publishable(config)
     runtime = create_runtime(config, 0)
     if arguments.inspect_template:
         if evidence_dir is None:

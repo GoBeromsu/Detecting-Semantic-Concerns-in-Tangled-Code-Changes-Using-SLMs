@@ -305,6 +305,38 @@ def test_verify_adapter_when_requested_delegates_selected_config(
     assert received == [(tmp_path / "adapter", config_path)]
 
 
+@pytest.mark.parametrize(
+    ("git_clean", "repo_reachable", "reason"),
+    ((False, True, "clean Git worktree"), (True, False, "not reachable")),
+)
+def test_require_publishable_when_a_precondition_fails_rejects_before_any_gpu_time(
+    monkeypatch: pytest.MonkeyPatch, git_clean: bool, repo_reachable: bool, reason: str
+) -> None:
+    # Given: a full run whose publication would fail only after hours of training — a dirty
+    # worktree is caught by build_manifest(), a missing repo by the upload itself.
+    from RQ.SLM.unsloth import train as train_unsloth
+    from RQ.SLM.unsloth._types import RunProvenance
+    from RQ.SLM.unsloth.config import load_config
+
+    class FakeHubClient:
+        def repo_info(self, *, repo_id: str, repo_type: str) -> object:
+            _ = repo_id, repo_type
+            if not repo_reachable:
+                raise RuntimeError("404 repository not found")
+            return object()
+
+    def provenance(run_mode: Literal["full", "smoke"]) -> RunProvenance:
+        return RunProvenance("a" * 40, git_clean, run_mode)
+
+    monkeypatch.setattr(train_unsloth, "_provenance", provenance)
+    monkeypatch.setattr(train_unsloth, "_hub_client", FakeHubClient)
+    config = load_config(REPO_ROOT / "RQ/SLM/unsloth/configs/qwen3_6_27b.yml")
+
+    # When/Then: the cheap precondition is refused up front, not after the GPU is spent.
+    with pytest.raises(train_unsloth.TrainingDataError, match=reason):
+        train_unsloth.require_publishable(config)
+
+
 def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after_save(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -407,6 +439,21 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
     def provenance(run_mode: Literal["full", "smoke"]) -> RunProvenance:
         return RunProvenance("a" * 40, True, run_mode)
 
+    # `require_publishable` is left unpatched so the real precondition runs; only the
+    # network client underneath it is faked, and it records what was probed.
+    probed_repos: list[str] = []
+
+    class FakeHubClient:
+        def repo_info(self, *, repo_id: str, repo_type: str) -> object:
+            _ = repo_type
+            probed_repos.append(repo_id)
+            return object()
+
+        def upload_folder(self, *, folder_path: str, repo_id: str, repo_type: str) -> object:
+            _ = folder_path, repo_id, repo_type
+            return object()
+
+    monkeypatch.setattr(train_unsloth, "_hub_client", FakeHubClient)
     monkeypatch.setattr(train_unsloth, "require_qualification_evidence", qualification)
     monkeypatch.setattr(train_unsloth, "require_full_credentials", credentials)
     monkeypatch.setattr(train_unsloth, "create_runtime", runtime)
@@ -458,6 +505,9 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
         assert os.environ["WANDB_PROJECT"] == (
             "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
         )
+
+        # Then: the upload destination was proven reachable, not discovered after training.
+        assert probed_repos == ["Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter"]
     finally:
         os.environ.pop("WANDB_PROJECT", None)
 
