@@ -402,3 +402,57 @@ def test_help_when_invoked_directly_is_available_without_unsloth() -> None:
     assert result.returncode == 0, result.stderr
     assert "ModuleNotFoundError" not in result.stderr
     assert "--lengths" in result.stdout
+
+
+class _LazyTokenizer:
+    """A tokenizer that serves its token ids through __getattr__, as TokenizersBackend does."""
+
+    def __init__(self, **served: object) -> None:
+        self._served = served
+
+    def __getattr__(self, name: str) -> object:
+        try:
+            return self._served[name]
+        except KeyError:
+            raise AttributeError(name) from None
+
+    def apply_chat_template(self) -> str:
+        return ""
+
+    def __call__(self) -> None:
+        return None
+
+
+def test_require_probe_tokenizer_accepts_ids_served_through_getattr() -> None:
+    # Given: the tokenizer Transformers 5.5 actually returns — pad/eos resolvable only at
+    # runtime. isinstance() reads members with inspect.getattr_static, which bypasses
+    # __getattr__, so the old structural gate rejected this and stopped the ladder at 2048.
+    from RQ.SLM.unsloth._memory_worker import require_probe_tokenizer
+
+    tokenizer = _LazyTokenizer(eos_token_id=248046, pad_token_id=248044)
+
+    # When/Then: reading the members the way the probe will accepts it.
+    assert require_probe_tokenizer(tokenizer) is tokenizer
+
+
+def test_require_probe_tokenizer_rejects_a_none_pad_token_id() -> None:
+    # Given: a tokenizer that has the attribute but cannot pad with it. A structural check
+    # passes this and the batch is then padded with nothing.
+    from RQ.SLM.unsloth._memory_types import ProbeError
+    from RQ.SLM.unsloth._memory_worker import require_probe_tokenizer
+
+    tokenizer = _LazyTokenizer(eos_token_id=248046, pad_token_id=None)
+
+    # When/Then: the probe refuses to start.
+    with pytest.raises(ProbeError, match="no integer pad_token_id"):
+        _ = require_probe_tokenizer(tokenizer)
+
+
+def test_require_probe_tokenizer_rejects_a_missing_chat_template() -> None:
+    # Given: an object that cannot render the supervised prompt at all.
+    from RQ.SLM.unsloth._memory_types import ProbeError
+    from RQ.SLM.unsloth._memory_worker import require_probe_tokenizer
+
+    # When/Then: the missing capability is named.
+    with pytest.raises(ProbeError, match="no callable apply_chat_template"):
+        _ = require_probe_tokenizer(object())

@@ -7,7 +7,7 @@ import sys
 import time
 from collections.abc import Callable, Collection, Iterator, Sequence
 from dataclasses import replace
-from typing import TYPE_CHECKING, Final, Protocol, override, runtime_checkable
+from typing import TYPE_CHECKING, Final, Protocol, cast, override, runtime_checkable
 
 from RQ.SLM.unsloth._memory_types import (
     ChildRequest,
@@ -106,9 +106,12 @@ class OptimizerFactory(Protocol):
     ) -> OptimizerLike: ...
 
 
-@runtime_checkable
 class ResponseProbeTokenizer(ResponseOnlyTokenizer, PaddingTokenizer, Protocol):
-    pass
+    """Static type only — validate instances with `require_probe_tokenizer`, never isinstance.
+
+    Deliberately not runtime_checkable: two of its members are data attributes, and no
+    structural instance check can see those on a tokenizer that serves them lazily.
+    """
 
 
 class OptimModule(Protocol):
@@ -143,6 +146,28 @@ def _load_torch() -> TorchModule:
     return torch
 
 
+def require_probe_tokenizer(tokenizer: object) -> ResponseProbeTokenizer:
+    """Check the probe's tokenizer requirements by reading them the way the probe will.
+
+    `isinstance` against a runtime_checkable Protocol resolves members through
+    `inspect.getattr_static`, which deliberately bypasses `__getattr__`. Transformers 5.5
+    hands back a `TokenizersBackend` that serves `pad_token_id` and `eos_token_id` from
+    exactly that hook, so the gate declared a perfectly usable tokenizer to be missing the
+    interface and stopped the memory ladder on its first rung — the second time a
+    structural check has cost this run for that reason. Live access is also the stricter
+    test: a `pad_token_id` of None satisfies any structural check and then pads with
+    nothing, which is the failure worth refusing to start on.
+    """
+    for name in ("apply_chat_template", "__call__"):
+        if not callable(getattr(tokenizer, name, None)):
+            raise ProbeError(f"loaded tokenizer has no callable {name}")
+    for name in ("eos_token_id", "pad_token_id"):
+        value = getattr(tokenizer, name, None)
+        if not isinstance(value, int):
+            raise ProbeError(f"loaded tokenizer has no integer {name}: {value!r}")
+    return cast(ResponseProbeTokenizer, tokenizer)
+
+
 def run_probe_child(options: ParentOptions, request: ChildRequest) -> Measurement:
     torch = _load_torch()
     if not torch.cuda.is_available():
@@ -167,12 +192,11 @@ def run_probe_child(options: ParentOptions, request: ChildRequest) -> Measuremen
     runtime = create_runtime(config, 0)
     if not isinstance(runtime.model, ProbeModel):
         raise ProbeError("loaded model does not expose the memory-probe interface")
-    if not isinstance(runtime.tokenizer, ResponseProbeTokenizer):
-        raise ProbeError("loaded tokenizer does not expose the memory-probe interface")
+    tokenizer = require_probe_tokenizer(runtime.tokenizer)
     batch = select_supervised_json_row(
-        load_split("local", "train"), runtime.tokenizer, request.length, build_chat_messages
+        load_split("local", "train"), tokenizer, request.length, build_chat_messages
     )
-    return measure_step(runtime.model, runtime.tokenizer, config.training.learning_rate, batch)
+    return measure_step(runtime.model, tokenizer, config.training.learning_rate, batch)
 
 
 def select_supervised_json_row(
