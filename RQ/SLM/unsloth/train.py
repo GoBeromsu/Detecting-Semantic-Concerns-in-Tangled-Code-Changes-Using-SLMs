@@ -330,6 +330,17 @@ def _adapter_dir(config: UnslothConfig, timestamp: str) -> Path:
     return Path(config.output.adapter_dir_root) / timestamp / "adapter"
 
 
+def _drop_trainer_pickle(adapter_dir: Path) -> None:
+    # Trainer.save_model() unconditionally torch.saves TrainingArguments to training_args.bin.
+    # It is a genuine pickle, and the adapter contract forbids pickles because this directory is
+    # published — so the file has to go before build_manifest() hashes the directory. Only this
+    # one known artifact is removed: any other pickle appearing here is unexplained, and the
+    # contract should still refuse to publish it rather than have us quietly delete it.
+    pickle_path = adapter_dir / "training_args.bin"
+    if pickle_path.is_file() and not pickle_path.is_symlink():
+        pickle_path.unlink()
+
+
 def _checkpoint_dir(config: UnslothConfig, timestamp: str) -> Path:
     # Epoch checkpoints must land outside adapter_dir: build_manifest()/validate_adapter()
     # require every entry under adapter_dir to be a regular file (only "evidence/" is a
@@ -421,6 +432,7 @@ def run(arguments: RunArguments) -> None:
     trainer.train()
     trainer.save_model(str(adapter_dir))
     runtime.tokenizer.save_pretrained(str(adapter_dir))
+    _drop_trainer_pickle(adapter_dir)
     run_mode: Literal["full", "smoke"] = "smoke" if arguments.smoke else "full"
     _ = write_manifest(adapter_dir, build_manifest(
         config,

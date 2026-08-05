@@ -61,6 +61,12 @@ def build_model_load_kwargs(
 def build_peft_kwargs(config: UnslothConfig) -> PeftKwargs:
     return {
         "r": config.lora.rank,
+        # PEFT leaves LoraConfig.revision at None unless it is passed, so the published adapter
+        # would not record which base-model commit it was trained against — the one fact an
+        # inference run needs to reproduce it. Unsloth forwards unrecognised kwargs straight into
+        # LoraConfig, so this lands in adapter_config.json, which is where validate_adapter checks
+        # it against the pinned training identity.
+        "revision": config.model.revision,
         "target_modules": config.lora.target_modules,
         "lora_alpha": config.lora.alpha,
         "lora_dropout": config.lora.dropout,

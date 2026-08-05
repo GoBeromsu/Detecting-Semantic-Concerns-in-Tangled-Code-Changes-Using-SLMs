@@ -41,6 +41,7 @@ class ModelLoadKwargs(TypedDict):
 
 class PeftKwargs(TypedDict):
     r: int
+    revision: str
     target_modules: tuple[str, ...]
     lora_alpha: int
     lora_dropout: float
