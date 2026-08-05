@@ -30,12 +30,12 @@ class FakeParameter:
     device: str = "cuda:0"
     dtype: str = "bfloat16"
 
-    def is_floating_point(self) -> bool:
-        return True
 
+class FakeNormParameter(FakeParameter):
+    """A normalisation weight as Unsloth actually returns one: FP32 above a BF16 base.
 
-class FakeLoraParameter(FakeParameter):
-    """A LoRA weight as PEFT actually produces one: FP32 master weights over a BF16 base."""
+    Measured on the real 27B load: 209 of 1843 parameters, every one of them a norm.
+    """
 
     dtype: str = "float32"
 
@@ -49,11 +49,14 @@ class FakeCausalLM:
         self.config: FakeConfig = FakeConfig()
 
     def named_parameters(self) -> tuple[tuple[str, FakeParameter], ...]:
-        # Both kinds, because an attached adapter always has both and a fake that showed only
-        # the base tower let a load-time check ship that no real adapter could have passed.
+        # All three kinds a real load returns. The norm is the one that matters: a fake made of
+        # BF16 weights alone let a load-time check ship that no real model could have passed,
+        # and it took a GPU run to find out. Adapter weights come back BF16 at inference —
+        # PEFT only holds them in FP32 while it is training them.
         return (
             ("model.layers.0.self_attn.q_proj.weight", FakeParameter()),
-            ("base_model.model.model.layers.0.self_attn.q_proj.lora_A.default.weight", FakeLoraParameter()),
+            ("model.layers.0.input_layernorm.weight", FakeNormParameter()),
+            ("base_model.model.model.layers.0.self_attn.q_proj.lora_A.default.weight", FakeParameter()),
         )
 
 
@@ -255,40 +258,52 @@ def test_load_backend_when_requested_uses_text_only_unsloth_and_unmerged_adapter
     assert FakePeftModel.model.evaluated is True
 
 
-def test_load_backend_when_a_base_tower_parameter_is_not_bf16_rejects_before_returning(
+def test_load_backend_when_unsloth_keeps_the_norms_in_fp32_is_accepted(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Given: the base tower comes back in FP32 rather than the requested BF16.
-    _patch_modules(monkeypatch)
-    monkeypatch.setattr(FakeParameter, "dtype", "float32")
-
-    # When/Then: the backend fails closed instead of running on the wrong precision.
-    with pytest.raises(GenerationError, match="unsupported dtype"):
-        _ = load_backend(_request())
-
-
-def test_load_backend_when_the_adapter_is_fp32_over_a_bf16_tower_is_accepted(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    # Given: the exact precision split PEFT produces — FP32 LoRA weights, BF16 base tower.
+    # Given: the precision split a real load returns — BF16 weights, FP32 normalisation.
     _patch_modules(monkeypatch)
 
     # When: the backend loads.
     backend = load_backend(_request())
 
-    # Then: it is accepted, because that split is how every adapter here is trained and saved.
+    # Then: it is accepted, because that split is what Unsloth builds on purpose.
     assert backend.model_max_tokens == 16384
 
 
-def test_load_backend_when_an_adapter_parameter_is_fp16_rejects_before_returning(
+def test_load_backend_when_a_parameter_is_fp16_rejects_before_returning(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Given: a LoRA weight in FP16 — allowed by neither the tower dtype nor the adapter dtype.
+    # Given: a tower in FP16 — the precision that trains and infers without ever complaining.
     _patch_modules(monkeypatch)
-    monkeypatch.setattr(FakeLoraParameter, "dtype", "float16")
+    monkeypatch.setattr(FakeParameter, "dtype", "float16")
 
-    # When/Then: relaxing the tower check for adapters did not relax it into accepting anything.
+    # When/Then: admitting FP32 did not widen the check into admitting anything.
     with pytest.raises(GenerationError, match="unsupported dtype"):
+        _ = load_backend(_request())
+
+
+def test_load_backend_when_a_parameter_is_quantised_rejects_before_returning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: packed 4-bit weights, which are uint8 and not floating point at all.
+    _patch_modules(monkeypatch)
+    monkeypatch.setattr(FakeParameter, "dtype", "uint8")
+
+    # When/Then: rejected rather than skipped — the run must be BF16, not silently quantised.
+    with pytest.raises(GenerationError, match="unsupported dtype"):
+        _ = load_backend(_request())
+
+
+def test_load_backend_when_a_parameter_is_off_gpu_rejects_before_returning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: a parameter left on the CPU, as an offloading device_map would produce.
+    _patch_modules(monkeypatch)
+    monkeypatch.setattr(FakeNormParameter, "device", "cpu")
+
+    # When/Then: rejected, rather than paying host-transfer latency on every generated token.
+    with pytest.raises(GenerationError, match="not on CUDA"):
         _ = load_backend(_request())
 
 

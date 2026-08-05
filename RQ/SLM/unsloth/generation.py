@@ -61,9 +61,6 @@ def _parse_model_output(raw_text: str) -> tuple[str, ...]:
     return labels
 
 GPU_DEVICE: Literal["cuda:0"] = "cuda:0"
-# PEFT names every LoRA weight "<base path>.lora_{A,B}.<adapter>.weight", so this substring
-# separates adapter parameters from the base tower they wrap.
-ADAPTER_PARAMETER_MARKER = ".lora_"
 MAX_NEW_TOKENS = 128
 NON_THINKING_TAIL = "<|im_start|>assistant\n<think>\n\n</think>\n\n"
 
@@ -79,8 +76,6 @@ class RuntimeDType(Protocol): ...
 class RuntimeParameter(Protocol):
     device: str
     dtype: RuntimeDType
-
-    def is_floating_point(self) -> bool: ...
 
 
 class RuntimeConfig(Protocol):
@@ -211,24 +206,32 @@ def _import_module(name: str) -> ModuleType:
     return importlib.import_module(name)
 
 
-def _assert_text_bf16_cuda(
-    model: RuntimeModel, dtype: RuntimeDType, adapter_dtype: RuntimeDType
+def _assert_runtime_precision(
+    model: RuntimeModel, allowed_dtypes: tuple[RuntimeDType, ...]
 ) -> None:
+    """Fail closed on a tower loaded in a precision we did not ask for.
+
+    Demanding BF16 of everything was wrong, for the same reason it was wrong on the training
+    side: mixed precision is the intended arrangement, not a defect. Unsloth deliberately
+    keeps every normalisation weight in FP32 above a BF16 base — measured on this model,
+    209 of 1843 parameters, all of them norms (64 input_layernorm, 64 post_attention_layernorm,
+    49 norm, 16 q_norm, 16 k_norm) — and PEFT keeps LoRA master weights in FP32 whenever it
+    holds them for training. A check that rejects FP32 rejects every model this project can
+    build, which is what it did.
+
+    So the allowed set is passed in explicitly rather than inferred from what the loader
+    happened to return. What still cannot pass: FP16, which runs without complaint and
+    degrades silently, and a quantised load, whose packed weights are not floating point at
+    all — hence no is_floating_point() escape hatch, since that is precisely how a 4-bit
+    tower would have slipped through unnoticed.
+    """
+    allowed = tuple(str(dtype) for dtype in allowed_dtypes)
     for name, parameter in model.named_parameters():
         if str(parameter.device) != GPU_DEVICE:
             raise GenerationError("model", f"parameter is not on CUDA: {name}")
-        if not parameter.is_floating_point():
-            continue
-        # PEFT keeps LoRA weights in FP32 over a BF16 base by design, and autocast_adapter_dtype
-        # does not opt out of it — every adapter this project trains is F32 on disk (measured:
-        # 992 of 992 tensors). Demanding BF16 everywhere would reject all of them at load. What
-        # the check exists to catch is a base tower that came back in the wrong precision, so
-        # hold the tower to BF16 exactly and let the adapter carry its own master-weight dtype.
-        # An FP16 anything still fails here.
-        allowed = (dtype, adapter_dtype) if ADAPTER_PARAMETER_MARKER in name else (dtype,)
-        if all(str(parameter.dtype) != str(candidate) for candidate in allowed):
+        if str(parameter.dtype) not in allowed:
             raise GenerationError(
-                "model", f"floating parameter has an unsupported dtype: {name} is {parameter.dtype}"
+                "model", f"parameter has an unsupported dtype: {name} is {parameter.dtype}"
             )
 
 
@@ -259,7 +262,7 @@ def load_backend(request: PeftLoadRequest) -> PeftBackend:
     model = base_model if request.adapter_path is None else _attach_adapter(base_model, request.adapter_path)
     model.eval()
     model.config.use_cache = True
-    _assert_text_bf16_cuda(model, torch.bfloat16, torch.float32)
+    _assert_runtime_precision(model, (torch.bfloat16, torch.float32))
     return PeftBackend(model, tokenizer, request.max_seq_length, _build_generator(model, tokenizer))
 
 
