@@ -32,6 +32,8 @@ from RQ.SLM.unsloth._memory_types import (
 DEFAULT_CONFIG_PATH: Final[Path] = Path("RQ/SLM/unsloth/configs/qwen3_6_27b.yml")
 DEFAULT_HOST_PROFILE_PATH: Final[Path] = Path("RQ/SLM/configs/hosts/blackwell-rtx-pro-6000.yml")
 DEFAULT_OUTPUT_DIRECTORY: Final[Path] = Path(".omo/evidence/unsloth")
+REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[3]
+_CHILD_ERROR_LINES: Final[int] = 12
 ChildRunner = Callable[[ChildRequest], Measurement]
 
 
@@ -122,35 +124,72 @@ def _runner_for(options: ParentOptions) -> ChildRunner:
 
 
 def run_child_process(options: ParentOptions, request: ChildRequest) -> Measurement:
+    # Every path is resolved before it crosses the process boundary. The child runs with its
+    # own working directory, so a relative path taken from the parent's command line resolves
+    # against the wrong root inside it — which is how the ladder died on its first rung with a
+    # plain missing-file error, reported as nothing more informative than "child_exit_1".
     command = [
         sys.executable,
         str(Path(__file__).resolve()),
         "--config",
-        str(options.config_path),
+        str(options.config_path.resolve()),
         "--host-profile",
-        str(options.host_profile_path),
+        str(options.host_profile_path.resolve()),
         "--output",
-        str(options.output_directory),
+        str(options.output_directory.resolve()),
         "--child-length",
         str(request.length),
         "--child-result",
-        str(request.result_path),
+        str(request.result_path.resolve()),
     ]
     _ = request.result_path.unlink(missing_ok=True)
     try:
         completed = subprocess.run(
             command,
-            cwd=Path(__file__).resolve().parents[2],
+            cwd=REPO_ROOT,
             capture_output=True,
             text=True,
             check=False,
         )
     except OSError:
         return Measurement(request.length, "terminal_failure", "child_launch_error")
+    _preserve_child_output(request, completed)
     measurement = _child_result(request, completed.returncode)
     if completed.returncode != 0 and measurement.status == "completed":
         return replace(measurement, status="terminal_failure", failure_class="child_exit_nonzero")
     return measurement
+
+
+def _preserve_child_output(
+    request: ChildRequest, completed: subprocess.CompletedProcess[str]
+) -> None:
+    """Surface a failed child's output instead of discarding it.
+
+    The child's streams are captured so they cannot interleave with the parent's, but a
+    captured stream nobody reads is worse than no capture at all: a rung that died on a
+    missing file was recorded as `child_exit_1` and the traceback explaining it was dropped
+    on the floor. A ladder rung is expensive enough that its failure must say why.
+    """
+    if completed.returncode == 0:
+        return
+    captured = "".join(part for part in (completed.stdout, completed.stderr) if part)
+    if not captured:
+        return
+    log_path = request.result_path.parent / f"{request.length}.stderr"
+    saved = True
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        _ = log_path.write_text(captured, encoding="utf-8")
+    except OSError:
+        saved = False
+    print(
+        f"[memory] child for length {request.length} exited {completed.returncode}:",
+        file=sys.stderr,
+    )
+    for line in captured.strip().splitlines()[-_CHILD_ERROR_LINES:]:
+        print(f"[memory]   {line}", file=sys.stderr)
+    if saved:
+        print(f"[memory]   full child output: {log_path}", file=sys.stderr)
 
 
 def _child_result(request: ChildRequest, return_code: int) -> Measurement:

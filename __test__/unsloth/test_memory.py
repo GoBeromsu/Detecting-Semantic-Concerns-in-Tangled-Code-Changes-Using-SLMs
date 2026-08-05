@@ -220,6 +220,64 @@ def test_run_child_process_when_stale_result_exists_discards_it_before_spawn(
     assert measurement.failure_class == "child_exit_0"
 
 
+def test_run_child_process_when_paths_are_relative_hands_the_child_absolute_ones(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Given: a parent configured the way the CLI configures it — every path relative to the
+    # repo root. The child runs under its own working directory, so any path still relative
+    # when it crosses the boundary resolves against the wrong root and the rung dies before
+    # it allocates anything.
+    from RQ.SLM.unsloth import memory as probe_unsloth_memory
+
+    recorded_command: list[str] = []
+    recorded_cwd: list[Path | None] = []
+
+    def record(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        recorded_command.extend(command)
+        cwd = kwargs.get("cwd")
+        recorded_cwd.append(cwd if isinstance(cwd, Path) else None)
+        return subprocess.CompletedProcess((), 1, "", "")
+
+    monkeypatch.setattr("RQ.SLM.unsloth.memory.subprocess.run", record)
+    request = ChildRequest(2048, tmp_path / ".children" / "2048.json")
+
+    # When: the parent spawns a rung.
+    _ = probe_unsloth_memory.run_child_process(_options(tmp_path), request)
+
+    # Then: nothing the child must open is left for its own cwd to interpret, and the two
+    # inputs it reads immediately resolve to files that actually exist.
+    for flag in ("--config", "--host-profile", "--output", "--child-result"):
+        value = Path(recorded_command[recorded_command.index(flag) + 1])
+        assert value.is_absolute(), f"{flag} crossed the process boundary as a relative path"
+    for flag in ("--config", "--host-profile"):
+        assert Path(recorded_command[recorded_command.index(flag) + 1]).is_file()
+    assert recorded_cwd == [REPO_ROOT]
+
+
+def test_run_child_process_when_the_child_fails_preserves_its_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Given: a child that dies with a traceback, which is the only account of why the rung
+    # failed — the measurement itself records nothing beyond an exit code.
+    from RQ.SLM.unsloth import memory as probe_unsloth_memory
+
+    def failing_child(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        _ = (args, kwargs)
+        return subprocess.CompletedProcess((), 1, "", "FileNotFoundError: missing host profile\n")
+
+    monkeypatch.setattr("RQ.SLM.unsloth.memory.subprocess.run", failing_child)
+    request = ChildRequest(2048, tmp_path / ".children" / "2048.json")
+
+    # When: the rung fails.
+    measurement = probe_unsloth_memory.run_child_process(_options(tmp_path), request)
+
+    # Then: the reason survives both on stderr and on disk, beside the result it never wrote.
+    assert measurement.status == "terminal_failure"
+    assert "FileNotFoundError" in capsys.readouterr().err
+    saved = (tmp_path / ".children" / "2048.stderr").read_text(encoding="utf-8")
+    assert "FileNotFoundError" in saved
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     (
@@ -288,20 +346,22 @@ def test_run_child_process_when_invoked_builds_a_fresh_self_subprocess(
 
     # Then: the current interpreter re-enters this file exactly once with one length.
     assert result.requested_length == 2048
+    # Paths are absolute: the child does not share this process's working directory, so a
+    # relative path would resolve against a different root inside it.
     assert calls == [
         [
             sys.executable,
             str(REPO_ROOT / "RQ/SLM/unsloth/memory.py"),
             "--config",
-        "RQ/SLM/unsloth/configs/qwen3_6_27b.yml",
+            str(Path("RQ/SLM/unsloth/configs/qwen3_6_27b.yml").resolve()),
             "--host-profile",
-            "RQ/SLM/configs/hosts/blackwell-rtx-pro-6000.yml",
+            str(Path("RQ/SLM/configs/hosts/blackwell-rtx-pro-6000.yml").resolve()),
             "--output",
-            str(tmp_path),
+            str(tmp_path.resolve()),
             "--child-length",
             "2048",
             "--child-result",
-            str(request.result_path),
+            str(request.result_path.resolve()),
         ]
     ]
 
