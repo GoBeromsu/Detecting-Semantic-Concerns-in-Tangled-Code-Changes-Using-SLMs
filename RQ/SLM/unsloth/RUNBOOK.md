@@ -36,7 +36,7 @@ Re-verify these before booking a session; the values are point-in-time, not stan
 | Blocker | Blocks | Action |
 |---|---|---|
 | `WANDB_API_KEY` absent from `.env` | §8 (`require_full_credentials`, `train.py:304-305`) | obtain the key and export it (§2) |
-| Hub repo `Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter` absent (404 @ 2026-08-03) | §8 — `require_publishable()` probes `repo_info()` before the runtime is created, so §8 refuses to start | create the repo before launching §8 |
+| ~~Hub repo `Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter` absent~~ | — | **cleared 2026-08-05**: created public, matching its nine sibling repos; `require_publishable()` verified PASS against the live Hub |
 | `t_infer` unbounded | §8 launch decision (§8a) | run the §7a canary after smoke |
 
 Host tuning is available this session (the workstation is otherwise idle), so swap and memory
