@@ -42,6 +42,9 @@ class FakeNormParameter(FakeParameter):
 
 class FakeConfig:
     use_cache: bool = False
+    # None is what a text-only load actually hands back: the nested text_config never names
+    # its architecture. A fake that pre-filled this could not have caught the crash it caused.
+    architectures: list[str] | None = None
 
 
 class FakeCausalLM:
@@ -77,6 +80,7 @@ class FakePeftModelForCausalLM(FakeCausalLM):
 class FakeFastLanguageModel:
     calls: list[dict[str, LoadArgument]] = []
     last_tokenizer: FakeTokenizer | None = None
+    last_model: FakeCausalLM | None = None
 
     @classmethod
     def from_pretrained(
@@ -85,7 +89,8 @@ class FakeFastLanguageModel:
         cls.calls.append(kwargs)
         tokenizer = FakeTokenizer('{"types": ["fix"]}')
         cls.last_tokenizer = tokenizer
-        return FakeCausalLM(), tokenizer
+        cls.last_model = FakeCausalLM()
+        return cls.last_model, tokenizer
 
 
 class FakePeftModel:
@@ -256,6 +261,38 @@ def test_load_backend_when_requested_uses_text_only_unsloth_and_unmerged_adapter
     assert FakePeftModel.calls[-1]["autocast_adapter_dtype"] is False
     assert FakePeftModel.model.config.use_cache is True
     assert FakePeftModel.model.evaluated is True
+
+
+def test_load_backend_when_the_text_only_config_is_unnamed_records_the_built_class(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: a text-only load, whose nested config carries no architecture name.
+    _patch_modules(monkeypatch)
+
+    # When: the backend loads.
+    _ = load_backend(_request())
+
+    # Then: the class that was actually built is named, so Unsloth's patched generate can ask
+    # whether this is a vision model instead of iterating None and dying before the first token.
+    base_model = FakeFastLanguageModel.last_model
+    assert base_model is not None
+    assert base_model.config.architectures == ["FakeCausalLM"]
+
+
+def test_load_backend_when_the_config_already_names_its_architecture_leaves_it_alone(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: a config that already knows what it is.
+    _patch_modules(monkeypatch)
+    monkeypatch.setattr(FakeConfig, "architectures", ["Qwen3_5ForConditionalGeneration"])
+
+    # When: the backend loads.
+    _ = load_backend(_request())
+
+    # Then: the loader's own answer stands — we fill a gap, we do not overrule it.
+    base_model = FakeFastLanguageModel.last_model
+    assert base_model is not None
+    assert base_model.config.architectures == ["Qwen3_5ForConditionalGeneration"]
 
 
 def test_load_backend_when_unsloth_keeps_the_norms_in_fp32_is_accepted(

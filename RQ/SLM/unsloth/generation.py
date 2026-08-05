@@ -80,6 +80,7 @@ class RuntimeParameter(Protocol):
 
 class RuntimeConfig(Protocol):
     use_cache: bool
+    architectures: list[str] | None
 
 
 class RuntimeModel(Protocol):
@@ -235,6 +236,29 @@ def _assert_runtime_precision(
             )
 
 
+def _name_architecture(base_model: RuntimeModel) -> None:
+    """Record which class was built, because a text-only load leaves the config unnamed.
+
+    Unsloth's patched generate decides whether it is driving a vision model by scanning
+    config.architectures for ForConditionalGeneration/ForVisionText2Text suffixes
+    (unsloth/models/vision.py:491). For Qwen3.6 that field is None and the scan dies on
+    'NoneType' object is not iterable before a single token is produced: text_only=True
+    replaces the composite config with its nested text_config, and the released config.json
+    names architectures only at the top level, never inside that nested block. Unsloth's own
+    republished copy of the model ships the same shape, so this is how the model is, not a
+    stale cache.
+
+    Filling it in from the class is what Transformers itself does whenever it saves a model,
+    so the answer is right by construction rather than by luck — whatever class the loader
+    actually built gets named, and the vision test then reads the truth about it. This must
+    happen before the adapter is attached: afterwards the outermost class is PeftModel, whose
+    name says nothing about the tower underneath.
+    """
+    config = base_model.config
+    if config.architectures is None:
+        config.architectures = [type(base_model).__name__]
+
+
 def _attach_adapter(base_model: RuntimeModel, adapter_path: Path) -> RuntimeModel:
     peft = _import_module("peft")
     if not isinstance(peft, PeftModule):
@@ -259,6 +283,7 @@ def load_backend(request: PeftLoadRequest) -> PeftBackend:
     if not isinstance(torch, TorchModule) or not isinstance(unsloth, UnslothModule):
         raise GenerationError("dependencies", "missing Unsloth runtime API")
     base_model, tokenizer = unsloth.FastLanguageModel.from_pretrained(model_name=request.model_id, revision=request.revision, max_seq_length=request.max_seq_length, dtype=torch.bfloat16, load_in_4bit=False, load_in_8bit=False, load_in_16bit=True, device_map={"": 0}, attn_implementation="sdpa", text_only=True)
+    _name_architecture(base_model)
     model = base_model if request.adapter_path is None else _attach_adapter(base_model, request.adapter_path)
     model.eval()
     model.config.use_cache = True
