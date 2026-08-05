@@ -261,6 +261,13 @@ def render_response_only(tokenizer: ResponseOnlyTokenizer, messages: Sequence[Ch
         raise ResponseMaskingError("rendered assistant prefix does not preserve the prompt tokens")
     json_ids = tuple(tokenizer(messages[-1]["content"], add_special_tokens=False)["input_ids"])
     supervised_ids = input_ids[len(prompt_ids) :]
-    if supervised_ids != json_ids + (tokenizer.eos_token_id,):
+    terminated = json_ids + (tokenizer.eos_token_id,)
+    # Qwen closes every turn with "<|im_end|>\n", so the rendered assistant turn carries one
+    # trailing separator token that belongs to a following turn a single-turn SFT example never
+    # has. Demanding an exact json+EOS match rejected the real template on the first row of the
+    # first rung. Accept that separator and nothing else: the supervised content itself must
+    # still be exactly the canonical JSON, terminated by exactly one EOS.
+    separator = tuple(tokenizer("\n", add_special_tokens=False)["input_ids"])
+    if supervised_ids not in (terminated, terminated + separator):
         raise ResponseMaskingError("rendered response is not canonical JSON followed by one EOS token")
     return ResponseOnlyExample(text, input_ids, (IGNORE_LABEL,) * len(prompt_ids) + supervised_ids)

@@ -19,6 +19,7 @@ from RQ.SLM.unsloth.data import (
     ChatMessage,
     DatasetRow,
     DatasetValidationError,
+    ResponseMaskingError,
     TokenIds,
     build_chat_messages,
     canonical_row_hash,
@@ -198,7 +199,11 @@ def test_label_space_is_reused_from_shared_constant() -> None:
 PROMPT_IDS: Final[tuple[int, ...]] = (10, 11, 12)
 JSON_IDS: Final[tuple[int, ...]] = (20, 21, 22)
 EOS_ID: Final[int] = 99
+NEWLINE_IDS: Final[tuple[int, ...]] = (7,)
 FULL_IDS: Final[tuple[int, ...]] = PROMPT_IDS + JSON_IDS + (EOS_ID,)
+# Qwen renders the assistant turn as "<JSON><|im_end|>\n" — the separator the old fake omitted,
+# which is why an invariant the real template never satisfied reached the GPU to be discovered.
+SEPARATED_IDS: Final[tuple[int, ...]] = FULL_IDS + NEWLINE_IDS
 
 
 @final
@@ -208,7 +213,8 @@ class _NonThinkingTokenizer:
     eos_token_id: int
     pad_token_id: int
 
-    def __init__(self) -> None:
+    def __init__(self, response_ids: tuple[int, ...] = FULL_IDS) -> None:
+        self.response_ids = response_ids
         self.padding_side = "right"
         self.chat_template = "qwen"
         self.eos_token_id = EOS_ID
@@ -222,7 +228,7 @@ class _NonThinkingTokenizer:
 
     def __call__(self, text: str, *, add_special_tokens: bool) -> TokenIds:
         _ = add_special_tokens
-        tokens = {"prompt": PROMPT_IDS, "response": FULL_IDS, '{"types": ["fix"]}': JSON_IDS}
+        tokens = {"prompt": PROMPT_IDS, "response": self.response_ids, "\n": NEWLINE_IDS, '{"types": ["fix"]}': JSON_IDS}
         return {"input_ids": tokens[text]}
 
     def save_pretrained(self, save_directory: str) -> None:
@@ -260,3 +266,29 @@ def test_training_and_memory_probe_when_rendering_one_row_share_response_only_la
     assert prepared.examples == ({"text": "response"},)
     assert probe_batch.input_ids == FULL_IDS
     assert probe_batch.labels == (IGNORE_LABEL, IGNORE_LABEL, IGNORE_LABEL, *JSON_IDS, EOS_ID)
+
+
+def test_response_only_rendering_when_the_template_appends_a_turn_separator_still_supervises_json_eos() -> None:
+    # Given: the real Qwen3.6 rendering — canonical JSON, one EOS, then the "\n" that closes
+    # every turn. Requiring an exact json+EOS match failed here on the first row of the first
+    # memory-ladder rung, after a full 27B load, for a template that was never going to match.
+    tokenizer = _NonThinkingTokenizer(SEPARATED_IDS)
+    messages = build_chat_messages(_row())["messages"]
+
+    # When: one response-only sample is rendered.
+    rendered = render_response_only(tokenizer, messages)
+
+    # Then: the separator is tolerated and the supervised content is still exactly JSON + EOS.
+    assert rendered.input_ids == SEPARATED_IDS
+    assert rendered.labels == (IGNORE_LABEL, IGNORE_LABEL, IGNORE_LABEL, *JSON_IDS, EOS_ID, *NEWLINE_IDS)
+
+
+def test_response_only_rendering_when_content_follows_the_eos_is_rejected() -> None:
+    # Given: a template that emits a real token after EOS rather than the turn separator —
+    # supervised content the canonical-JSON invariant exists to refuse.
+    tokenizer = _NonThinkingTokenizer(FULL_IDS + (4242,))
+    messages = build_chat_messages(_row())["messages"]
+
+    # When/Then: rendering still fails closed.
+    with pytest.raises(ResponseMaskingError):
+        _ = render_response_only(tokenizer, messages)

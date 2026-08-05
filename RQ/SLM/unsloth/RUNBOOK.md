@@ -1,12 +1,16 @@
 # Blackwell Manual Session Runbook — Qwen3.6-27B LoRA
 
-> **ACCESS POLICY (owner directive).** Every host command from §2 onward is executed by the
-> owner personally, at the keyboard, with the owner's own credentials. **No agent ever sshs to
-> this host autonomously** — this runbook is a checklist for an owner-run session, not something
-> an agent invokes.
+> **ACCESS POLICY (owner directive, revised 2026-08-05).** The assistant may ssh autonomously and
+> run **§4–§7a** (probe, preflight, memory ladder, template inspection, smoke train, `t_infer`
+> canary). GPU allocation, package installs, and host tuning are permitted; the workstation is
+> idle.
 >
-> Host tuning (freeing memory, adjusting swap) is permitted this session; the three settings that
-> must still stay untouched are listed in §13.
+> **§8 (full training) and §12 (inference) still require explicit per-action owner approval** —
+> §8's final step is an unconditional public upload to the adapter repo, and both phases are
+> multi-hour and single-shot.
+>
+> Credentials are never written to host disk or shell history (§2). The three host settings that
+> must stay untouched are listed in §13.
 
 Scope is the local model only — this runbook never touches `RQ/GPT/infer.py`, and nothing under
 `RQ/SLM/unsloth/` reads `OPENAI_API_KEY`.
@@ -75,6 +79,7 @@ git merge-base --is-ancestor 41263f4 HEAD && echo "wandb wiring present"   # mus
 git merge-base --is-ancestor efeca02 HEAD && echo "seed-43 dataset present" # must print
 git status --porcelain        # must be EMPTY — full training refuses to publish otherwise
 uv sync --extra local-gpu     # NOT plain `uv sync` — see below
+source .venv/bin/activate     # every `python -m` below assumes this shell
 ```
 
 **The `--extra local-gpu` is load-bearing.** Every GPU dependency (`torch`, `unsloth`, `peft`,
@@ -86,7 +91,7 @@ failure would be §5, well after the point where a fail-fast check should have c
 Prove the stack actually imports before spending a session on it:
 
 ```bash
-uv run python -c "import torch, unsloth, peft, trl, outlines; print(torch.__version__, torch.cuda.is_available())"
+python -c "import torch, unsloth, peft, trl, outlines; print(torch.__version__, torch.cuda.is_available())"
 # must print a cu128 build and True
 
 python -m RQ.SLM.unsloth.infer --help | grep -- --base
@@ -334,8 +339,8 @@ going to break on this host, it breaks here, in three minutes, instead of eleven
 minimal-flag posture is an invariant. So the narrowing is done by constructing
 `EvaluationOptions` directly, which is the same frozen dataclass the CLI builds.
 
-Run it from the repo root inside tmux by pasting into `uv run python -`, or save it under
-`/tmp` and run `uv run python /tmp/t_infer_bench.py` — never write scratch files into the repo
+Run it from the repo root inside tmux by pasting into `python -`, or save it under
+`/tmp` and run `python /tmp/t_infer_bench.py` — never write scratch files into the repo
 tree, which must stay clean for §8's manifest check. `output_root` points outside the repo for
 the same reason.
 
