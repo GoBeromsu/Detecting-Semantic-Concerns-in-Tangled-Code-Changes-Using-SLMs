@@ -337,6 +337,72 @@ def test_require_publishable_when_a_precondition_fails_rejects_before_any_gpu_ti
         train_unsloth.require_publishable(config)
 
 
+def test_hub_client_when_the_library_attaches_hfapi_lazily_still_builds_a_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: huggingface_hub as it actually ships — HfApi is not in the module's __dict__ but
+    # is served by a module-level __getattr__. Every other test substitutes _hub_client
+    # wholesale, so this is the only place the real function is exercised.
+    import types
+
+    from RQ.SLM.unsloth import train as train_unsloth
+
+    built: list[str] = []
+
+    class FakeHfApi:
+        def __init__(self, *, token: str) -> None:
+            built.append(token)
+
+        def upload_folder(self, *, folder_path: str, repo_id: str, repo_type: str) -> None:
+            _ = folder_path, repo_id, repo_type
+
+        def repo_info(self, *, repo_id: str, repo_type: str) -> object:
+            _ = repo_id, repo_type
+            return object()
+
+    def lazy_getattr(name: str) -> type[FakeHfApi]:
+        if name != "HfApi":
+            raise AttributeError(name)
+        return FakeHfApi
+
+    lazy = types.ModuleType("huggingface_hub")
+    setattr(lazy, "__getattr__", lazy_getattr)
+
+    def import_module(name: str) -> types.ModuleType:
+        _ = name
+        return lazy
+
+    monkeypatch.setattr("RQ.SLM.unsloth.train.importlib.import_module", import_module)
+    monkeypatch.setenv("HF_HUB_TOKEN", "token-value")
+
+    # When: the publication gate builds its client.
+    client = train_unsloth._hub_client()
+
+    # Then: the lazy attribute resolves. A structural `isinstance` check against a
+    # module-shaped Protocol would reject this, because Protocol checks resolve attributes via
+    # inspect.getattr_static, which bypasses __getattr__ — failing the gate closed on every
+    # real install and blocking a run it was written to protect.
+    assert isinstance(client, FakeHfApi)
+    assert built == ["token-value"]
+
+
+def test_hub_client_when_the_library_lacks_hfapi_rejects(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Given: a huggingface_hub that genuinely does not expose HfApi.
+    import types
+
+    from RQ.SLM.unsloth import train as train_unsloth
+
+    def import_module(name: str) -> types.ModuleType:
+        return types.ModuleType(name)
+
+    monkeypatch.setattr("RQ.SLM.unsloth.train.importlib.import_module", import_module)
+    monkeypatch.setenv("HF_HUB_TOKEN", "token-value")
+
+    # When/Then: tolerating lazy attributes must not degrade into tolerating a missing one.
+    with pytest.raises(train_unsloth.TrainingDataError, match="does not expose HfApi"):
+        _ = train_unsloth._hub_client()
+
+
 def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after_save(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

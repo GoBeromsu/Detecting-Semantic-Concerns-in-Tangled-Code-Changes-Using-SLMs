@@ -78,18 +78,10 @@ class RunArguments(argparse.Namespace):
     evidence_dir: Path | None = None; verify_adapter: Path | None = None; host_profile: Path | None = None; verify_adapter_path_file: Path | None = None
 
 
+@runtime_checkable
 class HubClient(Protocol):
     def upload_folder(self, *, folder_path: str, repo_id: str, repo_type: str) -> None: ...
     def repo_info(self, *, repo_id: str, repo_type: str) -> object: ...
-
-
-class HubFactory(Protocol):
-    def __call__(self, *, token: str) -> HubClient: ...
-
-
-@runtime_checkable
-class HubModule(Protocol):
-    HfApi: HubFactory
 
 
 def _adapter_fail(field: str, reason: str) -> Never:
@@ -327,9 +319,21 @@ def _checkpoint_dir(config: UnslothConfig, timestamp: str) -> Path:
 
 def _hub_client() -> HubClient:
     hub = importlib.import_module("huggingface_hub")
-    if not isinstance(hub, HubModule):
+    # Fetched with getattr rather than checked against a module-shaped Protocol. Since 3.12,
+    # Protocol instance checks resolve attributes through inspect.getattr_static, which
+    # deliberately bypasses __getattr__ — and huggingface_hub attaches HfApi lazily through
+    # exactly that hook. The structural check therefore rejected every real install while
+    # hasattr(hub, "HfApi") was True, and since every test substitutes this whole function,
+    # nothing caught it: the gate that exists to save a multi-hour run always failed closed.
+    factory = getattr(hub, "HfApi", None)
+    if factory is None:
         raise TrainingDataError("huggingface_hub does not expose HfApi")
-    return hub.HfApi(token=os.environ["HF_HUB_TOKEN"])
+    client = factory(token=os.environ["HF_HUB_TOKEN"])
+    # The client is still validated structurally. Its methods are ordinary class attributes,
+    # so getattr_static resolves them and this check means what it says.
+    if not isinstance(client, HubClient):
+        raise TrainingDataError("huggingface_hub.HfApi lacks upload_folder/repo_info")
+    return client
 
 
 def require_publishable(config: UnslothConfig) -> None:
