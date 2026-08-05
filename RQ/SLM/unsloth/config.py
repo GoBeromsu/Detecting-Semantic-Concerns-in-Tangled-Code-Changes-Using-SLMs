@@ -50,7 +50,7 @@ class LoraConfig:
     bias: str
     target_modules: tuple[str, ...]
     exclude_modules: str
-    use_gradient_checkpointing: str
+    use_gradient_checkpointing: bool | str
 
 
 @dataclass(frozen=True, slots=True)
@@ -243,6 +243,15 @@ class _Section:
     def boolean(self, key: str) -> bool:
         return _boolean(_value(self.values, key, self._field(key)), self._field(key))
 
+    def checkpointing(self, key: str) -> bool | str:
+        # Unsloth reads this field as True/False or the sentinel "unsloth" (offload activations
+        # to host RAM), so its type carries meaning that text() would erase: "true" is a truthy
+        # string, so a mistyped value would still enable checkpointing and look like it worked.
+        raw = _value(self.values, key, self._field(key))
+        if isinstance(raw, bool) or raw == "unsloth":
+            return raw
+        _fail('must be true, false, or "unsloth"', self._field(key))
+
     def strings(self, key: str) -> tuple[str, ...]:
         return _strings(_value(self.values, key, self._field(key)), self._field(key))
 
@@ -266,7 +275,7 @@ def _parse_config(root: Mapping[str, JsonValue]) -> UnslothConfig:
     return UnslothConfig(
         ModelConfig(model.text("id"), model.text("revision"), model.boolean("text_only"), model.text("dataset_id"), model.text("dataset_revision")),
         PrecisionConfig(precision.boolean("load_in_16bit"), precision.boolean("load_in_4bit"), precision.boolean("load_in_8bit")),
-        LoraConfig(lora.integer("rank"), lora.integer("alpha"), lora.number("dropout"), lora.text("bias"), lora.strings("target_modules"), lora.text("exclude_modules"), lora.text("use_gradient_checkpointing")),
+        LoraConfig(lora.integer("rank"), lora.integer("alpha"), lora.number("dropout"), lora.text("bias"), lora.strings("target_modules"), lora.text("exclude_modules"), lora.checkpointing("use_gradient_checkpointing")),
         TrainingConfig(training.text("optim"), training.number("learning_rate"), training.integer("num_train_epochs"), training.integer("per_device_train_batch_size"), training.integer("gradient_accumulation_steps"), training.number("warmup_ratio"), training.text("lr_scheduler_type"), training.integer("seed"), training.integer("logging_steps"), training.text("save_strategy"), training.integer("save_total_limit"), training.text("eval_strategy"), training.integer("max_seq_length"), training.boolean("packing"), training.text("padding_side")),
         TechnicalConfig(technical.text("attn_implementation"), technical.text("device_map")),
         DataConfig(data.boolean("drop_rows_over_max_seq_length")),

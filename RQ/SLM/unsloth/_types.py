@@ -35,7 +35,7 @@ class ModelLoadKwargs(TypedDict):
     text_only: bool
     trust_remote_code: bool
     attn_implementation: str
-    use_gradient_checkpointing: str
+    use_gradient_checkpointing: bool | str
     device_map: dict[str, int]
 
 
@@ -46,7 +46,7 @@ class PeftKwargs(TypedDict):
     lora_alpha: int
     lora_dropout: float
     bias: str
-    use_gradient_checkpointing: str
+    use_gradient_checkpointing: bool | str
     random_state: int
     max_seq_length: int
     exclude_modules: str
