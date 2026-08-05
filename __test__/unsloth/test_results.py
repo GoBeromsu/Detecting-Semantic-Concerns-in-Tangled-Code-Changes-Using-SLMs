@@ -2,6 +2,7 @@ import csv
 import json
 import subprocess
 import sys
+from collections.abc import Sequence
 from dataclasses import FrozenInstanceError
 from datetime import datetime
 from pathlib import Path
@@ -19,11 +20,11 @@ from RQ.SLM.unsloth.results import (
     ModelOutputError,
     SourceOrderError,
     build_result_path,
+    completed_source_rows,
     expected_result_paths,
     finalize_run,
     format_run_timestamp,
     parse_model_output,
-    validate_source_order,
 )
 from RQ.SLM.unsloth.generation import STRICT_RESPONSE_SCHEMA
 from utils.llms.constant import COMMIT_TYPES, DEFAULT_DF_COLUMNS
@@ -33,42 +34,66 @@ class TangledSplitLike(Protocol):
     sha_lists: tuple[tuple[str, ...], ...]
 
 
-def _write_result_file(path: Path, row_count: int = EXPECTED_SUCCESSFUL_ROWS) -> None:
+def _result_row(path: Path, index: int) -> dict[str, str]:
+    return {
+        "predicted_types": '{"types":["fix"]}',
+        "actual_types": '["fix"]',
+        "inference_time": "0.0",
+        "shas": json.dumps([f"sha-{index}"]),
+        "precision": "1.0",
+        "recall": "1.0",
+        "f1": "1.0",
+        "exact_match": "True",
+        "hamming_loss": "0.0",
+        "context_len": path.stem.removesuffix("_zs"),
+        "with_message": str(path.parent.name == "msg1"),
+        "concern_count": "1",
+    }
+
+
+def _write_result_file(
+    path: Path, row_count: int = EXPECTED_SUCCESSFUL_ROWS, order: Sequence[int] | None = None
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    indices = range(row_count) if order is None else order
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=DEFAULT_DF_COLUMNS)
         writer.writeheader()
-        row = {
-            "predicted_types": '{"types":["fix"]}',
-            "actual_types": '["fix"]',
-            "inference_time": "0.0",
-            "shas": '["sha"]',
-            "precision": "1.0",
-            "recall": "1.0",
-            "f1": "1.0",
-            "exact_match": "True",
-            "hamming_loss": "0.0",
-            "context_len": path.stem.removesuffix("_zs"),
-            "with_message": str(path.parent.name == "msg1"),
-            "concern_count": "1",
-        }
-        for _ in range(row_count):
-            writer.writerow(row)
+        writer.writerows(_result_row(path, index) for index in indices)
+
+
+def _write_run_identity(run_directory: Path) -> None:
+    """Certification recovers the run's source SHA order from here, so every run needs it."""
+    run_directory.mkdir(parents=True, exist_ok=True)
+    _ = (run_directory / "run_identity.json").write_text(
+        json.dumps({"ordered_test_shas": [[f"sha-{i}"] for i in range(EXPECTED_SUCCESSFUL_ROWS)]}),
+        encoding="utf-8",
+    )
 
 
 def _write_complete_run(run_directory: Path) -> None:
     for path in expected_result_paths(run_directory):
         _write_result_file(path)
+    _write_run_identity(run_directory)
     _ = (run_directory / "failures.jsonl").write_text("", encoding="utf-8")
 
 
 def _write_shape_only_run(run_directory: Path) -> None:
+    """Write files that satisfy every structural gate but hold no valid results.
+
+    ``shas`` is real so the run still reaches the semantic gate; garbling it too would make
+    the run fail as "not this split", which is a different rejection than the one under test.
+    """
     for path in expected_result_paths(run_directory):
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=DEFAULT_DF_COLUMNS)
             writer.writeheader()
-            writer.writerows(dict.fromkeys(DEFAULT_DF_COLUMNS, "value") for _ in range(EXPECTED_SUCCESSFUL_ROWS))
+            writer.writerows(
+                dict.fromkeys(DEFAULT_DF_COLUMNS, "value") | {"shas": json.dumps([f"sha-{index}"])}
+                for index in range(EXPECTED_SUCCESSFUL_ROWS)
+            )
+    _write_run_identity(run_directory)
     _ = (run_directory / "failures.jsonl").write_text("", encoding="utf-8")
 
 
@@ -193,7 +218,7 @@ def test_inference_result_when_serialized_uses_shared_column_order_and_metrics()
     assert row["hamming_loss"] == 2 / 7
 
 
-def test_validate_source_order_when_rows_match_real_fixture_passes(
+def test_completed_source_rows_when_rows_match_real_fixture_reports_every_row(
     test_split: TangledSplitLike,
 ) -> None:
     # Given: source SHA order and produced rows from the canonical test fixture.
@@ -202,23 +227,95 @@ def test_validate_source_order_when_rows_match_real_fixture_passes(
         {"shas": json.dumps(list(shas))} for shas in test_split.sha_lists[:3]
     )
 
-    # When/Then: exact source order is accepted.
-    validate_source_order(expected, produced)
+    # When: the produced rows are matched against source order.
+    completed = completed_source_rows(expected, produced)
+
+    # Then: exact source order is accepted and every row index is reported complete.
+    assert completed == (0, 1, 2)
 
 
-def test_validate_source_order_when_rows_are_swapped_raises_typed_error(
+def test_completed_source_rows_when_a_failed_row_is_skipped_reports_the_gap(
     test_split: TangledSplitLike,
 ) -> None:
-    # Given: two produced rows in reverse source order.
+    # Given: three source rows whose middle row failed and was never written.
+    expected = test_split.sha_lists[:3]
+    produced = (
+        {"shas": json.dumps(list(expected[0]))},
+        {"shas": json.dumps(list(expected[2]))},
+    )
+
+    # When: the partial file is matched against source order.
+    completed = completed_source_rows(expected, produced)
+
+    # Then: the subsequence is accepted and only the skipped row stays outstanding.
+    assert completed == (0, 2)
+    assert 1 not in completed
+
+
+def test_completed_source_rows_when_two_source_rows_share_shas_reports_only_one() -> None:
+    # Given: two distinct source rows that happen to carry the same SHA tuple, of which
+    # only the first has been produced.
+    expected = (["sha-a"], ["sha-a"], ["sha-b"])
+    produced = ({"shas": json.dumps(["sha-a"])},)
+
+    # When: the partial file is matched against source order.
+    completed = completed_source_rows(expected, produced)
+
+    # Then: one produced row completes exactly one source row. Keying completion on the SHA
+    # value instead would mark both twins done, so a resume would skip the un-produced one
+    # forever and the cell could never reach its full row count.
+    assert completed == (0,)
+
+
+def test_completed_source_rows_when_a_resume_appended_a_row_out_of_order_accepts_it(
+    test_split: TangledSplitLike,
+) -> None:
+    # Given: a cell whose middle row failed on the first pass and was regenerated by a
+    # resume — result rows are appended, so the recovered row sits at the end of the file.
+    expected = test_split.sha_lists[:3]
+    produced = (
+        {"shas": json.dumps(list(expected[0]))},
+        {"shas": json.dumps(list(expected[2]))},
+        {"shas": json.dumps(list(expected[1]))},
+    )
+
+    # When: a later resume re-reads the repaired file.
+    completed = completed_source_rows(expected, produced)
+
+    # Then: the file this program itself wrote is accepted as complete. Requiring source
+    # order here would reject it and strand the run with no recovery short of hand-sorting.
+    assert completed == (0, 2, 1)
+
+
+def test_completed_source_rows_when_a_row_is_foreign_raises_typed_error(
+    test_split: TangledSplitLike,
+) -> None:
+    # Given: a produced row whose SHAs belong to no source row in this cell.
     expected = test_split.sha_lists[:2]
     produced = (
-        {"shas": json.dumps(list(expected[1]))},
+        {"shas": json.dumps(list(expected[0]))},
+        {"shas": json.dumps(["sha-from-another-split"])},
+    )
+
+    # When/Then: it is rejected rather than silently counted as progress.
+    with pytest.raises(SourceOrderError, match="index 1"):
+        _ = completed_source_rows(expected, produced)
+
+
+def test_completed_source_rows_when_a_sha_repeats_beyond_its_source_count_raises(
+    test_split: TangledSplitLike,
+) -> None:
+    # Given: one source row, produced twice — a duplicated append rather than progress.
+    expected = test_split.sha_lists[:2]
+    produced = (
+        {"shas": json.dumps(list(expected[0]))},
         {"shas": json.dumps(list(expected[0]))},
     )
 
-    # When/Then: the first displaced row is rejected.
-    with pytest.raises(SourceOrderError, match="index 0"):
-        _ = validate_source_order(expected, produced)
+    # When/Then: the second copy claims no index and is refused, so a duplicated row can
+    # never let a cell report itself complete while a real source row is still missing.
+    with pytest.raises(SourceOrderError, match="index 1"):
+        _ = completed_source_rows(expected, produced)
 
 
 def test_failure_record_is_frozen_and_has_jsonl_shape() -> None:
@@ -257,8 +354,8 @@ def test_finalize_run_when_all_ten_files_are_complete_marks_canonical(
     run_directory = tmp_path / "model" / "20260731123456"
     _write_complete_run(run_directory)
 
-    # When: the finalization gate is evaluated with no unresolved failures.
-    canonical = finalize_run(run_directory, unresolved_failure_count=0)
+    # When: the finalization gate is evaluated.
+    canonical = finalize_run(run_directory)
 
     # Then: exactly ten files and 3,500 rows are certified.
     assert canonical.run_directory == run_directory
@@ -286,17 +383,22 @@ def test_finalize_run_when_a_file_contract_fails_rejects_run(
 
     # When/Then: the canonical gate rejects the run.
     with pytest.raises(FinalizationError, match=reason):
-        _ = finalize_run(run_directory, unresolved_failure_count=0)
+        _ = finalize_run(run_directory)
 
 
-def test_finalize_run_when_failures_remain_rejects_run(tmp_path: Path) -> None:
-    # Given: complete CSVs but one unresolved sidecar failure.
-    run_directory = tmp_path / "run"
+def test_finalize_run_when_past_failures_were_regenerated_still_certifies(
+    tmp_path: Path,
+) -> None:
+    # Given: complete CSVs plus a sidecar recording a failure a resume later re-generated.
+    run_directory = tmp_path / "recovered"
     _write_complete_run(run_directory)
+    _ = (run_directory / "failures.jsonl").write_text(
+        json.dumps({"row_index": 7, "error_type": "ModelOutputError"}) + "\n",
+        encoding="utf-8",
+    )
 
-    # When/Then: canonical status is denied before publication.
-    with pytest.raises(FinalizationError, match="unresolved"):
-        _ = finalize_run(run_directory, unresolved_failure_count=1)
+    # When/Then: the sidecar is provenance, so complete data still certifies.
+    assert finalize_run(run_directory).successful_rows == 3500
 
 
 def test_finalize_run_when_csv_rows_are_arbitrary_values_rejects(tmp_path: Path) -> None:
@@ -306,7 +408,34 @@ def test_finalize_run_when_csv_rows_are_arbitrary_values_rejects(tmp_path: Path)
 
     # When/Then: shape-only CSV data cannot receive canonical certification.
     with pytest.raises(FinalizationError, match="semantic"):
-        _ = finalize_run(run_directory, unresolved_failure_count=0)
+        _ = finalize_run(run_directory)
+
+
+def test_finalize_run_when_rows_are_complete_but_out_of_order_rejects(tmp_path: Path) -> None:
+    # Given: a complete run whose first cell holds every row, but with two of them swapped —
+    # what a crash between a resume's append and its re-sort leaves behind.
+    run_directory = tmp_path / "unsorted"
+    _write_complete_run(run_directory)
+    order = list(range(EXPECTED_SUCCESSFUL_ROWS))
+    order[1], order[-1] = order[-1], order[1]
+    _write_result_file(expected_result_paths(run_directory)[0], order=order)
+
+    # When/Then: certification proves order rather than trusting a resume to have restored it,
+    # because downstream analysis pairs models by CSV row position.
+    with pytest.raises(FinalizationError, match="order"):
+        _ = finalize_run(run_directory)
+
+
+def test_finalize_run_when_run_identity_is_missing_rejects(tmp_path: Path) -> None:
+    # Given: a complete run whose recorded source split has been deleted.
+    run_directory = tmp_path / "no-identity"
+    _write_complete_run(run_directory)
+    (run_directory / "run_identity.json").unlink()
+
+    # When/Then: without the split there is nothing to check row order against, so the run
+    # cannot be certified rather than being certified on shape alone.
+    with pytest.raises(FinalizationError, match="run identity"):
+        _ = finalize_run(run_directory)
 
 
 def test_finalize_run_when_failure_history_sidecar_is_deleted_rejects(tmp_path: Path) -> None:
@@ -317,7 +446,7 @@ def test_finalize_run_when_failure_history_sidecar_is_deleted_rejects(tmp_path: 
 
     # When/Then: the run cannot be certified after deleting failure evidence.
     with pytest.raises(FinalizationError, match="failure history"):
-        _ = finalize_run(run_directory, unresolved_failure_count=0)
+        _ = finalize_run(run_directory)
 
 
 def test_module_import_when_dependencies_are_blocked_stays_lightweight() -> None:

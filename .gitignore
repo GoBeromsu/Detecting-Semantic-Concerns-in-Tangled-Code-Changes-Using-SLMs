@@ -208,6 +208,9 @@ cython_debug/
 .cursorindexingignore
 # Tool state and generated artifacts
 .omo/
+.omc/
+.omx/
+.gjc/
 .codex/
 output/
 datasets/data/legacy/

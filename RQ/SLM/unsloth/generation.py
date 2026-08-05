@@ -175,7 +175,7 @@ class GenerationError(Exception):
 class PeftLoadRequest:
     model_id: str
     revision: str
-    adapter_path: Path
+    adapter_path: Path | None
     max_seq_length: int
 
 
@@ -197,6 +197,7 @@ class PeftBackend:
     model: RuntimeModel
     tokenizer: RuntimeTokenizer
     model_max_tokens: int
+    generator: Generator
 
     def generate(self, request: GenerationRequest) -> tuple[str, ...]:
         return generate_labels(self, request)
@@ -214,18 +215,35 @@ def _assert_text_bf16_cuda(model: RuntimeModel, dtype: RuntimeDType) -> None:
             raise GenerationError("model", f"floating parameter is not BF16: {name}")
 
 
+def _attach_adapter(base_model: RuntimeModel, adapter_path: Path) -> RuntimeModel:
+    peft = _import_module("peft")
+    if not isinstance(peft, PeftModule):
+        raise GenerationError("dependencies", "missing PEFT runtime API")
+    return peft.PeftModel.from_pretrained(base_model, adapter_path, is_trainable=False, autocast_adapter_dtype=False)
+
+
+def _build_generator(model: RuntimeModel, tokenizer: RuntimeTokenizer) -> Generator:
+    """Compile the constrained-JSON generator once, at load time, not per row."""
+    outlines = _import_module("outlines")
+    outlines_types = _import_module("outlines.types")
+    if not isinstance(outlines, OutlinesModule) or not isinstance(outlines_types, OutlinesTypesModule):
+        raise GenerationError("dependencies", "missing Outlines 1.3.2 public API")
+    schema = outlines_types.JsonSchema(json.dumps(STRICT_RESPONSE_SCHEMA, separators=(",", ":"), sort_keys=True))
+    return outlines.Generator(outlines.from_transformers(model, tokenizer), schema)
+
+
 def load_backend(request: PeftLoadRequest) -> PeftBackend:
+    """Load the base tower, optionally attach the LoRA adapter, and fail closed early."""
     torch = _import_module("torch")
     unsloth = _import_module("unsloth")
-    peft = _import_module("peft")
-    if not isinstance(torch, TorchModule) or not isinstance(unsloth, UnslothModule) or not isinstance(peft, PeftModule):
-        raise GenerationError("dependencies", "missing Unsloth or PEFT runtime API")
+    if not isinstance(torch, TorchModule) or not isinstance(unsloth, UnslothModule):
+        raise GenerationError("dependencies", "missing Unsloth runtime API")
     base_model, tokenizer = unsloth.FastLanguageModel.from_pretrained(model_name=request.model_id, revision=request.revision, max_seq_length=request.max_seq_length, dtype=torch.bfloat16, load_in_4bit=False, load_in_8bit=False, load_in_16bit=True, device_map={"": 0}, attn_implementation="sdpa", text_only=True)
-    model = peft.PeftModel.from_pretrained(base_model, request.adapter_path, is_trainable=False, autocast_adapter_dtype=False)
+    model = base_model if request.adapter_path is None else _attach_adapter(base_model, request.adapter_path)
     model.eval()
     model.config.use_cache = True
     _assert_text_bf16_cuda(model, torch.bfloat16)
-    return PeftBackend(model, tokenizer, request.max_seq_length)
+    return PeftBackend(model, tokenizer, request.max_seq_length, _build_generator(model, tokenizer))
 
 
 def _render_prompt(tokenizer: RuntimeTokenizer, request: GenerationRequest) -> str:
@@ -249,13 +267,7 @@ def generate_labels(backend: PeftBackend, request: GenerationRequest) -> tuple[s
         raise GenerationError("tokenizer", "tokenizer pad token is missing or invalid")
     if backend.tokenizer.pad_token_id == backend.tokenizer.eos_token_id:
         raise GenerationError("tokenizer", "tokenizer pad token must differ from eos token")
-    outlines = _import_module("outlines")
-    outlines_types = _import_module("outlines.types")
-    if not isinstance(outlines, OutlinesModule) or not isinstance(outlines_types, OutlinesTypesModule):
-        raise GenerationError("dependencies", "missing Outlines 1.3.2 public API")
-    schema = outlines_types.JsonSchema(json.dumps(STRICT_RESPONSE_SCHEMA, separators=(",", ":"), sort_keys=True))
-    generator = outlines.Generator(outlines.from_transformers(backend.model, backend.tokenizer), schema)
-    raw_output = generator(rendered, max_new_tokens=request.max_new_tokens, temperature=request.temperature, seed=request.seed)
+    raw_output = backend.generator(rendered, max_new_tokens=request.max_new_tokens, temperature=request.temperature, seed=request.seed)
     try:
         return _parse_model_output(raw_output)
     except ModelOutputError as error:

@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -76,19 +76,13 @@ class RunArguments(argparse.Namespace):
     config: Path = DEFAULT_CONFIG_PATH; dataset_source: Literal["local", "hub"] = "local"
     smoke: bool = False; max_steps: int | None = None; inspect_template: bool = False
     evidence_dir: Path | None = None; verify_adapter: Path | None = None; host_profile: Path | None = None; verify_adapter_path_file: Path | None = None
-
-
-class HubClient(Protocol):
-    def upload_folder(self, *, folder_path: str, repo_id: str, repo_type: str) -> None: ...
-
-
-class HubFactory(Protocol):
-    def __call__(self, *, token: str) -> HubClient: ...
+    no_wandb: bool = False
 
 
 @runtime_checkable
-class HubModule(Protocol):
-    HfApi: HubFactory
+class HubClient(Protocol):
+    def upload_folder(self, *, folder_path: str, repo_id: str, repo_type: str) -> None: ...
+    def repo_info(self, *, repo_id: str, repo_type: str) -> object: ...
 
 
 def _adapter_fail(field: str, reason: str) -> Never:
@@ -206,6 +200,13 @@ def write_manifest(adapter_dir: Path, manifest: RunManifest) -> Path:
     return path
 
 
+_NO_WANDB_HELP: Final = (
+    "train without Weights & Biases: drops WANDB_API_KEY from the required credentials and "
+    + "reports to nothing. Opt-out by design — a full run is multi-hour and single-shot, and "
+    + "silently losing its training curves cannot be repaired afterwards."
+)
+
+
 def parse_args(argv: Sequence[str] | None = None) -> RunArguments:
     parser = argparse.ArgumentParser(description=__doc__)
     _ = parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
@@ -217,6 +218,11 @@ def parse_args(argv: Sequence[str] | None = None) -> RunArguments:
     _ = parser.add_argument("--verify-adapter", type=Path)
     _ = parser.add_argument("--host-profile", type=Path)
     _ = parser.add_argument("--verify-adapter-path-file", type=Path)
+    _ = parser.add_argument(
+        "--no-wandb",
+        action="store_true",
+        help=_NO_WANDB_HELP,
+    )
     arguments = RunArguments()
     _ = parser.parse_args(argv, namespace=arguments)
     return arguments
@@ -301,8 +307,15 @@ def write_overflow_evidence(examples: Sequence[RenderedExample], excluded_rows: 
     _write_evidence(evidence_dir, "overflow-rows.json", {"final_row_count": len(examples), "excluded_rows": excluded})
 
 
-def require_full_credentials(environment: Mapping[str, str]) -> None:
-    missing = tuple(name for name in ("HF_HUB_TOKEN", "WANDB_API_KEY") if not environment.get(name))
+def require_full_credentials(environment: Mapping[str, str], *, wandb: bool = True) -> None:
+    """Reject a full run missing the credentials its completion path will need.
+
+    HF_HUB_TOKEN is unconditional: `_upload_adapter` runs automatically once verification
+    passes, so a missing token is only discovered after the whole run is spent. WANDB_API_KEY is
+    required only when the run actually reports to it — see `--no-wandb`.
+    """
+    required = ("HF_HUB_TOKEN", "WANDB_API_KEY") if wandb else ("HF_HUB_TOKEN",)
+    missing = tuple(name for name in required if not environment.get(name))
     if missing:
         raise TrainingDataError(f"missing credentials: {', '.join(missing)}")
 
@@ -324,11 +337,45 @@ def _checkpoint_dir(config: UnslothConfig, timestamp: str) -> Path:
     return Path(config.output.adapter_dir_root) / timestamp / "checkpoints"
 
 
-def _upload_adapter(adapter_dir: Path, config: UnslothConfig) -> None:
+def _hub_client() -> HubClient:
     hub = importlib.import_module("huggingface_hub")
-    if not isinstance(hub, HubModule):
+    # Fetched with getattr rather than checked against a module-shaped Protocol. Since 3.12,
+    # Protocol instance checks resolve attributes through inspect.getattr_static, which
+    # deliberately bypasses __getattr__ — and huggingface_hub attaches HfApi lazily through
+    # exactly that hook. The structural check therefore rejected every real install while
+    # hasattr(hub, "HfApi") was True, and since every test substitutes this whole function,
+    # nothing caught it: the gate that exists to save a multi-hour run always failed closed.
+    # Typed as returning `object` rather than left as Any: the isinstance below is what
+    # establishes the type, so nothing between here and there should be silently trusted.
+    factory: Callable[..., object] | None = getattr(hub, "HfApi", None)
+    if factory is None:
         raise TrainingDataError("huggingface_hub does not expose HfApi")
-    _ = hub.HfApi(token=os.environ["HF_HUB_TOKEN"]).upload_folder(
+    client = factory(token=os.environ["HF_HUB_TOKEN"])
+    # The client is still validated structurally. Its methods are ordinary class attributes,
+    # so getattr_static resolves them and this check means what it says.
+    if not isinstance(client, HubClient):
+        raise TrainingDataError("huggingface_hub.HfApi lacks upload_folder/repo_info")
+    return client
+
+
+def require_publishable(config: UnslothConfig) -> None:
+    """Reject the cheap publication preconditions before any GPU time is spent.
+
+    Both are otherwise only discovered after training completes — a dirty worktree by
+    build_manifest(), a missing repository by the upload itself — which costs the whole run.
+    """
+    if not _provenance("full").git_clean:
+        raise TrainingDataError("full publication requires a clean Git worktree")
+    try:
+        _ = _hub_client().repo_info(repo_id=config.hub.adapter_repo, repo_type="model")
+    except Exception as error:
+        raise TrainingDataError(
+            f"hub repository is not reachable: {config.hub.adapter_repo} ({error})"
+        ) from error
+
+
+def _upload_adapter(adapter_dir: Path, config: UnslothConfig) -> None:
+    _ = _hub_client().upload_folder(
         folder_path=str(adapter_dir), repo_id=config.hub.adapter_repo, repo_type="model"
     )
 
@@ -343,8 +390,8 @@ def run(arguments: RunArguments) -> None:
         raise TrainingDataError("--inspect-template requires --evidence-dir")
     if not arguments.smoke and not arguments.inspect_template:
         evidence_dir = require_qualification_evidence(arguments, config.training.max_seq_length)
-        require_full_credentials(os.environ)
-        _ = _provenance("full")
+        require_full_credentials(os.environ, wandb=not arguments.no_wandb)
+        require_publishable(config)
     runtime = create_runtime(config, 0)
     if arguments.inspect_template:
         if evidence_dir is None:
@@ -359,9 +406,13 @@ def run(arguments: RunArguments) -> None:
     timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     adapter_dir = _adapter_dir(config, timestamp)
     checkpoint_dir = _checkpoint_dir(config, timestamp)
-    report_to = "none" if arguments.smoke else "wandb"
-    run_name = None if arguments.smoke else f"{config.wandb.experiment_name}-{timestamp}"
-    if not arguments.smoke:
+    # A smoke run never reports; a full run reports unless --no-wandb opted out. `report_to`
+    # is carried into the manifest and the adapter identity, so which of the two a run used is
+    # recoverable from its artifacts rather than from whoever typed the command.
+    tracked = not arguments.smoke and not arguments.no_wandb
+    report_to = "wandb" if tracked else "none"
+    run_name = f"{config.wandb.experiment_name}-{timestamp}" if tracked else None
+    if tracked:
         os.environ["WANDB_PROJECT"] = config.wandb.project
     trainer = create_trainer(
         runtime, prepared.examples, config, checkpoint_dir,

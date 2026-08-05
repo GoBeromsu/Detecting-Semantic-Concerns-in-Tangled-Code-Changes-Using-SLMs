@@ -62,6 +62,7 @@ def test_cli_when_parsed_converts_paths_and_exposes_local_run_controls() -> None
             "host.json",
             "--verify-adapter-path-file",
             "adapter-path.txt",
+            "--no-wandb",
         )
     )
 
@@ -75,6 +76,7 @@ def test_cli_when_parsed_converts_paths_and_exposes_local_run_controls() -> None
     assert arguments.verify_adapter == Path("adapter")
     assert arguments.host_profile == Path("host.json")
     assert arguments.verify_adapter_path_file == Path("adapter-path.txt")
+    assert arguments.no_wandb is True
 
 
 def test_overflow_validation_when_default_requires_zero_exclusions() -> None:
@@ -305,8 +307,107 @@ def test_verify_adapter_when_requested_delegates_selected_config(
     assert received == [(tmp_path / "adapter", config_path)]
 
 
+@pytest.mark.parametrize(
+    ("git_clean", "repo_reachable", "reason"),
+    ((False, True, "clean Git worktree"), (True, False, "not reachable")),
+)
+def test_require_publishable_when_a_precondition_fails_rejects_before_any_gpu_time(
+    monkeypatch: pytest.MonkeyPatch, git_clean: bool, repo_reachable: bool, reason: str
+) -> None:
+    # Given: a full run whose publication would fail only after hours of training — a dirty
+    # worktree is caught by build_manifest(), a missing repo by the upload itself.
+    from RQ.SLM.unsloth import train as train_unsloth
+    from RQ.SLM.unsloth._types import RunProvenance
+    from RQ.SLM.unsloth.config import load_config
+
+    class FakeHubClient:
+        def repo_info(self, *, repo_id: str, repo_type: str) -> object:
+            _ = repo_id, repo_type
+            if not repo_reachable:
+                raise RuntimeError("404 repository not found")
+            return object()
+
+    def provenance(run_mode: Literal["full", "smoke"]) -> RunProvenance:
+        return RunProvenance("a" * 40, git_clean, run_mode)
+
+    monkeypatch.setattr(train_unsloth, "_provenance", provenance)
+    monkeypatch.setattr(train_unsloth, "_hub_client", FakeHubClient)
+    config = load_config(REPO_ROOT / "RQ/SLM/unsloth/configs/qwen3_6_27b.yml")
+
+    # When/Then: the cheap precondition is refused up front, not after the GPU is spent.
+    with pytest.raises(train_unsloth.TrainingDataError, match=reason):
+        train_unsloth.require_publishable(config)
+
+
+def test_hub_client_when_the_library_attaches_hfapi_lazily_still_builds_a_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: huggingface_hub as it actually ships — HfApi is not in the module's __dict__ but
+    # is served by a module-level __getattr__. Every other test substitutes _hub_client
+    # wholesale, so this is the only place the real function is exercised.
+    import types
+
+    from RQ.SLM.unsloth import train as train_unsloth
+
+    built: list[str] = []
+
+    class FakeHfApi:
+        def __init__(self, *, token: str) -> None:
+            built.append(token)
+
+        def upload_folder(self, *, folder_path: str, repo_id: str, repo_type: str) -> None:
+            _ = folder_path, repo_id, repo_type
+
+        def repo_info(self, *, repo_id: str, repo_type: str) -> object:
+            _ = repo_id, repo_type
+            return object()
+
+    def lazy_getattr(name: str) -> type[FakeHfApi]:
+        if name != "HfApi":
+            raise AttributeError(name)
+        return FakeHfApi
+
+    lazy = types.ModuleType("huggingface_hub")
+    setattr(lazy, "__getattr__", lazy_getattr)
+
+    def import_module(name: str) -> types.ModuleType:
+        _ = name
+        return lazy
+
+    monkeypatch.setattr("RQ.SLM.unsloth.train.importlib.import_module", import_module)
+    monkeypatch.setenv("HF_HUB_TOKEN", "token-value")
+
+    # When: the publication gate builds its client.
+    client = train_unsloth._hub_client()
+
+    # Then: the lazy attribute resolves. A structural `isinstance` check against a
+    # module-shaped Protocol would reject this, because Protocol checks resolve attributes via
+    # inspect.getattr_static, which bypasses __getattr__ — failing the gate closed on every
+    # real install and blocking a run it was written to protect.
+    assert isinstance(client, FakeHfApi)
+    assert built == ["token-value"]
+
+
+def test_hub_client_when_the_library_lacks_hfapi_rejects(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Given: a huggingface_hub that genuinely does not expose HfApi.
+    import types
+
+    from RQ.SLM.unsloth import train as train_unsloth
+
+    def import_module(name: str) -> types.ModuleType:
+        return types.ModuleType(name)
+
+    monkeypatch.setattr("RQ.SLM.unsloth.train.importlib.import_module", import_module)
+    monkeypatch.setenv("HF_HUB_TOKEN", "token-value")
+
+    # When/Then: tolerating lazy attributes must not degrade into tolerating a missing one.
+    with pytest.raises(train_unsloth.TrainingDataError, match="does not expose HfApi"):
+        _ = train_unsloth._hub_client()
+
+
+@pytest.mark.parametrize("no_wandb", (False, True))
 def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after_save(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, no_wandb: bool
 ) -> None:
     # Given: a full run with completed qualification and a trainer that records its save.
     from RQ.SLM.unsloth import train as train_unsloth
@@ -347,6 +448,7 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
     captured_report_to: list[str] = []
     captured_run_names: list[str | None] = []
     captured_manifest_report_to: list[str] = []
+    captured_wandb_required: list[bool] = []
 
     def build_manifest_after_save(
         config: UnslothConfig,
@@ -367,8 +469,9 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
         _ = arguments, max_seq_length
         return evidence_dir
 
-    def credentials(environment: Mapping[str, str]) -> None:
+    def credentials(environment: Mapping[str, str], *, wandb: bool = True) -> None:
         _ = environment
+        captured_wandb_required.append(wandb)
 
     def runtime(config: UnslothConfig, device_index: int) -> FakeRuntime:
         _ = config, device_index
@@ -407,6 +510,21 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
     def provenance(run_mode: Literal["full", "smoke"]) -> RunProvenance:
         return RunProvenance("a" * 40, True, run_mode)
 
+    # `require_publishable` is left unpatched so the real precondition runs; only the
+    # network client underneath it is faked, and it records what was probed.
+    probed_repos: list[str] = []
+
+    class FakeHubClient:
+        def repo_info(self, *, repo_id: str, repo_type: str) -> object:
+            _ = repo_type
+            probed_repos.append(repo_id)
+            return object()
+
+        def upload_folder(self, *, folder_path: str, repo_id: str, repo_type: str) -> object:
+            _ = folder_path, repo_id, repo_type
+            return object()
+
+    monkeypatch.setattr(train_unsloth, "_hub_client", FakeHubClient)
     monkeypatch.setattr(train_unsloth, "require_qualification_evidence", qualification)
     monkeypatch.setattr(train_unsloth, "require_full_credentials", credentials)
     monkeypatch.setattr(train_unsloth, "create_runtime", runtime)
@@ -418,10 +536,13 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
     monkeypatch.setattr(train_unsloth, "verify_adapter", verified)
     monkeypatch.setattr(train_unsloth, "_upload_adapter", uploaded)
     monkeypatch.setattr(train_unsloth, "_provenance", provenance)
-    arguments = train_unsloth.parse_args((
+    argv = [
         "--config", str(REPO_ROOT / "RQ/SLM/unsloth/configs/qwen3_6_27b.yml"), "--host-profile", str(tmp_path / "host.yml"),
         "--evidence-dir", str(evidence_dir),
-    ))
+    ]
+    if no_wandb:
+        argv.append("--no-wandb")
+    arguments = train_unsloth.parse_args(argv)
     monkeypatch.delenv("WANDB_PROJECT", raising=False)
 
     # When: the trainer completes its adapter save in a full run.
@@ -448,16 +569,28 @@ def test_run_when_full_training_saves_adapter_binds_qualification_evidence_after
 
         # Then: a full run reports to wandb under a timestamped run name, targets the
         # configured wandb project via the environment HF Trainer's WandbCallback reads, and
-        # echoes report_to into the manifest identity next to logging_steps.
-        assert captured_report_to == ["wandb"]
-        assert captured_manifest_report_to == ["wandb"]
+        # echoes report_to into the manifest identity next to logging_steps. Under --no-wandb
+        # every one of those is inert, and the manifest records "none" — so which of the two a
+        # run used is recoverable from its artifacts rather than from the command history.
         assert len(captured_run_names) == 1
-        run_name = captured_run_names[0]
-        assert run_name is not None
-        assert run_name.startswith("qwen3.6-27b-semantic-concern-slm-unsloth-lora-")
-        assert os.environ["WANDB_PROJECT"] == (
-            "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
-        )
+        assert captured_wandb_required == [not no_wandb]
+        if no_wandb:
+            assert captured_report_to == ["none"]
+            assert captured_manifest_report_to == ["none"]
+            assert captured_run_names == [None]
+            assert "WANDB_PROJECT" not in os.environ
+        else:
+            assert captured_report_to == ["wandb"]
+            assert captured_manifest_report_to == ["wandb"]
+            run_name = captured_run_names[0]
+            assert run_name is not None
+            assert run_name.startswith("qwen3.6-27b-semantic-concern-slm-unsloth-lora-")
+            assert os.environ["WANDB_PROJECT"] == (
+                "Untangling-Multi-Concern-Commits-with-Small-Language-Models"
+            )
+
+        # Then: the upload destination was proven reachable, not discovered after training.
+        assert probed_repos == ["Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter"]
     finally:
         os.environ.pop("WANDB_PROJECT", None)
 
@@ -560,6 +693,45 @@ def test_run_when_smoke_training_reports_to_none_without_wandb_credentials(
     assert captured_report_to == ["none"]
     assert captured_run_names == [None]
     assert "WANDB_PROJECT" not in os.environ
+
+
+@pytest.mark.parametrize(
+    ("no_wandb", "missing_key", "accepted"),
+    (
+        (False, True, False),
+        (False, False, True),
+        (True, True, True),
+        (True, False, True),
+    ),
+)
+def test_require_full_credentials_when_wandb_is_opted_out_stops_demanding_its_key(
+    no_wandb: bool, missing_key: bool, accepted: bool
+) -> None:
+    # Given: a full run's environment, with the wandb key present or absent.
+    from RQ.SLM.unsloth.train import TrainingDataError, require_full_credentials
+
+    environment = {"HF_HUB_TOKEN": "token"}
+    if not missing_key:
+        environment["WANDB_API_KEY"] = "key"
+
+    # When/Then: the key is demanded only by a run that will actually report to wandb. The
+    # default still demands it, so a run cannot silently lose its training curves — dropping
+    # them has to be typed out. HF_HUB_TOKEN is never optional either way: the adapter upload
+    # is automatic, so a missing token surfaces only after the whole run is spent.
+    if accepted:
+        require_full_credentials(environment, wandb=not no_wandb)
+    else:
+        with pytest.raises(TrainingDataError, match="WANDB_API_KEY"):
+            require_full_credentials(environment, wandb=not no_wandb)
+
+
+def test_require_full_credentials_when_the_hub_token_is_absent_always_rejects() -> None:
+    # Given: an environment with wandb satisfied but no Hub token, opting out of wandb.
+    from RQ.SLM.unsloth.train import TrainingDataError, require_full_credentials
+
+    # When/Then: --no-wandb narrows the requirement to wandb alone and never waives the token.
+    with pytest.raises(TrainingDataError, match="HF_HUB_TOKEN"):
+        require_full_credentials({"WANDB_API_KEY": "key"}, wandb=False)
 
 
 def test_adapter_path_when_written_atomically_contains_the_validated_directory(

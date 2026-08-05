@@ -85,7 +85,7 @@ def test_runtime_builders_when_using_pinned_config_preserve_required_settings() 
     assert sft_kwargs["dataset_text_field"] == "text"
     assert sft_kwargs["packing"] is False
     assert sft_kwargs["save_strategy"] == "epoch"
-    assert sft_kwargs["save_total_limit"] == 2
+    assert sft_kwargs["save_total_limit"] == 5
     assert sft_kwargs["report_to"] == "wandb"
     assert sft_kwargs.get("run_name") == "qwen3.6-27b-semantic-concern-slm-unsloth-lora-20260101000000"
     assert smoke_kwargs["report_to"] == "none"

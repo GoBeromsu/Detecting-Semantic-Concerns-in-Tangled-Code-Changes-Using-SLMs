@@ -97,7 +97,7 @@ def test_load_config_when_canonical_parses_locked_training_values() -> None:
     assert training.seed == 42
     assert training.logging_steps == 10
     assert training.save_strategy == "epoch"
-    assert training.save_total_limit == 2
+    assert training.save_total_limit == 5
     assert training.eval_strategy == "no"
     assert training.max_seq_length == 16384
     assert training.packing is False
