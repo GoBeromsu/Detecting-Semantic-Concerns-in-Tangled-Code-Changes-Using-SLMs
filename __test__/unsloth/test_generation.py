@@ -149,33 +149,31 @@ class FakeTokenizer:
         return self.decoded
 
 
-class FakeGenerator:
-    def __init__(self, *, device: str) -> None:
-        assert device == "cuda:0"
-        self.seed: int | None = None
-
-    def manual_seed(self, seed: int) -> FakeGenerator:
-        self.seed = seed
-        return self
-
-
 class FakeOutlinesGenerator:
-    calls: list[tuple[str, int, float, int]] = []
+    calls: list[tuple[str, int, float]] = []
 
     def __init__(self, _: FakePeftModelForCausalLM, __: str) -> None:
         pass
 
-    def __call__(self, prompt: str, *, max_new_tokens: int, temperature: float, seed: int) -> str:
-        self.calls.append((prompt, max_new_tokens, temperature, seed))
+    def __call__(self, prompt: str, *, max_new_tokens: int, temperature: float) -> str:
+        # Deliberately no **kwargs escape hatch. Outlines' Transformers backend forwards
+        # whatever it is given into model.generate, which raises on any kwarg it does not
+        # know; a permissive fake swallowed `seed` and let that crash reach the GPU.
+        self.calls.append((prompt, max_new_tokens, temperature))
         tokenizer = FakeFastLanguageModel.last_tokenizer
         assert tokenizer is not None
         return tokenizer.decoded
 
 
 class FakeTorch:
-    Generator: type[FakeGenerator] = FakeGenerator
+    seeds: list[int] = []
     bfloat16: str = "bfloat16"
     float32: str = "float32"
+
+    @classmethod
+    def manual_seed(cls, seed: int) -> object:
+        cls.seeds.append(seed)
+        return object()
 
 
 class FakeJsonLogitsProcessor:
@@ -384,7 +382,23 @@ def test_generate_labels_when_rendered_uses_one_qwen_template_and_generated_toke
         {"tokenize": False, "add_generation_prompt": True, "enable_thinking": False}
     ]
     assert tokenizer.tokenized_prompts == ["rendered " + PROMPT_TAIL]
-    assert FakeOutlinesGenerator.calls[-1] == ("rendered " + PROMPT_TAIL, 128, 0.3, 43)
+    assert FakeOutlinesGenerator.calls[-1] == ("rendered " + PROMPT_TAIL, 128, 0.3)
+
+
+def test_generate_labels_when_a_row_is_sampled_seeds_the_rng_rather_than_outlines(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: a loaded fake backend whose generator refuses unknown keyword arguments,
+    # exactly as Transformers' generate does behind Outlines.
+    _patch_modules(monkeypatch)
+    backend = load_backend(_request())
+
+    # When: a row is generated with an explicit seed.
+    _ = _generate(backend, seed=43)
+
+    # Then: the seed reaches torch, not the generator call.
+    assert FakeTorch.seeds[-1] == 43
+    assert len(FakeOutlinesGenerator.calls[-1]) == 3
 
 
 def test_generate_labels_when_tokenizer_has_distinct_padding_accepts_its_metadata(

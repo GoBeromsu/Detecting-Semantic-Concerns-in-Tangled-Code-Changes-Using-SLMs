@@ -126,7 +126,11 @@ class JsonSchemaFactory(Protocol):
 
 
 class Generator(Protocol):
-    def __call__(self, prompt: str, *, max_new_tokens: int, temperature: float, seed: int) -> str: ...
+    def __call__(self, prompt: str, *, max_new_tokens: int, temperature: float) -> str: ...
+
+
+class SeedFunction(Protocol):
+    def __call__(self, seed: int) -> object: ...
 
 
 class GeneratorFactory(Protocol):
@@ -137,6 +141,8 @@ class GeneratorFactory(Protocol):
 class TorchModule(Protocol):
     bfloat16: RuntimeDType
     float32: RuntimeDType
+
+    def manual_seed(self, seed: int) -> object: ...
 
 
 @runtime_checkable
@@ -198,6 +204,7 @@ class PeftBackend:
     tokenizer: RuntimeTokenizer
     model_max_tokens: int
     generator: Generator
+    seed_rng: SeedFunction
 
     def generate(self, request: GenerationRequest) -> tuple[str, ...]:
         return generate_labels(self, request)
@@ -288,7 +295,7 @@ def load_backend(request: PeftLoadRequest) -> PeftBackend:
     model.eval()
     model.config.use_cache = True
     _assert_runtime_precision(model, (torch.bfloat16, torch.float32))
-    return PeftBackend(model, tokenizer, request.max_seq_length, _build_generator(model, tokenizer))
+    return PeftBackend(model, tokenizer, request.max_seq_length, _build_generator(model, tokenizer), torch.manual_seed)
 
 
 def _render_prompt(tokenizer: RuntimeTokenizer, request: GenerationRequest) -> str:
@@ -312,7 +319,18 @@ def generate_labels(backend: PeftBackend, request: GenerationRequest) -> tuple[s
         raise GenerationError("tokenizer", "tokenizer pad token is missing or invalid")
     if backend.tokenizer.pad_token_id == backend.tokenizer.eos_token_id:
         raise GenerationError("tokenizer", "tokenizer pad token must differ from eos token")
-    raw_output = backend.generator(rendered, max_new_tokens=request.max_new_tokens, temperature=request.temperature, seed=request.seed)
+    # Seed the global RNG here rather than handing the seed to Outlines. Its Transformers
+    # backend forwards every inference kwarg straight into model.generate
+    # (outlines/models/transformers.py:349), and generate rejects anything it does not
+    # recognise — 'seed' is honoured by the vLLM and llama.cpp backends, not this one, so
+    # passing it raised before a single token was produced. Sampling is live here
+    # (Qwen3.6's generation_config sets do_sample=true, so temperature=0.3 is real), and
+    # torch.manual_seed covers the CUDA generator the sampler actually draws from. Seeding
+    # per row, not once per run, is what makes a row reproducible on its own: a resumed run
+    # skips completed rows, so a run-level seed would put every resumed row on a different
+    # RNG stream than the original pass.
+    _ = backend.seed_rng(request.seed)
+    raw_output = backend.generator(rendered, max_new_tokens=request.max_new_tokens, temperature=request.temperature)
     try:
         return _parse_model_output(raw_output)
     except ModelOutputError as error:
