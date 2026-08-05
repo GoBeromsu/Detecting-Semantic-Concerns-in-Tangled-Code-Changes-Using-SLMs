@@ -70,7 +70,9 @@ def test_load_config_when_canonical_parses_locked_lora_values() -> None:
     assert lora.dropout == 0.05
     assert lora.bias == "none"
     assert lora.exclude_modules == r"(?:.*\.)?(?:mtp|visual)(?:\..*)?"
-    assert lora.use_gradient_checkpointing == "unsloth"
+    # `is True`, not `== True`: the string "true" and the int 1 both compare equal, and either
+    # would mean the parser had widened past the three values Unsloth actually accepts.
+    assert lora.use_gradient_checkpointing is True
 
 
 def test_target_modules_when_canonical_are_exact_and_cover_gated_delta_net() -> None:
@@ -189,8 +191,11 @@ def test_load_host_profile_when_canonical_parses_all_observed_facts() -> None:
         (r'  exclude_modules: "(?:.*\\.)?(?:mtp|visual)(?:\\..*)?"', r'  exclude_modules: "(?:.*\\.)?visual(?:\\..*)?"', "lora.exclude_modules"),
         (r'  exclude_modules: "(?:.*\\.)?(?:mtp|visual)(?:\\..*)?"', r'  exclude_modules: "(?:.*\\.)?mtp(?:\\..*)?"', "lora.exclude_modules"),
         ("  max_seq_length: 16384", "  max_seq_length: 8192", "training.max_seq_length"),
+        # "yes" is the shape a hand-edit most plausibly takes, and it is the one that would have
+        # slipped through text(): truthy, so checkpointing would switch on under a wrong type.
+        ("  use_gradient_checkpointing: true", '  use_gradient_checkpointing: "yes"', "lora.use_gradient_checkpointing"),
     ),
-    ids=("4bit", "8bit", "16bit-disabled", "flash-attention-2", "left-padding", "packing", "8bit-optimizer", "automatic-device-map", "missing-in-proj-a", "missing-mtp-exclusion", "missing-visual-exclusion", "unapproved-sequence-length"),
+    ids=("4bit", "8bit", "16bit-disabled", "flash-attention-2", "left-padding", "packing", "8bit-optimizer", "automatic-device-map", "missing-in-proj-a", "missing-mtp-exclusion", "missing-visual-exclusion", "unapproved-sequence-length", "untyped-checkpointing"),
 )
 def test_load_config_when_forbidden_value_is_present_raises_typed_error(tmp_path: Path, old: str, new: str, expected_field: str) -> None:
     # Given: one isolated YAML variant violating a locked safety invariant.

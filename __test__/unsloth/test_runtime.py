@@ -70,7 +70,7 @@ def test_runtime_builders_when_using_pinned_config_preserve_required_settings() 
         "text_only": True,
         "trust_remote_code": False,
         "attn_implementation": "sdpa",
-        "use_gradient_checkpointing": "unsloth",
+        "use_gradient_checkpointing": True,
         "device_map": {"": 0},
     }
     assert device_map_for(7) == {"": 7}
