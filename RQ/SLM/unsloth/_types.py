@@ -50,6 +50,7 @@ class PeftKwargs(TypedDict):
     max_seq_length: int
     exclude_modules: str
     autocast_adapter_dtype: bool
+    finetune_vision_layers: bool
 
 
 class TokenIds(TypedDict):
@@ -158,6 +159,7 @@ class FastLanguageModelFactory(Protocol):
 @runtime_checkable
 class TorchModule(Protocol):
     bfloat16: DtypeLike
+    float32: DtypeLike
 
 
 @runtime_checkable

@@ -18,6 +18,7 @@ from RQ.SLM.unsloth._types import (
     RenderedExample,
     TokenIds,
     TokenizerLike,
+    TrainableAdapter,
     TrainerLike,
     TrainableParameter,
     TrainingDataset,
@@ -81,6 +82,9 @@ def test_runtime_builders_when_using_pinned_config_preserve_required_settings() 
     assert peft_kwargs["exclude_modules"] == "(?:.*\\.)?(?:mtp|visual)(?:\\..*)?"
     assert peft_kwargs["random_state"] == 42
     assert peft_kwargs["autocast_adapter_dtype"] is False
+    # Vision stays on so the explicit target list reaches PEFT verbatim rather than being
+    # narrowed by Unsloth's dense-attention-only regex; the load is text_only regardless.
+    assert peft_kwargs["finetune_vision_layers"] is True
     assert sft_kwargs["max_length"] == 16384
     assert sft_kwargs["dataset_text_field"] == "text"
     assert sft_kwargs["packing"] is False
@@ -168,7 +172,16 @@ def test_runtime_factories_when_injected_with_modules_use_response_only_markers(
             self.config = FakeModelConfig()
 
         def named_parameters(self) -> Iterator[tuple[str, TrainableParameter]]:
-            return iter((("adapter", FakeParameter(True, "bf16")),))
+            # One adapted parameter per configured target, in FP32 — what Unsloth actually
+            # produces. A stub that adapts a single anonymous "adapter" would pass a coverage
+            # check that exists precisely to catch targets which matched nothing.
+            return iter(
+                (
+                    (f"base_model.model.layers.0.block.{target}.lora_A.default.weight",
+                     FakeParameter(True, "fp32"))
+                    for target in config.lora.target_modules
+                )
+            )
 
     @final
     class FakeParameter:
@@ -257,6 +270,7 @@ def test_runtime_factories_when_injected_with_modules_use_response_only_markers(
 
     torch = ModuleType("torch")
     setattr(torch, "bfloat16", "bf16")
+    setattr(torch, "float32", "fp32")
     unsloth = ModuleType("unsloth")
     setattr(unsloth, "FastLanguageModel", FakeLanguageModel)
     trl = ModuleType("trl")
@@ -305,24 +319,72 @@ def test_runtime_factories_when_injected_with_modules_use_response_only_markers(
     ]
 
 
-def test_bf16_adapter_validation_when_trainable_parameter_is_fp32_fails() -> None:
-    # Given: PEFT exposes a trainable adapter that escaped BF16 conversion.
-    from RQ.SLM.unsloth.runtime import RuntimeDependencyError, validate_bf16_trainable_adapters
+@final
+class _Parameter:
+    requires_grad: bool
+    dtype: DtypeLike
 
-    @final
-    class Parameter:
-        requires_grad: bool
-        dtype: DtypeLike
+    def __init__(self, requires_grad: bool, dtype: DtypeLike) -> None:
+        self.requires_grad = requires_grad
+        self.dtype = dtype
 
-        def __init__(self) -> None:
-            self.requires_grad = True
-            self.dtype = "fp32"
 
+def _adapter(*named: tuple[str, _Parameter]) -> TrainableAdapter:
     @final
     class Adapter:
         def named_parameters(self) -> Iterator[tuple[str, TrainableParameter]]:
-            return iter((("adapter", Parameter()),))
+            return iter(named)
 
-    # When/Then: runtime construction rejects a non-BF16 trainable adapter.
-    with pytest.raises(RuntimeDependencyError, match="adapter"):
-        validate_bf16_trainable_adapters(Adapter(), "bf16")
+    return Adapter()
+
+
+def test_adapter_precision_validation_when_trainable_parameter_is_fp16_fails() -> None:
+    # Given: an adapter whose trainable weights came back in FP16, which trains to completion
+    # and degrades silently — the one precision worth refusing to start on.
+    from RQ.SLM.unsloth.runtime import RuntimeDependencyError, validate_trainable_adapter_precision
+
+    adapter = _adapter(("lora_A", _Parameter(True, "fp16")))
+
+    # When/Then: runtime construction refuses it.
+    with pytest.raises(RuntimeDependencyError, match="not BF16 or FP32"):
+        validate_trainable_adapter_precision(adapter, ("bf16", "fp32"))
+
+
+def test_adapter_precision_validation_when_trainable_parameter_is_fp32_passes() -> None:
+    # Given: the adapter Unsloth actually builds — FP32 LoRA master weights over a BF16 base.
+    # Demanding BF16 here rejected every adapter the runtime can produce and stopped the
+    # memory ladder on its first rung before it allocated anything worth measuring.
+    from RQ.SLM.unsloth.runtime import validate_trainable_adapter_precision
+
+    adapter = _adapter(("lora_A", _Parameter(True, "fp32")), ("base", _Parameter(False, "bf16")))
+
+    # When/Then: it is accepted.
+    validate_trainable_adapter_precision(adapter, ("bf16", "fp32"))
+
+
+def test_target_module_coverage_when_a_configured_target_is_unadapted_fails() -> None:
+    # Given: an adapter that attached to the dense-attention leaves but to none of the
+    # linear-attention projections the config also named — the silent narrowing that a
+    # loader reports, at most, as a warning.
+    from RQ.SLM.unsloth.runtime import RuntimeDependencyError, validate_target_module_coverage
+
+    adapter = _adapter(
+        ("base_model.model.layers.3.self_attn.q_proj.lora_A.default.weight", _Parameter(True, "fp32"))
+    )
+
+    # When/Then: the run stops naming the targets that matched nothing.
+    with pytest.raises(RuntimeDependencyError, match="in_proj_qkv"):
+        validate_target_module_coverage(adapter, ("q_proj", "in_proj_qkv"))
+
+
+def test_target_module_coverage_when_every_target_is_adapted_passes() -> None:
+    # Given: an adapter covering both families the config names.
+    from RQ.SLM.unsloth.runtime import validate_target_module_coverage
+
+    adapter = _adapter(
+        ("base_model.model.layers.3.self_attn.q_proj.lora_A.default.weight", _Parameter(True, "fp32")),
+        ("base_model.model.layers.0.linear_attn.in_proj_qkv.lora_B.default.weight", _Parameter(True, "fp32")),
+    )
+
+    # When/Then: coverage is accepted.
+    validate_target_module_coverage(adapter, ("q_proj", "in_proj_qkv"))

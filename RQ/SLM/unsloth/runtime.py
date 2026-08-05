@@ -70,6 +70,15 @@ def build_peft_kwargs(config: UnslothConfig) -> PeftKwargs:
         "max_seq_length": config.training.max_seq_length,
         "exclude_modules": config.lora.exclude_modules,
         "autocast_adapter_dtype": False,
+        # Unsloth routes an explicit target_modules list through get_peft_regex whenever any
+        # finetune_(vision|language|attention|mlp) family is switched off, and FastLanguageModel
+        # switches vision off for us. That regex only knows the dense-attention leaf names, so it
+        # silently drops every linear_attn.in_proj_*/out_proj target — on Qwen3.6-27B that is the
+        # sequence mixer of 48 of the 64 layers, leaving them adapted in the MLP only. Keeping
+        # vision on makes the list reach PEFT verbatim; the model is loaded text_only, so there is
+        # no vision tower to attach to, and exclude_modules (inert under the regex path) is what
+        # keeps the MTP head out.
+        "finetune_vision_layers": True,
     }
 
 
@@ -109,7 +118,18 @@ def build_sft_kwargs(
     return kwargs
 
 
-def validate_bf16_trainable_adapters(model: TrainableAdapter, bf16_dtype: DtypeLike) -> None:
+def validate_trainable_adapter_precision(
+    model: TrainableAdapter, allowed_dtypes: tuple[DtypeLike, ...]
+) -> None:
+    """Fail fast on an adapter whose trainable precision is not one we intend to train in.
+
+    Demanding BF16 here was wrong and cost a ladder run: Unsloth keeps LoRA master weights in
+    FP32 above a BF16 base on purpose — the standard mixed-precision arrangement, and one
+    `autocast_adapter_dtype=False` does not opt out of — so the check rejected every adapter
+    the runtime is capable of building. The hazard actually worth stopping for is FP16, which
+    trains without complaint and degrades silently, so the allowed set is passed in explicitly
+    rather than inferred from whatever the loader happened to produce.
+    """
     trainable = tuple(
         (name, parameter)
         for name, parameter in model.named_parameters()
@@ -117,10 +137,33 @@ def validate_bf16_trainable_adapters(model: TrainableAdapter, bf16_dtype: DtypeL
     )
     if not trainable:
         raise RuntimeDependencyError("PEFT adapter has no trainable parameters")
-    non_bf16 = tuple(name for name, parameter in trainable if parameter.dtype != bf16_dtype)
-    if non_bf16:
+    rejected = tuple(name for name, parameter in trainable if parameter.dtype not in allowed_dtypes)
+    if rejected:
         raise RuntimeDependencyError(
-            f"trainable adapter parameters are not BF16: {', '.join(non_bf16)}"
+            f"trainable adapter parameters are not BF16 or FP32: {', '.join(rejected)}"
+        )
+
+
+def validate_target_module_coverage(
+    model: TrainableAdapter, target_modules: Sequence[str]
+) -> None:
+    """Fail fast when a configured target module received no adapter.
+
+    A LoRA target that matches nothing costs nothing to ignore and everything to discover
+    late: the loader emits at most a warning, training runs to completion, and the resulting
+    adapter is quietly narrower than the one the config describes. That is how the whole
+    linear-attention sequence mixer went unadapted here — a config naming twelve targets
+    produced adapters for seven of them.
+    """
+    adapted = tuple(
+        name for name, parameter in model.named_parameters() if parameter.requires_grad
+    )
+    missing = tuple(
+        target for target in target_modules if not any(f".{target}." in name for name in adapted)
+    )
+    if missing:
+        raise RuntimeDependencyError(
+            f"configured LoRA targets received no adapter: {', '.join(missing)}"
         )
 
 
@@ -141,7 +184,8 @@ def create_runtime(config: UnslothConfig, device_index: int) -> UnslothRuntime:
     )
     tokenizer.padding_side = "right"
     adapter = unsloth.FastLanguageModel.get_peft_model(model, **build_peft_kwargs(config))
-    validate_bf16_trainable_adapters(adapter, torch.bfloat16)
+    validate_trainable_adapter_precision(adapter, (torch.bfloat16, torch.float32))
+    validate_target_module_coverage(adapter, config.lora.target_modules)
     adapter.config.use_cache = False
     return UnslothRuntime(model=adapter, tokenizer=tokenizer)
 
