@@ -106,8 +106,15 @@ def _smi(query: str, extra: str) -> list[str]:
         ("nvidia-smi", query, f"--format=csv,noheader,{extra}"),
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
+    if completed.returncode != 0:
+        # CalledProcessError stringifies to the exit status alone, so letting check=True raise
+        # would record a failed probe as "returned non-zero exit status 1" and drop the one line
+        # that says whether the driver is missing, the GPU fell off the bus, or the query is
+        # unsupported. The probe's whole job is to answer that question.
+        detail = completed.stderr.strip() or "no stderr"
+        raise ProbeCaptureError(f"nvidia-smi {query} failed ({completed.returncode}): {detail}")
     return [line.strip() for line in completed.stdout.splitlines() if line.strip()]
 
 

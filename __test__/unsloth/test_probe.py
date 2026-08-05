@@ -83,6 +83,26 @@ def test_build_probe_document_places_home_at_disks_index_one() -> None:
     assert home["free_bytes"] == 205 * GIB
 
 
+def test_smi_when_nvidia_smi_fails_records_its_stderr(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Given: nvidia-smi exits non-zero with the only line that says what is actually wrong.
+    # Letting check=True raise would reduce this to "returned non-zero exit status 9".
+    import subprocess
+
+    from RQ.SLM.unsloth import probe
+
+    def failing_smi(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        _ = (args, kwargs)
+        return subprocess.CompletedProcess(
+            (), 9, "", "Failed to initialize NVML: Driver/library version mismatch\n"
+        )
+
+    monkeypatch.setattr("RQ.SLM.unsloth.probe.subprocess.run", failing_smi)
+
+    # When/Then: the reason reaches the probe document rather than the exit status alone.
+    with pytest.raises(ProbeCaptureError, match="Driver/library version mismatch"):
+        _ = probe._smi("--query-gpu=name", "nounits")  # pyright: ignore[reportPrivateUsage]
+
+
 def test_main_writes_invalid_document_and_returns_one_on_capture_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
