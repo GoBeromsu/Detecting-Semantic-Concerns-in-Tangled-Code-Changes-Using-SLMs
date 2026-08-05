@@ -61,6 +61,9 @@ def _parse_model_output(raw_text: str) -> tuple[str, ...]:
     return labels
 
 GPU_DEVICE: Literal["cuda:0"] = "cuda:0"
+# PEFT names every LoRA weight "<base path>.lora_{A,B}.<adapter>.weight", so this substring
+# separates adapter parameters from the base tower they wrap.
+ADAPTER_PARAMETER_MARKER = ".lora_"
 MAX_NEW_TOKENS = 128
 NON_THINKING_TAIL = "<|im_start|>assistant\n<think>\n\n</think>\n\n"
 
@@ -137,6 +140,7 @@ class GeneratorFactory(Protocol):
 @runtime_checkable
 class TorchModule(Protocol):
     bfloat16: RuntimeDType
+    float32: RuntimeDType
 
 
 @runtime_checkable
@@ -207,12 +211,25 @@ def _import_module(name: str) -> ModuleType:
     return importlib.import_module(name)
 
 
-def _assert_text_bf16_cuda(model: RuntimeModel, dtype: RuntimeDType) -> None:
+def _assert_text_bf16_cuda(
+    model: RuntimeModel, dtype: RuntimeDType, adapter_dtype: RuntimeDType
+) -> None:
     for name, parameter in model.named_parameters():
         if str(parameter.device) != GPU_DEVICE:
             raise GenerationError("model", f"parameter is not on CUDA: {name}")
-        if parameter.is_floating_point() and str(parameter.dtype) != str(dtype):
-            raise GenerationError("model", f"floating parameter is not BF16: {name}")
+        if not parameter.is_floating_point():
+            continue
+        # PEFT keeps LoRA weights in FP32 over a BF16 base by design, and autocast_adapter_dtype
+        # does not opt out of it — every adapter this project trains is F32 on disk (measured:
+        # 992 of 992 tensors). Demanding BF16 everywhere would reject all of them at load. What
+        # the check exists to catch is a base tower that came back in the wrong precision, so
+        # hold the tower to BF16 exactly and let the adapter carry its own master-weight dtype.
+        # An FP16 anything still fails here.
+        allowed = (dtype, adapter_dtype) if ADAPTER_PARAMETER_MARKER in name else (dtype,)
+        if all(str(parameter.dtype) != str(candidate) for candidate in allowed):
+            raise GenerationError(
+                "model", f"floating parameter has an unsupported dtype: {name} is {parameter.dtype}"
+            )
 
 
 def _attach_adapter(base_model: RuntimeModel, adapter_path: Path) -> RuntimeModel:
@@ -242,7 +259,7 @@ def load_backend(request: PeftLoadRequest) -> PeftBackend:
     model = base_model if request.adapter_path is None else _attach_adapter(base_model, request.adapter_path)
     model.eval()
     model.config.use_cache = True
-    _assert_text_bf16_cuda(model, torch.bfloat16)
+    _assert_text_bf16_cuda(model, torch.bfloat16, torch.float32)
     return PeftBackend(model, tokenizer, request.max_seq_length, _build_generator(model, tokenizer))
 
 

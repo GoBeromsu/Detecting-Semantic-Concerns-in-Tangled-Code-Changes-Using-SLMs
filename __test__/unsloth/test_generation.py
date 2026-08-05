@@ -34,6 +34,12 @@ class FakeParameter:
         return True
 
 
+class FakeLoraParameter(FakeParameter):
+    """A LoRA weight as PEFT actually produces one: FP32 master weights over a BF16 base."""
+
+    dtype: str = "float32"
+
+
 class FakeConfig:
     use_cache: bool = False
 
@@ -43,7 +49,12 @@ class FakeCausalLM:
         self.config: FakeConfig = FakeConfig()
 
     def named_parameters(self) -> tuple[tuple[str, FakeParameter], ...]:
-        return (("model.layers.0.self_attn.q_proj.weight", FakeParameter()),)
+        # Both kinds, because an attached adapter always has both and a fake that showed only
+        # the base tower let a load-time check ship that no real adapter could have passed.
+        return (
+            ("model.layers.0.self_attn.q_proj.weight", FakeParameter()),
+            ("base_model.model.model.layers.0.self_attn.q_proj.lora_A.default.weight", FakeLoraParameter()),
+        )
 
 
 class FakePeftModelForCausalLM(FakeCausalLM):
@@ -156,6 +167,7 @@ class FakeOutlinesGenerator:
 class FakeTorch:
     Generator: type[FakeGenerator] = FakeGenerator
     bfloat16: str = "bfloat16"
+    float32: str = "float32"
 
 
 class FakeJsonLogitsProcessor:
@@ -243,15 +255,40 @@ def test_load_backend_when_requested_uses_text_only_unsloth_and_unmerged_adapter
     assert FakePeftModel.model.evaluated is True
 
 
-def test_load_backend_when_a_floating_parameter_is_not_bf16_rejects_before_returning(
+def test_load_backend_when_a_base_tower_parameter_is_not_bf16_rejects_before_returning(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Given: the loaded adapter exposes one FP32 floating parameter on CUDA.
+    # Given: the base tower comes back in FP32 rather than the requested BF16.
     _patch_modules(monkeypatch)
     monkeypatch.setattr(FakeParameter, "dtype", "float32")
 
-    # When/Then: the backend fails closed instead of accepting mixed precision.
-    with pytest.raises(GenerationError, match="BF16"):
+    # When/Then: the backend fails closed instead of running on the wrong precision.
+    with pytest.raises(GenerationError, match="unsupported dtype"):
+        _ = load_backend(_request())
+
+
+def test_load_backend_when_the_adapter_is_fp32_over_a_bf16_tower_is_accepted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: the exact precision split PEFT produces — FP32 LoRA weights, BF16 base tower.
+    _patch_modules(monkeypatch)
+
+    # When: the backend loads.
+    backend = load_backend(_request())
+
+    # Then: it is accepted, because that split is how every adapter here is trained and saved.
+    assert backend.model_max_tokens == 16384
+
+
+def test_load_backend_when_an_adapter_parameter_is_fp16_rejects_before_returning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: a LoRA weight in FP16 — allowed by neither the tower dtype nor the adapter dtype.
+    _patch_modules(monkeypatch)
+    monkeypatch.setattr(FakeLoraParameter, "dtype", "float16")
+
+    # When/Then: relaxing the tower check for adapters did not relax it into accepting anything.
+    with pytest.raises(GenerationError, match="unsupported dtype"):
         _ = load_backend(_request())
 
 
