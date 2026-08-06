@@ -167,15 +167,13 @@ def _first_json_object(raw_text: str) -> dict[str, JsonValue]:
     return decoded
 
 
-def parse_model_output(raw_text: str) -> tuple[str, ...]:
-    """Extract and strictly validate one ``{\"types\": [...]}`` object."""
-    payload = _first_json_object(raw_text)
-    keys = frozenset(payload)
-    if "types" not in keys:
-        raise ModelOutputError("missing required key 'types'")
-    if keys != frozenset(("types",)):
-        raise ModelOutputError("extra keys are not allowed")
-    values = payload["types"]
+def _validate_labels(values: JsonValue) -> tuple[str, ...]:
+    """Apply the label-set rules, independent of how the labels were transported.
+
+    A label set reaches this program in two shapes: wrapped in the model's ``{"types": ...}``
+    envelope, and bare in a CSV column. The rules are the same either way, so they live here
+    once and each transport unwraps its own shape before calling in.
+    """
     if not isinstance(values, list):
         raise ModelOutputError("types must be an array")
     labels: list[str] = []
@@ -193,6 +191,32 @@ def parse_model_output(raw_text: str) -> tuple[str, ...]:
     if len(labels) != len(frozenset(labels)):
         raise ModelOutputError("duplicate label")
     return tuple(labels)
+
+
+def parse_model_output(raw_text: str) -> tuple[str, ...]:
+    """Extract and strictly validate one ``{\"types\": [...]}`` object."""
+    payload = _first_json_object(raw_text)
+    keys = frozenset(payload)
+    if "types" not in keys:
+        raise ModelOutputError("missing required key 'types'")
+    if keys != frozenset(("types",)):
+        raise ModelOutputError("extra keys are not allowed")
+    return _validate_labels(payload["types"])
+
+
+def parse_label_column(raw_text: str) -> tuple[str, ...]:
+    """Validate one CSV label column, which stores the label array bare — no envelope.
+
+    ``as_csv_row`` writes ``predicted_types`` and ``actual_types`` through the same
+    ``json.dumps(list(...))`` call, so certification must read them the same way. Validating
+    one column as an envelope and the other as an array is what made ``finalize_run`` reject
+    every run regardless of data quality.
+    """
+    try:
+        decoded = json.loads(raw_text)
+    except json.JSONDecodeError as error:
+        raise ModelOutputError("invalid JSON array") from error
+    return _validate_labels(decoded)
 
 
 def _produced_shas(row: ProducedRow, row_index: int) -> tuple[str, ...]:
@@ -307,8 +331,8 @@ def _successful_row_count(path: Path, expected_shas: Sequence[Sequence[str]]) ->
         raise FinalizationError("rows are not in test-split order", path)
     for row in rows:
         try:
-            _ = parse_model_output(row["predicted_types"])
-            _ = parse_model_output(json.dumps({"types": json.loads(row["actual_types"])}))
+            _ = parse_label_column(row["predicted_types"])
+            _ = parse_label_column(row["actual_types"])
             inference_time = float(row["inference_time"])
         except (KeyError, TypeError, ValueError, json.JSONDecodeError, ModelOutputError) as error:
             raise FinalizationError("semantic CSV row validation failed", path) from error

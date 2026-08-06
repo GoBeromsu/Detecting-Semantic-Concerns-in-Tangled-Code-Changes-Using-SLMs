@@ -2,7 +2,6 @@ import csv
 import json
 import subprocess
 import sys
-from collections.abc import Sequence
 from dataclasses import FrozenInstanceError
 from datetime import datetime
 from pathlib import Path
@@ -26,56 +25,17 @@ from RQ.SLM.unsloth.results import (
     format_run_timestamp,
     parse_model_output,
 )
+from __test__.unsloth.result_fixtures import (
+    write_complete_run as _write_complete_run,
+    write_result_file as _write_result_file,
+    write_run_identity as _write_run_identity,
+)
 from RQ.SLM.unsloth.generation import STRICT_RESPONSE_SCHEMA
 from utils.llms.constant import COMMIT_TYPES, DEFAULT_DF_COLUMNS
 
 
 class TangledSplitLike(Protocol):
     sha_lists: tuple[tuple[str, ...], ...]
-
-
-def _result_row(path: Path, index: int) -> dict[str, str]:
-    return {
-        "predicted_types": '{"types":["fix"]}',
-        "actual_types": '["fix"]',
-        "inference_time": "0.0",
-        "shas": json.dumps([f"sha-{index}"]),
-        "precision": "1.0",
-        "recall": "1.0",
-        "f1": "1.0",
-        "exact_match": "True",
-        "hamming_loss": "0.0",
-        "context_len": path.stem.removesuffix("_zs"),
-        "with_message": str(path.parent.name == "msg1"),
-        "concern_count": "1",
-    }
-
-
-def _write_result_file(
-    path: Path, row_count: int = EXPECTED_SUCCESSFUL_ROWS, order: Sequence[int] | None = None
-) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    indices = range(row_count) if order is None else order
-    with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=DEFAULT_DF_COLUMNS)
-        writer.writeheader()
-        writer.writerows(_result_row(path, index) for index in indices)
-
-
-def _write_run_identity(run_directory: Path) -> None:
-    """Certification recovers the run's source SHA order from here, so every run needs it."""
-    run_directory.mkdir(parents=True, exist_ok=True)
-    _ = (run_directory / "run_identity.json").write_text(
-        json.dumps({"ordered_test_shas": [[f"sha-{i}"] for i in range(EXPECTED_SUCCESSFUL_ROWS)]}),
-        encoding="utf-8",
-    )
-
-
-def _write_complete_run(run_directory: Path) -> None:
-    for path in expected_result_paths(run_directory):
-        _write_result_file(path)
-    _write_run_identity(run_directory)
-    _ = (run_directory / "failures.jsonl").write_text("", encoding="utf-8")
 
 
 def _write_shape_only_run(run_directory: Path) -> None:

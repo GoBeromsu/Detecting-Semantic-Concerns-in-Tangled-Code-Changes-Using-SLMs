@@ -29,7 +29,13 @@ lora:
     - "up_proj"
     - "down_proj"
   exclude_modules: "(?:.*\\.)?(?:mtp|visual)(?:\\..*)?"
-  use_gradient_checkpointing: "unsloth"
+  # "unsloth" offloads checkpointed activations to host RAM to save VRAM. On this host that
+  # trade runs backwards: 28 GiB of VRAM sits idle while the offload takes ~23 GiB of
+  # unreclaimable shmem out of 31 GiB of RAM, and a max-length row pushes the working set past
+  # what remains — measured at step 30 of the first §8 attempt as 95% memory stall, 52 MB/s
+  # swap-in, and 193 s/step against a 41 s/step baseline. Standard checkpointing keeps the
+  # activations on the device that has room for them.
+  use_gradient_checkpointing: true
 
 training:
   optim: "adamw_torch"
