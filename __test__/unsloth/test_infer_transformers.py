@@ -11,7 +11,7 @@ from typing import NoReturn
 
 import pytest
 
-from RQ.SLM.unsloth.results import expected_result_paths
+from __test__.unsloth.result_fixtures import write_complete_run
 from RQ.SLM.unsloth.data import DatasetRow
 from RQ.SLM.unsloth.infer_options import (
     EvaluationOptions,
@@ -363,25 +363,10 @@ def test_main_when_verify_only_never_loads_ml_runtime(monkeypatch: pytest.Monkey
     # Given: a complete canonical result tree and a loader that would fail if called.
     from RQ.SLM.unsloth import infer as infer_transformers
 
-    for path in expected_result_paths(tmp_path):
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("w", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=DEFAULT_DF_COLUMNS)
-            writer.writeheader()
-            writer.writerows({
-                "predicted_types": '{"types":["fix"]}', "actual_types": '["fix"]',
-                "inference_time": "0.0", "shas": json.dumps([f"sha-{index}"]), "precision": "1.0",
-                "recall": "1.0", "f1": "1.0", "exact_match": "True",
-                "hamming_loss": "0.0", "context_len": path.stem.removesuffix("_zs"),
-                "with_message": str(path.parent.name == "msg1"), "concern_count": "1",
-            } for index in range(350))
-    _ = (tmp_path / "failures.jsonl").write_text("", encoding="utf-8")
-    # Certification checks row order against the split the run was started on, so the run
-    # identity is as much part of a certifiable tree as the CSVs themselves.
-    _ = (tmp_path / "run_identity.json").write_text(
-        json.dumps({"ordered_test_shas": [[f"sha-{index}"] for index in range(350)]}),
-        encoding="utf-8",
-    )
+    # The tree is built by the shared writer-derived builder: certification reads back what
+    # the production writer emits, so a fixture spelled out here would only test itself.
+    write_complete_run(tmp_path)
+
     def fail_load_backend(_: PeftLoadRequest) -> NoReturn:
         pytest.fail("ML load")
 

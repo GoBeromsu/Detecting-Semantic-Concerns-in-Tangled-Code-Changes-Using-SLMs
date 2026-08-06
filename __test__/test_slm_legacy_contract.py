@@ -244,6 +244,36 @@ def test_legacy_commit_type_labels_are_unchanged() -> None:
     assert COMMIT_TYPES == EXPECTED_COMMIT_TYPES
 
 
+def test_unsloth_writer_encodes_the_label_columns_the_legacy_way() -> None:
+    """Pin the label columns' encoding against the frozen 14B pipeline's.
+
+    ``predicted_types`` and ``actual_types`` are the columns that carry structure, that
+    ``RQ/analysis`` parses across both models, and that the writer and the finalization gate
+    already once disagreed about. The 14B writer cannot drift — it is sha256-pinned above —
+    so pinning the live writer here leaves the pair with no way to diverge.
+
+    ``shas`` is deliberately not pinned. The two pipelines do encode it differently (the 14B
+    path hands pandas a list, which stringifies to a Python repr; this one emits JSON), but
+    nothing reads that column across pipelines: ``RQ/analysis`` never touches it, and the
+    only reader is this package's own resume path, on files this package itself wrote.
+    """
+    from RQ.SLM.unsloth.results import InferenceResult
+
+    row = InferenceResult(
+        predicted_types=("fix", "test"),
+        actual_types=("fix", "refactor"),
+        inference_time=1.25,
+        shas=("abc123", "def456"),
+        context_len=4096,
+        with_message=True,
+    ).as_csv_row()
+
+    # Byte-identical to what RQ/SLM/infer.py writes for the same observation.
+    assert row["predicted_types"] == '["fix", "test"]'
+    assert row["actual_types"] == '["fix", "refactor"]'
+    assert list(row) == EXPECTED_DEFAULT_DF_COLUMNS
+
+
 def test_legacy_protected_file_digests_still_verify() -> None:
     manifest_lines = PROTECTED_FILES_PATH.read_text(encoding="utf-8").splitlines()
 
