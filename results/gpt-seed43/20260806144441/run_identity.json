@@ -1,0 +1,21 @@
+{
+  "model": "gpt-4.1-2025-04-14",
+  "dataset_repo": "Berom0227/tangled-ccs-commits",
+  "dataset_revision": "65b09af76f3e9badf4a28bf7a641b1d2930a26b5",
+  "context_windows": [
+    12288,
+    8192,
+    4096,
+    2048,
+    1024
+  ],
+  "shot_types": [
+    "Zero-shot"
+  ],
+  "seed": 42,
+  "temperature": 0.3,
+  "max_tokens": 16384,
+  "row_count": 350,
+  "limit": null,
+  "started_at": "2026-08-06T05:44:41.236706+00:00"
+}
