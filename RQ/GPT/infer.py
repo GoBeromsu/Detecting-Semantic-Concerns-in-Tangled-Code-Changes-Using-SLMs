@@ -1,13 +1,14 @@
+import argparse
 import os
 import sys
 import json
 import pandas as pd
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 from dotenv import load_dotenv
 import time
 from itertools import product
-from datetime import datetime
+from datetime import datetime, timezone
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
@@ -25,7 +26,8 @@ MODEL_NAME = "gpt-4.1-2025-04-14"
 DATASET_REPO_ID = (
     "Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs"
 )
-RESULTS_ROOT: Path = Path(__file__).resolve().parents[2] / "results"
+DATASET_REVISION: Optional[str] = None
+RESULTS_DIR = "results/gpt"
 
 # Inference constants
 CONTEXT_WINDOWS = [12288, 8192, 4096, 2048, 1024]
@@ -35,6 +37,22 @@ SEED = 42
 TEMPERATURE = 0.3
 INCLUDE_MESSAGE = True
 START_TIME_STR: str = datetime.now().strftime("%Y%m%d%H%M%S")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run GPT inference sweep.")
+    parser.add_argument("--model", type=str, default=MODEL_NAME)
+    parser.add_argument("--dataset-repo", type=str, default=DATASET_REPO_ID)
+    parser.add_argument("--dataset-revision", type=str, default=DATASET_REVISION)
+    parser.add_argument("--results-dir", type=str, default=RESULTS_DIR)
+    parser.add_argument(
+        "--context-windows",
+        type=int,
+        nargs="+",
+        default=CONTEXT_WINDOWS,
+    )
+    parser.add_argument("--limit", type=int, default=None)
+    return parser.parse_args()
 
 
 def measure_performance(
@@ -93,16 +111,45 @@ def measure_performance(
 
 
 def main() -> None:
-    base_model_dir: Path = RESULTS_ROOT / "gpt" / START_TIME_STR
+    args = parse_args()
+
+    repo_root: Path = Path(__file__).resolve().parents[2]
+    base_model_dir: Path = repo_root / args.results_dir / START_TIME_STR
     print(f"Creating base results directory: {base_model_dir}")
     base_model_dir.mkdir(parents=True, exist_ok=True)
 
-    tangled_df: pd.DataFrame = load_dataset(DATASET_REPO_ID, split="test").to_pandas()
+    started_at: str = datetime.now(timezone.utc).isoformat()
+
+    load_kwargs = {"split": "test"}
+    if args.dataset_revision:
+        load_kwargs["revision"] = args.dataset_revision
+    tangled_df: pd.DataFrame = load_dataset(
+        args.dataset_repo, **load_kwargs
+    ).to_pandas()
+
+    if args.limit is not None:
+        tangled_df = tangled_df.head(args.limit).reset_index(drop=True)
+
+    run_identity = {
+        "model": args.model,
+        "dataset_repo": args.dataset_repo,
+        "dataset_revision": args.dataset_revision,
+        "context_windows": args.context_windows,
+        "shot_types": SHOT_TYPES,
+        "seed": SEED,
+        "temperature": TEMPERATURE,
+        "max_tokens": MAX_TOKENS,
+        "row_count": len(tangled_df),
+        "limit": args.limit,
+        "started_at": started_at,
+    }
+    with open(base_model_dir / "run_identity.json", "w") as f:
+        json.dump(run_identity, f, indent=2)
 
     shot_abbrev_map = {"Zero-shot": "zs", "One-shot": "os", "Two-shot": "ts"}
 
     for shot_type, cw, include_message in product(
-        SHOT_TYPES, CONTEXT_WINDOWS, (True, False)
+        SHOT_TYPES, args.context_windows, (True, False)
     ):
         system_prompt: str = prompt.get_prompt_by_type(
             shot_type=shot_type, include_message=include_message
@@ -128,7 +175,7 @@ def main() -> None:
         )
 
         measure_performance(
-            model_name=MODEL_NAME,
+            model_name=args.model,
             truncated_dataset=truncated_dataset,
             system_prompt=system_prompt,
             csv_path=csv_path,
