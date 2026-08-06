@@ -1,0 +1,4 @@
+Condition,GPT-4.1,Qwen3,Qwen3-FT
+Without Msg,0.11,0.28,0.25
+With Msg,0.09,0.25,0.14
+Delta,0.02,0.03,0.11

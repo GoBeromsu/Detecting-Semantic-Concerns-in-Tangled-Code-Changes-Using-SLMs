@@ -1,0 +1,49 @@
+{
+  "analysis_info": {
+    "timestamp": "2026-01-16T16:49:50.509821+00:00",
+    "analysis_type": "efficiency_commit_message_correlation",
+    "input_files": [
+      "/Users/beomsu/Documents/EMSE/Concern-is-All-You-Need/results/Qwen3-14B-LoRA/avg_result/msg0/12288_zs.csv",
+      "/Users/beomsu/Documents/EMSE/Concern-is-All-You-Need/results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+    ]
+  },
+  "correlation_analysis": {
+    "pearson_r": 0.046,
+    "p_value": 0.03501485081771619,
+    "significant": true
+  },
+  "outlier_analysis": {
+    "method": "IQR",
+    "count": 9,
+    "values": [
+      1.97,
+      2.14,
+      1.87,
+      1.89,
+      2.13,
+      1.87,
+      1.89,
+      1.88,
+      1.88
+    ]
+  },
+  "inference_time": {
+    "mean": 0.7385,
+    "std": 0.3667,
+    "min": 0.2219,
+    "max": 2.1381,
+    "unit": "seconds"
+  },
+  "sample_size": 2100,
+  "group_comparison": {
+    "with_message": {
+      "count": 1050,
+      "mean": 0.7554
+    },
+    "without_message": {
+      "count": 1050,
+      "mean": 0.7217
+    },
+    "mean_difference": 0.0337
+  }
+}

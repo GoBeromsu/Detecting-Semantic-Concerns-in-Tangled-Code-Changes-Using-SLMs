@@ -1,0 +1,106 @@
+{
+  "summary": {
+    "test_method": "Wilcoxon Signed-Rank Test (two-sided, paired)",
+    "effect_size_metric": "Vargha-Delaney A12",
+    "significance_threshold": 0.05,
+    "models": [
+      "Qwen3",
+      "GPT-4.1",
+      "Qwen3-FT"
+    ],
+    "concern_counts": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "by_concern_count": {
+    "1": {
+      "GPT-4.1 vs Qwen3": {
+        "p_value": "0.022",
+        "effect_size": "0.431",
+        "significant": true
+      },
+      "GPT-4.1 vs Qwen3-FT": {
+        "p_value": "0.003",
+        "effect_size": "0.563",
+        "significant": true
+      },
+      "Qwen3 vs Qwen3-FT": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.633",
+        "significant": true
+      }
+    },
+    "2": {
+      "GPT-4.1 vs Qwen3": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.353",
+        "significant": true
+      },
+      "GPT-4.1 vs Qwen3-FT": {
+        "p_value": "0.001",
+        "effect_size": "0.446",
+        "significant": true
+      },
+      "Qwen3 vs Qwen3-FT": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.598",
+        "significant": true
+      }
+    },
+    "3": {
+      "GPT-4.1 vs Qwen3": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.155",
+        "significant": true
+      },
+      "GPT-4.1 vs Qwen3-FT": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.399",
+        "significant": true
+      },
+      "Qwen3 vs Qwen3-FT": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.751",
+        "significant": true
+      }
+    },
+    "4": {
+      "GPT-4.1 vs Qwen3": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.150",
+        "significant": true
+      },
+      "GPT-4.1 vs Qwen3-FT": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.343",
+        "significant": true
+      },
+      "Qwen3 vs Qwen3-FT": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.691",
+        "significant": true
+      }
+    },
+    "5": {
+      "GPT-4.1 vs Qwen3": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.237",
+        "significant": true
+      },
+      "GPT-4.1 vs Qwen3-FT": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.440",
+        "significant": true
+      },
+      "Qwen3 vs Qwen3-FT": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.676",
+        "significant": true
+      }
+    }
+  }
+}

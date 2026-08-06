@@ -1,0 +1,74 @@
+{
+  "experiment_id": "4096_4096_yes_20250921",
+  "model": "4096",
+  "context_length": 4096,
+  "with_message": true,
+  "num_samples": 350,
+  "metrics_macro": {
+    "accuracy": 0.24068767908309455,
+    "precision": 0.7103083640332924,
+    "recall": 0.8351002865329512,
+    "f1": 0.7468256035591277,
+    "hamming_loss": 0.2521489971346704,
+    "inference_time_avg": 0.8888160588064986
+  },
+  "metrics_by_concern": [
+    {
+      "concern_count": 1,
+      "accuracy": 0.5714285714285714,
+      "precision": 0.7287074829931972,
+      "recall": 0.9285714285714286,
+      "f1": 0.7855442176870748,
+      "hamming_loss": 0.11428571428571425,
+      "inference_time_avg": 0.5086165530341012,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 2,
+      "accuracy": 0.4,
+      "precision": 0.669625850340136,
+      "recall": 0.8285714285714286,
+      "f1": 0.715578231292517,
+      "hamming_loss": 0.22857142857142854,
+      "inference_time_avg": 0.744434905052185,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 3,
+      "accuracy": 0.1,
+      "precision": 0.6604421768707484,
+      "recall": 0.7428571428571429,
+      "f1": 0.6790702947845805,
+      "hamming_loss": 0.3081632653061224,
+      "inference_time_avg": 0.8690923997334071,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 4,
+      "accuracy": 0.08571428571428572,
+      "precision": 0.698265306122449,
+      "recall": 0.8464285714285714,
+      "f1": 0.7516975881261596,
+      "hamming_loss": 0.3244897959183673,
+      "inference_time_avg": 1.1181335415158953,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 5,
+      "accuracy": 0.043478260869565216,
+      "precision": 0.7957211870255348,
+      "recall": 0.8289855072463769,
+      "f1": 0.8030407595624987,
+      "hamming_loss": 0.2857142857142857,
+      "inference_time_avg": 1.2083679213040117,
+      "num_samples": 69
+    }
+  ],
+  "created_at": "2025-09-21T20:06:16.696802+00:00",
+  "outliers": {
+    "indices": [
+      307
+    ],
+    "count": 1
+  }
+}

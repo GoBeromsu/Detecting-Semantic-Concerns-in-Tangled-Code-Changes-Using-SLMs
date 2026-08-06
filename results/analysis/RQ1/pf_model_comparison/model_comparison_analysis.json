@@ -1,0 +1,285 @@
+{
+  "analysis_metadata": {
+    "total_samples": 1050,
+    "analysis_timestamp": "2026-01-17T01:49:42.869185",
+    "description": "Analysis of complete misses using pandas vectorized operations"
+  },
+  "complete_miss_statistics": {
+    "total_samples": 1050,
+    "LLM": {
+      "complete_misses": 30,
+      "percentage": 2.857142857142857
+    },
+    "SLM": {
+      "complete_misses": 21,
+      "percentage": 2.0
+    },
+    "FT_SLM": {
+      "complete_misses": 39,
+      "percentage": 3.7142857142857144
+    }
+  },
+  "miss_pattern_distribution": {
+    "0_models_missed": {
+      "count": 987,
+      "percentage": 94.0
+    },
+    "1_models_missed": {
+      "count": 42,
+      "percentage": 4.0
+    },
+    "2_models_missed": {
+      "count": 15,
+      "percentage": 1.4285714285714286
+    },
+    "3_models_missed": {
+      "count": 6,
+      "percentage": 0.5714285714285714
+    }
+  },
+  "common_failures": {
+    "all_models_missed": {
+      "count": 6,
+      "percentage": 0.5714285714285714,
+      "examples": [
+        {
+          "actual_types": "['fix']",
+          "LLM_prediction": "['feat']",
+          "SLM_prediction": "['feat', 'refactor']",
+          "FT_SLM_prediction": "['refactor']"
+        },
+        {
+          "actual_types": "['refactor']",
+          "LLM_prediction": "['feat']",
+          "SLM_prediction": "['feat', 'docs']",
+          "FT_SLM_prediction": "['fix']"
+        },
+        {
+          "actual_types": "['fix']",
+          "LLM_prediction": "['feat']",
+          "SLM_prediction": "['feat', 'refactor']",
+          "FT_SLM_prediction": "['refactor']"
+        },
+        {
+          "actual_types": "['refactor']",
+          "LLM_prediction": "['feat']",
+          "SLM_prediction": "['feat', 'docs']",
+          "FT_SLM_prediction": "['fix']"
+        },
+        {
+          "actual_types": "['fix']",
+          "LLM_prediction": "['feat']",
+          "SLM_prediction": "['feat', 'refactor']",
+          "FT_SLM_prediction": "['refactor']"
+        },
+        {
+          "actual_types": "['refactor']",
+          "LLM_prediction": "['feat']",
+          "SLM_prediction": "['feat', 'docs']",
+          "FT_SLM_prediction": "['fix']"
+        }
+      ]
+    }
+  },
+  "unique_model_patterns": {
+    "llm_unique_failures": {
+      "description": "LLM missed but both SLMs got it right",
+      "count": 9,
+      "percentage": 0.8571428571428572,
+      "examples": [
+        {
+          "actual_types": "['build']",
+          "LLM_prediction": "['fix']",
+          "SLM_prediction": "['fix', 'build']",
+          "FT_SLM_prediction": "['build']"
+        },
+        {
+          "actual_types": "['build']",
+          "LLM_prediction": "['fix']",
+          "SLM_prediction": "['build', 'fix']",
+          "FT_SLM_prediction": "['build']"
+        },
+        {
+          "actual_types": "['build']",
+          "LLM_prediction": "['refactor']",
+          "SLM_prediction": "['refactor', 'build']",
+          "FT_SLM_prediction": "['build']"
+        },
+        {
+          "actual_types": "['build']",
+          "LLM_prediction": "['fix']",
+          "SLM_prediction": "['fix', 'build']",
+          "FT_SLM_prediction": "['build']"
+        },
+        {
+          "actual_types": "['build']",
+          "LLM_prediction": "['fix']",
+          "SLM_prediction": "['build']",
+          "FT_SLM_prediction": "['build']"
+        },
+        {
+          "actual_types": "['build']",
+          "LLM_prediction": "['refactor']",
+          "SLM_prediction": "['refactor', 'build']",
+          "FT_SLM_prediction": "['build']"
+        },
+        {
+          "actual_types": "['build']",
+          "LLM_prediction": "['fix']",
+          "SLM_prediction": "['fix', 'build']",
+          "FT_SLM_prediction": "['build']"
+        },
+        {
+          "actual_types": "['build']",
+          "LLM_prediction": "['fix']",
+          "SLM_prediction": "['build', 'fix']",
+          "FT_SLM_prediction": "['build']"
+        },
+        {
+          "actual_types": "['build']",
+          "LLM_prediction": "['refactor']",
+          "SLM_prediction": "['refactor', 'build']",
+          "FT_SLM_prediction": "['build']"
+        }
+      ]
+    },
+    "llm_unique_successes": {
+      "description": "Both SLMs missed but LLM got it right",
+      "count": 0,
+      "percentage": 0.0,
+      "examples": []
+    }
+  },
+  "difficulty_rankings": {
+    "LLM": [
+      {
+        "label_combination": [
+          "refactor"
+        ],
+        "miss_count": 12,
+        "percentage_of_model_misses": 40.0
+      },
+      {
+        "label_combination": [
+          "build"
+        ],
+        "miss_count": 9,
+        "percentage_of_model_misses": 30.0
+      },
+      {
+        "label_combination": [
+          "fix"
+        ],
+        "miss_count": 6,
+        "percentage_of_model_misses": 20.0
+      },
+      {
+        "label_combination": [
+          "feat"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 10.0
+      }
+    ],
+    "SLM": [
+      {
+        "label_combination": [
+          "fix"
+        ],
+        "miss_count": 9,
+        "percentage_of_model_misses": 42.857142857142854
+      },
+      {
+        "label_combination": [
+          "build",
+          "docs"
+        ],
+        "miss_count": 6,
+        "percentage_of_model_misses": 28.57142857142857
+      },
+      {
+        "label_combination": [
+          "docs"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 14.285714285714285
+      },
+      {
+        "label_combination": [
+          "refactor"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 14.285714285714285
+      }
+    ],
+    "FT_SLM": [
+      {
+        "label_combination": [
+          "refactor"
+        ],
+        "miss_count": 12,
+        "percentage_of_model_misses": 30.76923076923077
+      },
+      {
+        "label_combination": [
+          "fix"
+        ],
+        "miss_count": 6,
+        "percentage_of_model_misses": 15.384615384615385
+      },
+      {
+        "label_combination": [
+          "ci"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 7.6923076923076925
+      },
+      {
+        "label_combination": [
+          "feat"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 7.6923076923076925
+      },
+      {
+        "label_combination": [
+          "docs"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 7.6923076923076925
+      },
+      {
+        "label_combination": [
+          "feat",
+          "test"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 7.6923076923076925
+      },
+      {
+        "label_combination": [
+          "build",
+          "refactor"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 7.6923076923076925
+      },
+      {
+        "label_combination": [
+          "docs",
+          "feat"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 7.6923076923076925
+      },
+      {
+        "label_combination": [
+          "ci",
+          "docs"
+        ],
+        "miss_count": 3,
+        "percentage_of_model_misses": 7.6923076923076925
+      }
+    ]
+  }
+}

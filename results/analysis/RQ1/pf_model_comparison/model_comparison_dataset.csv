@@ -1,0 +1,1051 @@
+Row_Index,Actual_Types,LLM_Prediction,LLM_Exact_Match,LLM_Any_Match,SLM_Prediction,SLM_Exact_Match,SLM_Any_Match,FT_SLM_Prediction,FT_SLM_Exact_Match,FT_SLM_Any_Match
+0,['fix'],['feat'],False,False,"['feat', 'refactor']",False,False,['refactor'],False,False
+1,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+2,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+3,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+4,['fix'],"['fix', 'refactor']",False,True,['fix'],True,True,['fix'],True,True
+5,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+6,['refactor'],['feat'],False,False,"['feat', 'refactor']",False,True,['feat'],False,False
+7,['feat'],['feat'],True,True,"['feat', 'refactor']",False,True,['feat'],True,True
+8,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+9,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+10,['feat'],['feat'],True,True,"['refactor', 'feat']",False,True,['feat'],True,True
+11,['build'],"['build', 'test']",False,True,"['build', 'test']",False,True,['build'],True,True
+12,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+13,['docs'],['docs'],True,True,"['fix', 'docs']",False,True,['docs'],True,True
+14,['feat'],['feat'],True,True,['feat'],True,True,['feat'],True,True
+15,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+16,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+17,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+18,['fix'],"['fix', 'refactor']",False,True,"['fix', 'refactor']",False,True,['fix'],True,True
+19,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+20,['feat'],['feat'],True,True,['feat'],True,True,['feat'],True,True
+21,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+22,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+23,['feat'],"['feat', 'docs']",False,True,"['feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,['feat'],True,True
+24,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+25,['ci'],['ci'],True,True,['ci'],True,True,['build'],False,False
+26,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+27,['test'],"['build', 'test']",False,True,['test'],True,True,['test'],True,True
+28,['docs'],['docs'],True,True,"['docs', 'feat']",False,True,['docs'],True,True
+29,['fix'],['fix'],True,True,['fix'],True,True,['fix'],True,True
+30,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+31,['fix'],['fix'],True,True,['fix'],True,True,['build'],False,False
+32,['build'],"['fix', 'build']",False,True,['build'],True,True,['build'],True,True
+33,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+34,['docs'],['docs'],True,True,"['feat', 'docs']",False,True,['docs'],True,True
+35,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+36,['docs'],['docs'],True,True,"['fix', 'test']",False,False,['docs'],True,True
+37,['fix'],['fix'],True,True,['fix'],True,True,['fix'],True,True
+38,['refactor'],['refactor'],True,True,"['refactor', 'docs']",False,True,['refactor'],True,True
+39,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+40,['refactor'],"['refactor', 'test']",False,True,['refactor'],True,True,['refactor'],True,True
+41,['fix'],['fix'],True,True,['fix'],True,True,['fix'],True,True
+42,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+43,['build'],['fix'],False,False,"['fix', 'build']",False,True,['build'],True,True
+44,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+45,['build'],"['fix', 'build']",False,True,['build'],True,True,['build'],True,True
+46,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+47,['fix'],['fix'],True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,['fix'],True,True
+48,['fix'],['fix'],True,True,['refactor'],False,False,['fix'],True,True
+49,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+50,['build'],['fix'],False,False,"['build', 'fix']",False,True,['build'],True,True
+51,['build'],['refactor'],False,False,"['refactor', 'build']",False,True,['build'],True,True
+52,['refactor'],['feat'],False,False,"['feat', 'docs']",False,False,['fix'],False,False
+53,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+54,['feat'],['fix'],False,False,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,['fix'],False,False
+55,['feat'],['feat'],True,True,"['feat', 'test', 'ci', 'build', 'docs']",False,True,['feat'],True,True
+56,['fix'],['feat'],False,False,"['feat', 'refactor']",False,False,['fix'],True,True
+57,['feat'],['feat'],True,True,"['feat', 'refactor']",False,True,['feat'],True,True
+58,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+59,['ci'],['ci'],True,True,"['ci', 'test']",False,True,['ci'],True,True
+60,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+61,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+62,['refactor'],"['feat', 'docs']",False,False,"['feat', 'refactor']",False,True,['docs'],False,False
+63,['refactor'],['docs'],False,False,"['refactor', 'docs']",False,True,['docs'],False,False
+64,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+65,['test'],['test'],True,True,"['fix', 'test']",False,True,['test'],True,True
+66,['feat'],"['feat', 'refactor']",False,True,"['feat', 'refactor']",False,True,['feat'],True,True
+67,['test'],['test'],True,True,"['feat', 'test']",False,True,"['build', 'test']",False,True
+68,['feat'],"['build', 'feat']",False,True,"['feat', 'build', 'test']",False,True,['feat'],True,True
+69,['docs'],['docs'],True,True,"['feat', 'docs']",False,True,['ci'],False,False
+70,"['feat', 'refactor']","['feat', 'refactor']",True,True,"['feat', 'refactor']",True,True,"['feat', 'refactor']",True,True
+71,"['ci', 'build']","['ci', 'build', 'fix']",False,True,"['ci', 'build']",True,True,"['build', 'build']",False,True
+72,"['refactor', 'docs']","['feat', 'docs']",False,True,"['feat', 'refactor', 'test']",False,True,"['feat', 'docs']",False,True
+73,"['feat', 'refactor']","['feat', 'fix', 'refactor']",False,True,"['feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'feat']",False,True
+74,"['ci', 'test']","['ci', 'test']",True,True,"['ci', 'test', 'refactor']",False,True,"['ci', 'test']",True,True
+75,"['test', 'ci']","['test', 'ci']",True,True,"['test', 'ci']",True,True,"['test', 'ci']",True,True
+76,"['ci', 'build']","['ci', 'build']",True,True,"['ci', 'build']",True,True,['build'],False,True
+77,"['feat', 'test']","['feat', 'test']",True,True,"['feat', 'test', 'refactor']",False,True,['refactor'],False,False
+78,"['fix', 'docs']","['fix', 'docs']",True,True,"['fix', 'ci']",False,True,"['docs', 'build']",False,True
+79,"['fix', 'ci']","['fix', 'ci']",True,True,"['fix', 'ci']",True,True,"['docs', 'ci']",False,True
+80,"['build', 'test']","['build', 'test']",True,True,"['build', 'test']",True,True,"['build', 'test']",True,True
+81,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'docs']",True,True,"['ci', 'docs']",True,True
+82,"['refactor', 'build']","['refactor', 'build', 'feat']",False,True,"['refactor', 'build']",True,True,"['refactor', 'build']",True,True
+83,"['fix', 'refactor']","['fix', 'refactor']",True,True,"['feat', 'refactor', 'fix', 'ci', 'build', 'test', 'docs']",False,True,"['refactor', 'feat']",False,True
+84,"['build', 'ci']","['build', 'ci']",True,True,"['fix', 'ci']",False,True,"['build', 'ci']",True,True
+85,"['build', 'refactor']","['build', 'feat']",False,True,"['build', 'feat', 'refactor']",False,True,"['docs', 'fix']",False,False
+86,"['feat', 'docs']","['feat', 'docs']",True,True,"['feat', 'ci']",False,True,"['fix', 'ci']",False,False
+87,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'docs']",True,True,"['ci', 'docs']",True,True
+88,"['fix', 'feat']","['fix', 'build', 'refactor', 'feat']",False,True,"['feat', 'build', 'test', 'refactor']",False,True,"['fix', 'feat', 'refactor']",False,True
+89,"['feat', 'ci']","['feat', 'ci']",True,True,"['feat', 'refactor', 'ci']",False,True,"['refactor', 'ci']",False,True
+90,"['docs', 'ci']","['docs', 'ci']",True,True,"['docs', 'ci']",True,True,"['docs', 'ci']",True,True
+91,"['test', 'docs']","['test', 'docs']",True,True,"['feat', 'docs']",False,True,['test'],False,True
+92,"['docs', 'feat']","['docs', 'feat']",True,True,"['docs', 'feat']",True,True,['docs'],False,True
+93,"['refactor', 'fix']",['refactor'],False,True,"['refactor', 'test', 'ci', 'build', 'docs', 'feat', 'fix']",False,True,"['refactor', 'fix']",True,True
+94,"['build', 'ci']","['build', 'ci']",True,True,"['build', 'ci']",True,True,"['build', 'ci']",True,True
+95,"['build', 'refactor']","['fix', 'refactor', 'build']",False,True,"['build', 'refactor']",True,True,"['build', 'refactor']",True,True
+96,"['fix', 'test']","['feat', 'test']",False,True,"['feat', 'test']",False,True,"['feat', 'test']",False,True
+97,"['build', 'docs']","['build', 'docs']",True,True,"['fix', 'build', 'docs']",False,True,"['build', 'docs']",True,True
+98,"['fix', 'ci']","['fix', 'ci']",True,True,"['fix', 'ci']",True,True,"['fix', 'ci']",True,True
+99,"['fix', 'ci']","['fix', 'ci']",True,True,"['fix', 'ci']",True,True,"['docs', 'ci']",False,True
+100,"['docs', 'refactor']","['docs', 'refactor']",True,True,"['docs', 'refactor']",True,True,"['docs', 'refactor']",True,True
+101,"['fix', 'feat']","['fix', 'feat']",True,True,"['feat', 'refactor', 'docs']",False,True,"['fix', 'feat']",True,True
+102,"['fix', 'build']","['fix', 'build']",True,True,"['fix', 'build']",True,True,"['build', 'fix']",True,True
+103,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'build', 'test']",False,True,"['build', 'fix']",False,False
+104,"['ci', 'feat']","['ci', 'feat']",True,True,"['ci', 'feat']",True,True,"['ci', 'feat']",True,True
+105,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs']",True,True
+106,"['test', 'build']","['test', 'build']",True,True,"['test', 'ci']",False,True,"['test', 'build']",True,True
+107,"['docs', 'feat']","['docs', 'feat']",True,True,"['feat', 'docs']",True,True,"['docs', 'feat']",True,True
+108,"['refactor', 'build']","['refactor', 'fix', 'build']",False,True,"['refactor', 'build']",True,True,"['refactor', 'build']",True,True
+109,"['feat', 'refactor']","['feat', 'refactor']",True,True,"['feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['feat', 'refactor']",True,True
+110,"['feat', 'fix']","['build', 'refactor', 'fix']",False,True,"['feat', 'refactor', 'build', 'test', 'ci', 'docs']",False,True,"['fix', 'docs']",False,True
+111,"['build', 'docs']","['build', 'docs']",True,True,"['build', 'fix']",False,True,"['build', 'docs']",True,True
+112,"['test', 'refactor']","['build', 'test', 'feat', 'refactor']",False,True,"['feat', 'test', 'ci', 'build', 'docs']",False,True,['test'],False,True
+113,"['refactor', 'fix']","['refactor', 'fix']",True,True,['refactor'],False,True,"['refactor', 'fix']",True,True
+114,"['build', 'ci']","['refactor', 'ci']",False,True,"['refactor', 'ci']",False,True,"['build', 'ci']",True,True
+115,"['fix', 'feat']","['fix', 'feat']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'feat']",True,True
+116,"['refactor', 'docs']","['refactor', 'docs']",True,True,"['refactor', 'docs']",True,True,"['docs', 'build']",False,True
+117,"['feat', 'fix']","['build', 'refactor', 'feat']",False,True,"['feat', 'refactor', 'build', 'test', 'ci', 'docs']",False,True,"['test', 'feat', 'refactor']",False,True
+118,"['refactor', 'test']","['refactor', 'test']",True,True,"['refactor', 'test']",True,True,"['refactor', 'test']",True,True
+119,"['test', 'refactor']","['test', 'feat']",False,True,"['test', 'feat']",False,True,"['test', 'feat']",False,True
+120,"['docs', 'build']","['docs', 'fix']",False,True,"['feat', 'refactor']",False,False,"['build', 'fix']",False,True
+121,"['refactor', 'build']","['refactor', 'build']",True,True,"['refactor', 'build']",True,True,"['refactor', 'build']",True,True
+122,"['docs', 'fix']","['docs', 'refactor', 'fix']",False,True,"['docs', 'refactor', 'build']",False,True,['docs'],False,True
+123,"['docs', 'ci']","['docs', 'ci']",True,True,"['fix', 'feat', 'ci', 'docs']",False,True,"['docs', 'ci']",True,True
+124,"['refactor', 'ci']","['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True
+125,"['test', 'fix']","['test', 'feat']",False,True,"['test', 'feat']",False,True,"['test', 'feat']",False,True
+126,"['feat', 'refactor']","['feat', 'fix']",False,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['feat', 'fix', 'test', 'docs', 'fix']",False,True
+127,"['fix', 'ci']","['fix', 'ci']",True,True,"['refactor', 'fix', 'ci']",False,True,"['build', 'ci']",False,True
+128,"['build', 'ci']","['build', 'ci']",True,True,"['build', 'ci']",True,True,"['build', 'ci']",True,True
+129,"['build', 'test']","['build', 'feat', 'test']",False,True,"['build', 'test', 'ci']",False,True,"['build', 'test']",True,True
+130,"['refactor', 'ci']","['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True
+131,"['fix', 'build']","['fix', 'build']",True,True,"['refactor', 'build']",False,True,"['fix', 'build']",True,True
+132,"['build', 'refactor']","['fix', 'refactor', 'test']",False,True,"['build', 'refactor']",True,True,"['build', 'refactor']",True,True
+133,"['test', 'ci']","['build', 'test', 'ci']",False,True,"['test', 'ci', 'build', 'feat']",False,True,"['test', 'ci']",True,True
+134,"['test', 'refactor']","['test', 'refactor']",True,True,"['refactor', 'test']",True,True,"['test', 'refactor']",True,True
+135,"['ci', 'refactor']","['ci', 'feat']",False,True,"['ci', 'refactor', 'test', 'feat']",False,True,"['ci', 'feat']",False,True
+136,"['test', 'docs']","['test', 'docs']",True,True,"['test', 'docs']",True,True,"['test', 'fix']",False,True
+137,"['feat', 'fix']",['feat'],False,True,"['feat', 'refactor']",False,True,"['feat', 'fix']",True,True
+138,"['build', 'docs']","['refactor', 'docs']",False,True,"['refactor', 'ci']",False,False,"['docs', 'fix']",False,True
+139,"['feat', 'refactor']","['build', 'refactor', 'feat', 'fix']",False,True,"['feat', 'build', 'test', 'docs', 'refactor', 'ci']",False,True,"['build', 'feat']",False,True
+140,"['ci', 'fix', 'docs']","['ci', 'fix', 'docs']",True,True,"['ci', 'docs', 'refactor', 'test', 'feat', 'build', 'fix']",False,True,"['docs', 'fix', 'docs', 'docs']",False,True
+141,"['fix', 'refactor', 'feat']","['fix', 'refactor', 'build', 'feat']",False,True,"['refactor', 'test']",False,True,"['fix', 'refactor', 'feat']",True,True
+142,"['build', 'feat', 'ci']","['fix', 'feat', 'ci']",False,True,"['build', 'feat', 'refactor']",False,True,"['build', 'feat', 'ci']",True,True
+143,"['ci', 'docs', 'feat']","['ci', 'docs', 'feat']",True,True,"['ci', 'feat', 'refactor', 'docs']",False,True,"['build', 'docs', 'feat']",False,True
+144,"['ci', 'docs', 'build']","['ci', 'docs', 'fix']",False,True,"['ci', 'build', 'docs', 'fix']",False,True,"['ci', 'docs', 'build']",True,True
+145,"['test', 'docs', 'fix']","['test', 'docs', 'fix']",True,True,"['test', 'ci', 'feat', 'refactor']",False,True,"['test', 'fix', 'docs']",True,True
+146,"['feat', 'docs', 'refactor']","['feat', 'docs', 'refactor']",True,True,"['feat', 'docs', 'refactor']",True,True,"['fix', 'docs', 'feat']",False,True
+147,"['docs', 'ci', 'test']","['docs', 'ci', 'test']",True,True,"['build', 'ci', 'docs', 'fix', 'refactor']",False,True,"['docs', 'build', 'test']",False,True
+148,"['build', 'fix', 'refactor']","['build', 'refactor', 'fix']",True,True,"['build', 'refactor']",False,True,"['docs', 'fix', 'refactor']",False,True
+149,"['test', 'fix', 'docs']","['test', 'fix', 'docs']",True,True,"['test', 'docs', 'refactor']",False,True,"['test', 'fix', 'docs']",True,True
+150,"['build', 'refactor', 'fix']","['build', 'refactor', 'fix']",True,True,"['build', 'ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['build', 'refactor', 'fix']",True,True
+151,"['test', 'docs', 'build']","['test', 'docs', 'fix']",False,True,"['test', 'refactor', 'ci']",False,True,"['test', 'docs', 'build']",True,True
+152,"['feat', 'test', 'refactor']","['build', 'refactor', 'test', 'feat']",False,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['feat', 'test', 'feat', 'refactor']",False,True
+153,"['docs', 'feat', 'fix']","['docs', 'feat', 'fix']",True,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['docs', 'feat', 'fix']",True,True
+154,"['ci', 'docs', 'fix']","['ci', 'docs', 'refactor', 'fix']",False,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs', 'fix']",True,True
+155,"['ci', 'docs', 'fix']","['ci', 'docs', 'fix']",True,True,"['ci', 'docs', 'refactor', 'test']",False,True,"['ci', 'docs', 'fix']",True,True
+156,"['test', 'fix', 'build']","['test', 'refactor', 'fix', 'build']",False,True,"['test', 'refactor', 'build']",False,True,"['test', 'fix', 'build', 'ci']",False,True
+157,"['docs', 'ci', 'fix']","['docs', 'ci', 'refactor', 'fix']",False,True,"['docs', 'ci', 'refactor', 'build']",False,True,"['build', 'ci', 'feat']",False,True
+158,"['build', 'ci', 'test']","['build', 'ci', 'test']",True,True,"['fix', 'ci', 'test', 'build']",False,True,"['build', 'ci', 'test']",True,True
+159,"['refactor', 'feat', 'fix']",['feat'],False,True,"['feat', 'feat', 'feat']",False,True,"['refactor', 'fix', 'feat']",True,True
+160,"['ci', 'test', 'fix']","['ci', 'test', 'fix']",True,True,"['ci', 'test', 'refactor']",False,True,"['build', 'test', 'fix']",False,True
+161,"['feat', 'refactor', 'build']","['feat', 'refactor', 'build']",True,True,"['feat', 'refactor', 'test', 'build']",False,True,"['refactor', 'test', 'build']",False,True
+162,"['fix', 'feat', 'ci']","['fix', 'feat', 'ci']",True,True,"['feat', 'refactor', 'ci', 'build']",False,True,"['fix', 'feat', 'build']",False,True
+163,"['docs', 'refactor', 'test']","['docs', 'feat', 'test']",False,True,"['feat', 'docs', 'test', 'refactor']",False,True,"['docs', 'test', 'test']",False,True
+164,"['test', 'ci', 'feat']","['fix', 'ci', 'feat']",False,True,"['fix', 'ci', 'refactor', 'docs', 'test', 'build']",False,True,"['test', 'build', 'fix']",False,True
+165,"['feat', 'build', 'refactor']","['feat', 'fix', 'refactor', 'build']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'build', 'refactor']",True,True
+166,"['feat', 'build', 'docs']","['feat', 'build', 'refactor', 'docs']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'build', 'fix']",False,True
+167,"['build', 'refactor', 'ci']","['build', 'refactor', 'ci']",True,True,"['fix', 'refactor', 'ci']",False,True,"['build', 'refactor', 'ci']",True,True
+168,"['docs', 'ci', 'build']","['docs', 'ci', 'build', 'test']",False,True,"['docs', 'build']",False,True,"['docs', 'ci', 'build']",True,True
+169,"['fix', 'test', 'build']","['fix', 'test', 'build']",True,True,"['fix', 'test', 'build']",True,True,"['fix', 'test', 'build']",True,True
+170,"['refactor', 'docs', 'feat']","['feat', 'docs', 'refactor']",True,True,"['feat', 'docs', 'refactor', 'test', 'ci', 'build']",False,True,"['docs', 'fix', 'refactor']",False,True
+171,"['docs', 'refactor', 'test']","['docs', 'refactor', 'test']",True,True,"['fix', 'refactor', 'test']",False,True,"['docs', 'refactor', 'test']",True,True
+172,"['fix', 'docs', 'test']","['fix', 'docs', 'test']",True,True,"['fix', 'build', 'test']",False,True,"['build', 'docs', 'test']",False,True
+173,"['refactor', 'ci', 'test']","['refactor', 'ci', 'test']",True,True,"['refactor', 'ci', 'test']",True,True,"['refactor', 'ci', 'test']",True,True
+174,"['ci', 'test', 'docs']","['ci', 'test', 'docs']",True,True,"['ci', 'test', 'docs']",True,True,"['build', 'test', 'docs']",False,True
+175,"['feat', 'docs', 'fix']","['feat', 'docs', 'fix']",True,True,"['feat', 'build', 'refactor']",False,True,"['feat', 'docs', 'fix']",True,True
+176,"['test', 'fix', 'build']","['test', 'fix', 'build']",True,True,"['test', 'build']",False,True,"['test', 'fix', 'build', 'docs']",False,True
+177,"['feat', 'docs', 'refactor']","['feat', 'docs', 'refactor', 'fix']",False,True,"['feat', 'refactor', 'docs', 'build', 'ci', 'test']",False,True,"['feat', 'docs', 'refactor']",True,True
+178,"['fix', 'ci', 'build']","['fix', 'ci']",False,True,"['feat', 'build', 'refactor']",False,True,"['fix', 'build', 'fix']",False,True
+179,"['fix', 'refactor', 'docs']","['fix', 'feat', 'docs']",False,True,"['fix', 'feat', 'docs']",False,True,"['refactor', 'fix', 'test', 'docs']",False,True
+180,"['build', 'feat', 'fix']","['build', 'feat', 'fix']",True,True,"['build', 'fix']",False,True,"['build', 'fix']",False,True
+181,"['test', 'refactor', 'feat']","['test', 'refactor', 'feat']",True,True,"['test', 'refactor', 'feat']",True,True,"['test', 'refactor', 'feat']",True,True
+182,"['test', 'build', 'ci']","['test', 'build', 'ci']",True,True,"['test', 'ci', 'build']",True,True,"['test', 'build', 'ci', 'ci']",False,True
+183,"['test', 'fix', 'docs']","['test', 'fix', 'docs']",True,True,"['feat', 'test', 'refactor', 'docs']",False,True,"['test', 'fix', 'docs']",True,True
+184,"['fix', 'build', 'test']","['fix', 'build', 'test']",True,True,"['fix', 'refactor', 'test']",False,True,"['build', 'test', 'test']",False,True
+185,"['feat', 'fix', 'ci']","['feat', 'fix', 'ci']",True,True,"['feat', 'fix', 'ci']",True,True,"['feat', 'fix', 'ci']",True,True
+186,"['fix', 'docs', 'build']","['feat', 'docs', 'build']",False,True,"['feat', 'build', 'docs']",False,True,"['feat', 'docs', 'build']",False,True
+187,"['fix', 'ci', 'docs']","['feat', 'ci', 'docs']",False,True,"['feat', 'ci', 'docs']",False,True,"['refactor', 'ci', 'docs']",False,True
+188,"['feat', 'docs', 'fix']","['feat', 'docs', 'refactor', 'fix']",False,True,"['feat', 'docs', 'build']",False,True,"['feat', 'docs', 'fix']",True,True
+189,"['feat', 'fix', 'refactor']","['feat', 'refactor']",False,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['feat', 'feat', 'refactor']",False,True
+190,"['fix', 'docs', 'test']","['refactor', 'fix', 'docs', 'test']",False,True,"['fix', 'docs', 'build', 'test']",False,True,"['refactor', 'docs', 'test']",False,True
+191,"['docs', 'ci', 'feat']","['docs', 'ci', 'feat']",True,True,"['docs', 'ci', 'refactor']",False,True,"['docs', 'test', 'feat']",False,True
+192,"['build', 'ci', 'refactor']","['build', 'test', 'ci', 'refactor']",False,True,"['build', 'refactor']",False,True,"['build', 'ci', 'refactor']",True,True
+193,"['feat', 'fix', 'test']","['feat', 'fix', 'test', 'refactor']",False,True,"['feat', 'test', 'ci', 'build', 'docs', 'refactor']",False,True,"['feat', 'docs', 'test']",False,True
+194,"['docs', 'test', 'build']","['docs', 'test', 'build']",True,True,"['docs', 'test', 'ci', 'build']",False,True,"['docs', 'fix', 'build']",False,True
+195,"['fix', 'ci', 'test']","['fix', 'ci', 'test']",True,True,"['feat', 'ci', 'test']",False,True,"['fix', 'ci', 'test']",True,True
+196,"['docs', 'fix', 'ci']","['docs', 'ci']",False,True,"['docs', 'build', 'refactor']",False,True,"['docs', 'fix', 'build']",False,True
+197,"['ci', 'fix', 'docs']","['ci', 'fix', 'docs']",True,True,"['ci', 'refactor', 'docs']",False,True,"['ci', 'fix', 'docs']",True,True
+198,"['build', 'docs', 'refactor']","['build', 'docs', 'fix']",False,True,"['build', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'build', 'docs']",False,True
+199,"['fix', 'build', 'refactor']","['refactor', 'build']",False,True,"['fix', 'refactor', 'ci', 'build', 'docs', 'test']",False,True,"['docs', 'build', 'refactor']",False,True
+200,"['test', 'docs', 'build']","['test', 'docs', 'build']",True,True,"['test', 'ci', 'build', 'refactor']",False,True,"['test', 'fix', 'build']",False,True
+201,"['feat', 'fix', 'test']","['feat', 'fix', 'test']",True,True,"['feat', 'test', 'refactor', 'build']",False,True,"['feat', 'refactor', 'test']",False,True
+202,"['test', 'fix', 'feat']","['test', 'fix', 'feat']",True,True,"['test', 'feat', 'build']",False,True,"['test', 'fix', 'feat']",True,True
+203,"['feat', 'fix', 'docs']","['feat', 'fix', 'docs']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['refactor', 'fix', 'fix']",False,True
+204,"['ci', 'docs', 'test']","['ci', 'test', 'docs']",True,True,"['ci', 'feat', 'refactor', 'test']",False,True,"['build', 'fix', 'test']",False,True
+205,"['ci', 'fix', 'docs']","['ci', 'fix', 'build']",False,True,"['ci', 'refactor', 'docs']",False,True,"['ci', 'fix', 'docs']",True,True
+206,"['feat', 'fix', 'test']","['feat', 'fix', 'test']",True,True,"['feat', 'test', 'ci', 'build']",False,True,"['feat', 'docs', 'fix', 'test']",False,True
+207,"['docs', 'ci', 'feat']","['docs', 'ci', 'feat']",True,True,"['feat', 'ci', 'refactor', 'docs', 'test', 'build']",False,True,"['docs', 'build', 'fix']",False,True
+208,"['ci', 'docs', 'build']","['ci', 'docs', 'fix']",False,True,"['ci', 'docs', 'feat', 'refactor']",False,True,"['ci', 'docs', 'fix']",False,True
+209,"['ci', 'feat', 'build']","['ci', 'feat', 'build']",True,True,"['ci', 'refactor', 'build']",False,True,"['build', 'fix', 'ci']",False,True
+210,"['test', 'build', 'fix', 'feat']","['test', 'build', 'fix', 'feat']",True,True,"['test', 'build', 'feat', 'fix']",True,True,"['test', 'build', 'fix', 'feat']",True,True
+211,"['ci', 'build', 'test', 'docs']","['ci', 'build', 'test', 'docs']",True,True,"['ci', 'docs', 'feat', 'refactor', 'test']",False,True,"['ci', 'build', 'test', 'docs']",True,True
+212,"['refactor', 'feat', 'docs', 'test']","['refactor', 'feat', 'docs', 'test']",True,True,"['refactor', 'docs', 'test', 'build']",False,True,"['refactor', 'fix', 'docs', 'test']",False,True
+213,"['fix', 'test', 'build', 'refactor']","['refactor', 'test', 'build', 'feat']",False,True,"['fix', 'build', 'refactor', 'test']",True,True,"['fix', 'test', 'build', 'feat']",False,True
+214,"['docs', 'build', 'ci', 'feat']","['docs', 'ci', 'build', 'feat']",True,True,"['build', 'ci', 'docs', 'refactor', 'test']",False,True,"['docs', 'build', 'refactor', 'feat']",False,True
+215,"['test', 'fix', 'refactor', 'ci']","['test', 'refactor', 'feat', 'ci']",False,True,"['feat', 'fix', 'test', 'ci', 'docs']",False,True,"['test', 'fix', 'feat', 'ci']",False,True
+216,"['ci', 'fix', 'feat', 'refactor']","['ci', 'fix', 'feat', 'refactor']",True,True,"['ci', 'feat', 'refactor', 'build']",False,True,['ci'],False,True
+217,"['docs', 'ci', 'test', 'refactor']","['docs', 'ci', 'test', 'refactor']",True,True,"['docs', 'ci', 'test', 'refactor']",True,True,"['docs', 'ci', 'test', 'refactor']",True,True
+218,"['fix', 'feat', 'build', 'docs']","['fix', 'feat', 'refactor', 'docs', 'build']",False,True,"['fix', 'feat', 'build', 'ci', 'docs', 'test', 'refactor']",False,True,"['fix', 'feat', 'build', 'docs']",True,True
+219,"['docs', 'feat', 'test', 'fix']","['docs', 'feat', 'test']",False,True,"['fix', 'feat', 'test', 'ci', 'build', 'docs', 'refactor']",False,True,"['docs', 'fix', 'test', 'feat']",True,True
+220,"['build', 'refactor', 'test', 'ci']","['build', 'refactor', 'test', 'ci']",True,True,"['build', 'refactor', 'test']",False,True,"['build', 'docs', 'refactor', 'test', 'ci']",False,True
+221,"['feat', 'fix', 'test', 'refactor']","['feat', 'fix', 'test', 'refactor']",True,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['fix', 'test', 'refactor']",False,True
+222,"['refactor', 'docs', 'test', 'ci']","['feat', 'docs', 'test', 'ci']",False,True,"['feat', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'docs', 'test', 'ci']",False,True
+223,"['docs', 'refactor', 'test', 'fix']","['docs', 'refactor', 'test', 'fix']",True,True,"['docs', 'refactor', 'build']",False,True,"['docs', 'refactor', 'fix', 'fix']",False,True
+224,"['test', 'docs', 'build', 'ci']","['test', 'docs', 'build', 'ci']",True,True,"['test', 'docs', 'build', 'ci', 'feat']",False,True,"['test', 'docs', 'build']",False,True
+225,"['fix', 'refactor', 'docs', 'test']","['fix', 'refactor', 'test', 'docs']",True,True,"['refactor', 'test', 'ci', 'build', 'docs']",False,True,"['fix', 'refactor', 'docs', 'test']",True,True
+226,"['refactor', 'ci', 'docs', 'build']","['feat', 'ci', 'docs', 'build']",False,True,"['feat', 'docs', 'build', 'ci']",False,True,"['fix', 'ci', 'docs', 'build']",False,True
+227,"['ci', 'build', 'test', 'fix']","['ci', 'build', 'test', 'feat']",False,True,"['ci', 'test', 'feat', 'docs', 'refactor']",False,True,"['ci', 'build', 'test', 'feat']",False,True
+228,"['ci', 'build', 'feat', 'fix']","['ci', 'build', 'feat', 'fix']",True,True,"['ci', 'docs', 'refactor', 'test']",False,True,"['ci', 'build', 'feat', 'fix']",True,True
+229,"['test', 'build', 'fix', 'feat']","['test', 'build', 'fix', 'feat']",True,True,"['test', 'build', 'ci', 'refactor']",False,True,"['test', 'build', 'fix', 'refactor']",False,True
+230,"['fix', 'docs', 'test', 'refactor']","['refactor', 'docs', 'test', 'fix']",True,True,"['fix', 'feat', 'test', 'refactor']",False,True,"['fix', 'docs', 'test', 'refactor']",True,True
+231,"['ci', 'docs', 'build', 'feat']","['ci', 'docs', 'fix', 'refactor', 'feat']",False,True,"['ci', 'feat', 'refactor', 'test']",False,True,"['ci', 'feat', 'fix', 'feat']",False,True
+232,"['fix', 'test', 'feat', 'docs']","['fix', 'test', 'refactor', 'docs']",False,True,"['feat', 'fix', 'test', 'refactor', 'docs']",False,True,"['test', 'docs']",False,True
+233,"['ci', 'fix', 'test', 'docs']","['ci', 'fix', 'test', 'docs']",True,True,"['ci', 'test', 'refactor']",False,True,"['ci', 'fix', 'test', 'docs']",True,True
+234,"['feat', 'ci', 'refactor', 'fix']","['feat', 'refactor', 'ci']",False,True,"['feat', 'refactor', 'ci', 'build', 'docs', 'test']",False,True,"['feat', 'build', 'refactor', 'fix']",False,True
+235,"['refactor', 'feat', 'docs', 'build']","['feat', 'refactor', 'docs', 'build']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['feat', 'test', 'docs', 'build']",False,True
+236,"['build', 'test', 'ci', 'refactor']","['build', 'ci', 'test', 'feat', 'fix']",False,True,"['build', 'test', 'refactor', 'ci', 'docs']",False,True,"['build', 'test', 'build', 'feat']",False,True
+237,"['build', 'docs', 'feat', 'fix']","['build', 'docs', 'feat', 'refactor']",False,True,"['build', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'docs', 'fix', 'refactor']",False,True
+238,"['build', 'test', 'ci', 'feat']","['build', 'test', 'ci', 'feat', 'refactor']",False,True,"['build', 'test', 'ci', 'refactor', 'feat']",False,True,"['build', 'build', 'test', 'ci', 'refactor']",False,True
+239,"['fix', 'build', 'docs', 'refactor']","['fix', 'build', 'docs', 'refactor']",True,True,"['refactor', 'build', 'docs', 'test', 'ci']",False,True,"['fix', 'build', 'docs', 'refactor']",True,True
+240,"['fix', 'feat', 'docs', 'ci']","['fix', 'feat', 'docs', 'ci']",True,True,"['refactor', 'feat', 'docs', 'test', 'ci']",False,True,"['fix', 'feat', 'docs', 'ci']",True,True
+241,"['docs', 'fix', 'feat', 'refactor']","['docs', 'fix', 'feat', 'refactor']",True,True,"['fix', 'feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['docs', 'fix', 'feat', 'refactor']",True,True
+242,"['fix', 'build', 'feat', 'ci']","['fix', 'feat', 'build', 'ci']",True,True,"['feat', 'build', 'refactor', 'ci', 'docs']",False,True,"['feat', 'fix', 'feat', 'build']",False,True
+243,"['feat', 'refactor', 'test', 'build']","['feat', 'refactor', 'test', 'build']",True,True,"['feat', 'refactor', 'fix', 'build']",False,True,"['fix', 'refactor', 'test']",False,True
+244,"['build', 'test', 'ci', 'fix']","['build', 'test', 'ci', 'fix', 'refactor']",False,True,"['build', 'test', 'fix', 'refactor', 'ci']",False,True,"['build', 'test', 'ci', 'fix']",True,True
+245,"['docs', 'feat', 'build', 'ci']","['docs', 'refactor', 'feat', 'build', 'ci']",False,True,"['feat', 'build', 'test', 'refactor']",False,True,"['docs', 'feat', 'build', 'ci']",True,True
+246,"['docs', 'refactor', 'ci', 'build']","['docs', 'feat', 'ci', 'build']",False,True,"['docs', 'feat', 'build', 'ci', 'test']",False,True,"['docs', 'feat', 'fix', 'build', 'build']",False,True
+247,"['refactor', 'ci', 'fix', 'docs']","['feat', 'ci', 'docs', 'refactor']",False,True,"['feat', 'build', 'refactor', 'docs']",False,True,"['build', 'ci', 'fix', 'docs']",False,True
+248,"['test', 'ci', 'docs', 'feat']","['test', 'ci', 'docs', 'feat']",True,True,"['test', 'ci', 'docs', 'feat']",True,True,"['test', 'ci', 'docs', 'feat']",True,True
+249,"['refactor', 'fix', 'test', 'feat']","['refactor', 'feat', 'test']",False,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['refactor', 'feat', 'test', 'fix']",True,True
+250,"['docs', 'feat', 'ci', 'refactor']","['docs', 'ci', 'feat']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['build', 'feat', 'build', 'docs']",False,True
+251,"['refactor', 'feat', 'docs', 'ci']","['refactor', 'feat', 'ci']",False,True,"['refactor', 'ci', 'build']",False,True,"['refactor', 'fix', 'ci', 'docs']",False,True
+252,"['docs', 'ci', 'refactor', 'test']","['docs', 'ci', 'refactor', 'test']",True,True,"['docs', 'ci', 'build', 'test', 'refactor']",False,True,"['docs', 'refactor', 'fix', 'test']",False,True
+253,"['test', 'docs', 'ci', 'fix']","['test', 'docs', 'ci', 'fix']",True,True,"['test', 'ci', 'fix', 'refactor']",False,True,"['test', 'fix']",False,True
+254,"['ci', 'refactor', 'test', 'docs']","['ci', 'refactor', 'test', 'build', 'docs', 'feat']",False,True,"['ci', 'test', 'docs', 'refactor']",True,True,"['ci', 'refactor', 'test', 'docs']",True,True
+255,"['docs', 'feat', 'test', 'build']","['docs', 'feat', 'test', 'build']",True,True,"['feat', 'fix', 'docs', 'test', 'ci', 'build']",False,True,"['docs', 'feat', 'test', 'build']",True,True
+256,"['refactor', 'feat', 'test', 'fix']","['refactor', 'fix', 'test']",False,True,"['refactor', 'test', 'ci', 'build', 'feat', 'fix', 'docs']",False,True,"['refactor', 'fix', 'test', 'feat']",True,True
+257,"['build', 'ci', 'fix', 'refactor']","['build', 'ci', 'fix', 'feat', 'docs']",False,True,"['build', 'ci', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'ci', 'fix', 'feat']",False,True
+258,"['test', 'refactor', 'docs', 'feat']","['test', 'feat', 'docs', 'build']",False,True,"['feat', 'test', 'docs', 'ci', 'build', 'refactor', 'fix']",False,True,"['test', 'fix', 'docs', 'refactor']",False,True
+259,"['build', 'refactor', 'fix', 'ci']","['build', 'docs', 'refactor', 'ci']",False,True,"['build', 'ci', 'refactor', 'test']",False,True,"['build', 'docs', 'fix', 'ci']",False,True
+260,"['feat', 'test', 'refactor', 'ci']","['refactor', 'test', 'feat', 'ci']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'test', 'feat', 'build']",False,True
+261,"['docs', 'fix', 'test', 'refactor']","['docs', 'test', 'refactor']",False,True,"['fix', 'refactor', 'ci', 'test', 'docs', 'build']",False,True,"['docs', 'fix', 'test', 'refactor']",True,True
+262,"['refactor', 'fix', 'docs', 'ci']","['refactor', 'fix', 'docs', 'ci']",True,True,"['fix', 'refactor', 'ci', 'build']",False,True,"['test', 'docs', 'build', 'fix']",False,True
+263,"['fix', 'build', 'ci', 'test']","['refactor', 'fix', 'build', 'ci', 'test']",False,True,"['fix', 'build', 'test', 'ci', 'refactor', 'docs']",False,True,"['docs', 'build', 'refactor', 'test']",False,True
+264,"['build', 'fix', 'ci', 'docs']","['build', 'ci', 'docs', 'refactor', 'fix']",False,True,"['build', 'ci', 'docs', 'refactor', 'test']",False,True,"['build', 'docs', 'test', 'fix']",False,True
+265,"['ci', 'refactor', 'fix', 'docs']","['ci', 'refactor', 'fix', 'docs']",True,True,"['ci', 'refactor', 'docs']",False,True,"['build', 'refactor', 'docs', 'docs']",False,True
+266,"['fix', 'ci', 'docs', 'refactor']","['fix', 'docs', 'ci', 'refactor']",True,True,"['feat', 'fix', 'docs', 'refactor', 'ci', 'build']",False,True,"['fix', 'build', 'docs', 'refactor']",False,True
+267,"['fix', 'feat', 'build', 'docs']","['fix', 'feat', 'build', 'docs']",True,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['fix', 'feat', 'build', 'docs']",True,True
+268,"['build', 'ci', 'test', 'feat']","['build', 'ci', 'test', 'fix', 'feat']",False,True,"['feat', 'build', 'test', 'ci', 'refactor']",False,True,"['build', 'docs', 'fix', 'feat']",False,True
+269,"['ci', 'docs', 'feat', 'test']","['ci', 'feat', 'test', 'docs']",True,True,"['ci', 'feat', 'refactor', 'test']",False,True,"['ci', 'fix', 'feat', 'test']",False,True
+270,"['refactor', 'docs', 'ci', 'test']","['refactor', 'docs', 'ci', 'test']",True,True,"['refactor', 'docs', 'ci', 'test']",True,True,"['refactor', 'docs', 'ci', 'build']",False,True
+271,"['docs', 'refactor', 'test', 'fix']","['docs', 'test', 'refactor', 'fix']",True,True,"['fix', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['docs', 'refactor', 'test', 'fix']",True,True
+272,"['ci', 'docs', 'refactor', 'test']","['ci', 'docs', 'refactor', 'test']",True,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs', 'refactor', 'test']",True,True
+273,"['fix', 'docs', 'ci', 'feat']","['fix', 'docs', 'ci', 'feat']",True,True,"['fix', 'refactor', 'ci', 'feat']",False,True,"['fix', 'docs', 'build', 'feat']",False,True
+274,"['docs', 'test', 'build', 'feat']","['docs', 'test', 'build', 'feat']",True,True,"['fix', 'feat', 'docs', 'test', 'ci', 'build']",False,True,"['docs', 'test', 'feat']",False,True
+275,"['docs', 'refactor', 'test', 'fix']","['docs', 'test', 'fix']",False,True,"['docs', 'refactor', 'test', 'build']",False,True,"['docs', 'refactor', 'test', 'fix']",True,True
+276,"['test', 'feat', 'docs', 'ci']","['test', 'feat', 'docs', 'ci']",True,True,"['test', 'feat', 'docs', 'build']",False,True,"['test', 'docs', 'docs', 'ci']",False,True
+277,"['refactor', 'build', 'feat', 'docs']","['feat', 'build', 'docs']",False,True,"['feat', 'build', 'refactor']",False,True,"['test', 'fix', 'feat', 'docs']",False,True
+278,"['build', 'fix', 'test', 'feat']","['build', 'test', 'fix', 'feat']",True,True,"['build', 'ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['build', 'fix', 'test', 'feat']",True,True
+279,"['refactor', 'ci', 'docs', 'build']","['refactor', 'build', 'docs', 'ci']",True,True,"['feat', 'docs', 'build', 'test', 'ci', 'refactor', 'fix']",False,True,"['refactor', 'ci', 'docs', 'build']",True,True
+280,"['fix', 'docs', 'refactor', 'ci', 'test']","['fix', 'docs', 'feat', 'ci', 'test']",False,True,"['fix', 'docs', 'feat', 'ci', 'test']",False,True,"['docs', 'fix', 'feat', 'build', 'test']",False,True
+281,"['test', 'docs', 'refactor', 'build', 'feat']","['test', 'docs', 'refactor', 'build', 'feat']",True,True,"['test', 'feat', 'docs', 'build', 'refactor']",True,True,"['test', 'refactor', 'docs']",False,True
+282,"['test', 'ci', 'fix', 'build', 'refactor']","['test', 'ci', 'build', 'refactor']",False,True,"['test', 'ci', 'refactor', 'docs']",False,True,"['test', 'ci', 'docs', 'build', 'refactor']",False,True
+283,"['ci', 'refactor', 'build', 'test', 'fix']","['ci', 'refactor', 'fix']",False,True,"['ci', 'test', 'refactor', 'fix', 'feat']",False,True,"['ci', 'fix', 'build', 'test', 'feat']",False,True
+284,"['build', 'fix', 'feat', 'refactor', 'docs']","['refactor', 'docs', 'feat']",False,True,"['refactor', 'docs']",False,True,"['refactor', 'fix', 'feat', 'feat', 'docs']",False,True
+285,"['docs', 'test', 'build', 'fix', 'feat']","['docs', 'test', 'build', 'fix', 'feat']",True,True,"['docs', 'test', 'build', 'refactor', 'feat']",False,True,"['docs', 'test', 'build', 'fix', 'feat']",True,True
+286,"['ci', 'build', 'fix', 'test', 'feat']","['ci', 'build', 'fix', 'test', 'feat']",True,True,"['ci', 'build', 'test', 'refactor']",False,True,"['ci', 'build', 'fix', 'test', 'feat']",True,True
+287,"['fix', 'test', 'build', 'ci', 'refactor']","['fix', 'test', 'build', 'ci', 'refactor']",True,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['fix', 'test', 'docs', 'refactor']",False,True
+288,"['docs', 'ci', 'refactor', 'test', 'fix']","['docs', 'ci', 'feat', 'fix']",False,True,"['fix', 'refactor', 'ci', 'docs', 'test', 'build']",False,True,"['docs', 'ci', 'feat', 'test', 'refactor']",False,True
+289,"['refactor', 'docs', 'build', 'feat', 'fix']","['refactor', 'docs', 'build', 'feat']",False,True,"['refactor', 'docs', 'build', 'ci', 'test']",False,True,"['refactor', 'docs', 'build', 'feat', 'feat']",False,True
+290,"['feat', 'build', 'fix', 'ci', 'test']","['feat', 'fix', 'refactor', 'build', 'ci', 'test']",False,True,"['feat', 'build', 'refactor', 'ci', 'test']",False,True,"['feat', 'build', 'fix', 'ci', 'test']",True,True
+291,"['ci', 'refactor', 'test', 'feat', 'fix']","['ci', 'fix', 'build', 'refactor', 'feat']",False,True,"['ci', 'test', 'refactor', 'feat', 'docs']",False,True,['ci'],False,True
+292,"['build', 'refactor', 'ci', 'docs', 'fix']","['build', 'ci', 'docs', 'feat', 'fix']",False,True,"['build', 'feat', 'refactor', 'ci', 'docs', 'test']",False,True,"['build', 'fix', 'feat', 'ci', 'docs']",False,True
+293,"['docs', 'ci', 'refactor', 'build', 'feat']","['docs', 'ci', 'refactor', 'feat', 'fix']",False,True,"['fix', 'feat', 'docs', 'ci', 'build', 'refactor']",False,True,"['docs', 'ci', 'feat', 'build', 'feat']",False,True
+294,"['test', 'feat', 'refactor', 'fix', 'docs']","['test', 'feat', 'refactor', 'fix', 'docs']",True,True,"['test', 'refactor', 'build', 'feat', 'ci', 'docs']",False,True,"['test', 'feat', 'refactor', 'fix', 'docs']",True,True
+295,"['docs', 'build', 'ci', 'fix', 'test']","['docs', 'build', 'ci', 'refactor', 'test', 'fix']",False,True,"['docs', 'ci', 'test', 'build', 'feat']",False,True,"['docs', 'fix', 'ci', 'build', 'test', 'feat']",False,True
+296,"['refactor', 'ci', 'docs', 'test', 'build']","['refactor', 'ci', 'docs', 'test', 'build']",True,True,"['refactor', 'ci', 'test', 'build']",False,True,"['refactor', 'ci', 'fix', 'build']",False,True
+297,"['test', 'feat', 'ci', 'refactor', 'fix']","['test', 'ci', 'fix', 'refactor']",False,True,"['test', 'refactor', 'ci', 'build']",False,True,"['test', 'fix', 'ci', 'refactor', 'fix']",False,True
+298,"['build', 'fix', 'ci', 'refactor', 'docs']","['build', 'fix', 'ci', 'refactor', 'test', 'docs']",False,True,"['build', 'ci', 'refactor', 'test']",False,True,"['build', 'refactor', 'ci', 'test', 'docs']",False,True
+299,"['build', 'docs', 'ci', 'test', 'feat']","['fix', 'docs', 'ci', 'test', 'feat']",False,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['build', 'docs', 'fix', 'test', 'feat']",False,True
+300,"['feat', 'fix', 'refactor', 'build', 'test']","['feat', 'fix', 'refactor', 'test']",False,True,"['feat', 'refactor', 'test', 'ci', 'build']",False,True,"['feat', 'fix', 'refactor', 'docs', 'build', 'test']",False,True
+301,"['refactor', 'build', 'ci', 'docs', 'test']","['refactor', 'build', 'ci', 'docs', 'test']",True,True,"['refactor', 'ci', 'build', 'docs', 'test']",True,True,"['refactor', 'build', 'ci', 'docs', 'test']",True,True
+302,"['build', 'test', 'refactor', 'ci', 'fix']","['build', 'test', 'ci', 'fix', 'refactor']",True,True,"['build', 'test', 'ci', 'refactor', 'fix']",True,True,"['build', 'test', 'refactor', 'ci', 'fix']",True,True
+303,"['build', 'docs', 'ci', 'test', 'fix']","['build', 'ci', 'docs', 'test', 'refactor', 'fix']",False,True,"['build', 'ci', 'docs', 'fix', 'refactor']",False,True,"['build', 'ci', 'fix', 'build', 'test', 'feat']",False,True
+304,"['fix', 'ci', 'feat', 'build', 'refactor']","['feat', 'ci', 'build', 'refactor']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'ci', 'refactor', 'test']",False,True
+305,"['fix', 'build', 'refactor', 'feat', 'test']","['refactor', 'fix', 'feat', 'build', 'test']",True,True,"['fix', 'refactor', 'ci', 'build', 'feat']",False,True,"['refactor', 'docs', 'fix', 'feat', 'test']",False,True
+306,"['fix', 'test', 'feat', 'docs', 'build']","['feat', 'test', 'docs', 'build', 'refactor']",False,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'test', 'feat', 'docs', 'build']",True,True
+307,"['test', 'docs', 'feat', 'build', 'fix']","['build', 'docs', 'test', 'feat', 'fix']",True,True,"['test', 'feat', 'docs', 'build', 'ci']",False,True,"['test', 'docs', 'feat', 'build', 'fix']",True,True
+308,"['docs', 'feat', 'build', 'refactor', 'test']","['docs', 'feat', 'build', 'test']",False,True,"['feat', 'ci', 'test', 'docs', 'refactor']",False,True,"['docs', 'feat', 'build', 'refactor', 'test']",True,True
+309,"['fix', 'feat', 'test', 'refactor', 'build']","['fix', 'feat', 'test', 'refactor', 'build']",True,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['fix', 'feat', 'test', 'refactor', 'build']",True,True
+310,"['fix', 'build', 'refactor', 'test', 'docs']","['fix', 'build', 'test', 'refactor', 'docs']",True,True,"['build', 'ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['fix', 'build', 'refactor', 'test', 'ci']",False,True
+311,"['fix', 'ci', 'docs', 'build', 'feat']","['fix', 'ci', 'docs', 'build', 'feat']",True,True,"['feat', 'build', 'docs', 'refactor', 'test']",False,True,"['fix', 'ci', 'docs', 'build', 'feat']",True,True
+312,"['feat', 'build', 'refactor', 'docs', 'fix']","['feat', 'fix', 'build', 'docs']",False,True,"['feat', 'fix', 'refactor', 'build']",False,True,"['feat', 'build', 'feat', 'docs', 'fix']",False,True
+313,"['test', 'docs', 'refactor', 'ci', 'feat']","['test', 'docs', 'refactor', 'ci', 'feat']",True,True,"['feat', 'test', 'ci', 'docs', 'refactor', 'build']",False,True,"['test', 'fix', 'refactor', 'ci', 'feat']",False,True
+314,"['build', 'docs', 'fix', 'test', 'refactor']","['build', 'docs', 'refactor', 'fix', 'test']",True,True,"['build', 'feat', 'fix', 'refactor', 'test']",False,True,"['build', 'feat', 'fix', 'docs']",False,True
+315,"['build', 'ci', 'docs', 'test', 'refactor']","['build', 'ci', 'docs', 'test', 'refactor']",True,True,"['build', 'ci', 'fix', 'test', 'docs']",False,True,"['build', 'ci', 'docs', 'test', 'refactor']",True,True
+316,"['build', 'ci', 'docs', 'refactor', 'fix']","['build', 'ci', 'docs', 'fix', 'refactor']",True,True,"['feat', 'docs', 'build', 'refactor', 'fix']",False,True,"['build', 'ci', 'docs', 'fix', 'refactor']",True,True
+317,"['test', 'docs', 'fix', 'feat', 'build']","['test', 'docs', 'fix', 'feat', 'build']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['test', 'docs', 'fix', 'feat', 'build']",True,True
+318,"['refactor', 'ci', 'test', 'build', 'feat']","['refactor', 'ci', 'test', 'build', 'feat']",True,True,"['refactor', 'ci', 'test', 'build', 'feat']",True,True,"['refactor', 'ci', 'test', 'build', 'feat']",True,True
+319,"['refactor', 'feat', 'build', 'fix', 'test']","['refactor', 'feat', 'fix', 'build', 'test']",True,True,"['refactor', 'test', 'ci', 'build', 'feat']",False,True,"['refactor', 'feat', 'build', 'fix', 'test']",True,True
+320,"['refactor', 'test', 'docs', 'feat', 'ci']","['refactor', 'test', 'docs', 'feat', 'build', 'ci']",False,True,"['refactor', 'test', 'ci', 'docs']",False,True,"['refactor', 'test', 'docs', 'feat', 'ci']",True,True
+321,"['test', 'ci', 'refactor', 'feat', 'fix']","['test', 'ci', 'build', 'feat', 'fix', 'refactor']",False,True,"['feat', 'ci', 'refactor', 'test', 'build']",False,True,"['test', 'ci', 'refactor', 'feat', 'fix']",True,True
+322,"['ci', 'refactor', 'docs', 'fix', 'feat']","['ci', 'feat', 'fix', 'refactor']",False,True,"['ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['ci', 'feat', 'fix', 'docs', 'build', 'feat']",False,True
+323,"['docs', 'refactor', 'fix', 'test', 'build']","['docs', 'refactor', 'fix', 'test', 'build']",True,True,"['fix', 'refactor', 'test', 'ci', 'build']",False,True,"['docs', 'refactor', 'fix', 'test', 'build']",True,True
+324,"['test', 'ci', 'fix', 'docs', 'refactor']","['test', 'ci', 'docs', 'fix', 'refactor']",True,True,"['test', 'ci', 'feat', 'docs', 'refactor']",False,True,"['test', 'ci', 'fix', 'docs', 'refactor']",True,True
+325,"['build', 'ci', 'test', 'docs', 'feat']","['build', 'ci', 'test', 'docs', 'feat']",True,True,"['feat', 'fix', 'refactor', 'ci', 'build', 'docs', 'test']",False,True,"['build', 'docs', 'ci', 'test', 'feat']",True,True
+326,"['refactor', 'feat', 'test', 'fix', 'ci']","['feat', 'fix', 'test', 'refactor', 'ci']",True,True,"['feat', 'refactor', 'test', 'ci']",False,True,"['feat', 'fix', 'test', 'refactor', 'ci']",True,True
+327,"['ci', 'docs', 'refactor', 'build', 'test']","['ci', 'test', 'refactor', 'build']",False,True,"['ci', 'fix', 'refactor', 'test']",False,True,"['ci', 'fix', 'refactor', 'build', 'test']",False,True
+328,"['build', 'docs', 'refactor', 'test', 'feat']","['build', 'docs', 'test', 'refactor', 'feat']",True,True,"['build', 'docs', 'feat', 'refactor', 'test']",True,True,"['build', 'docs', 'refactor', 'test', 'feat']",True,True
+329,"['ci', 'feat', 'fix', 'docs', 'test']","['ci', 'feat', 'fix', 'docs', 'test']",True,True,"['ci', 'feat', 'fix', 'test', 'docs']",True,True,"['ci', 'feat', 'fix', 'docs', 'test']",True,True
+330,"['feat', 'build', 'test', 'docs', 'fix']","['feat', 'refactor', 'test', 'docs']",False,True,"['feat', 'build', 'test', 'refactor', 'docs']",False,True,"['test', 'build', 'fix', 'refactor']",False,True
+331,"['build', 'docs', 'test', 'fix', 'ci']","['refactor', 'docs', 'test', 'feat', 'ci']",False,True,"['refactor', 'docs', 'build', 'test', 'ci']",False,True,"['build', 'docs', 'test', 'feat', 'fix']",False,True
+332,"['feat', 'fix', 'ci', 'docs', 'test']","['feat', 'refactor', 'build', 'ci', 'docs', 'test', 'fix']",False,True,"['feat', 'fix', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'build', 'ci', 'docs', 'test']",False,True
+333,"['feat', 'refactor', 'build', 'fix', 'docs']","['feat', 'fix', 'build', 'docs']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'refactor', 'build', 'fix', 'docs']",True,True
+334,"['test', 'build', 'feat', 'fix', 'docs']","['test', 'build', 'refactor', 'fix', 'docs']",False,True,"['test', 'refactor', 'build', 'feat', 'docs']",False,True,"['test', 'build', 'fix', 'docs', 'docs']",False,True
+335,"['fix', 'feat', 'test', 'ci', 'docs']","['fix', 'build', 'refactor', 'test', 'ci', 'docs', 'feat']",False,True,"['feat', 'refactor', 'test', 'ci', 'docs', 'build']",False,True,"['fix', 'feat', 'test', 'ci', 'refactor']",False,True
+336,"['test', 'refactor', 'ci', 'build', 'fix']","['test', 'refactor', 'ci', 'build', 'fix', 'feat']",False,True,"['test', 'refactor', 'build', 'feat']",False,True,"['test', 'refactor', 'build', 'fix']",False,True
+337,"['build', 'feat', 'refactor', 'ci', 'test']","['build', 'feat', 'refactor', 'ci', 'test']",True,True,"['build', 'ci', 'feat', 'refactor', 'test']",True,True,"['build', 'fix', 'test', 'ci', 'test']",False,True
+338,"['feat', 'refactor', 'test', 'ci', 'build']","['feat', 'fix', 'refactor', 'docs', 'build', 'test', 'ci']",False,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['feat', 'docs', 'fix', 'build', 'ci', 'build']",False,True
+339,"['test', 'fix', 'build', 'refactor', 'docs']","['test', 'fix', 'build', 'feat', 'docs']",False,True,"['test', 'refactor', 'build', 'feat', 'docs']",False,True,"['test', 'fix', 'build', 'feat', 'docs']",False,True
+340,"['ci', 'feat', 'build', 'fix', 'test']","['ci', 'build', 'refactor', 'test', 'fix']",False,True,"['ci', 'test', 'build', 'feat', 'refactor']",False,True,"['ci', 'refactor', 'build', 'fix', 'test']",False,True
+341,"['ci', 'test', 'fix', 'feat', 'build']","['ci', 'test', 'fix', 'feat', 'build']",True,True,"['ci', 'test', 'refactor', 'build']",False,True,"['ci', 'test', 'fix', 'feat', 'build']",True,True
+342,"['test', 'build', 'feat', 'fix', 'ci']","['test', 'build', 'ci', 'refactor', 'feat', 'fix']",False,True,"['test', 'ci', 'refactor', 'build']",False,True,"['test', 'build', 'feat', 'fix', 'ci']",True,True
+343,"['test', 'build', 'refactor', 'docs', 'feat']","['test', 'build', 'refactor', 'docs', 'feat']",True,True,"['test', 'build', 'docs', 'feat']",False,True,"['test', 'build', 'refactor', 'docs', 'feat']",True,True
+344,"['build', 'ci', 'feat', 'docs', 'fix']","['build', 'ci', 'feat', 'docs', 'fix']",True,True,"['build', 'ci', 'refactor', 'test', 'docs']",False,True,"['build', 'ci', 'feat', 'docs', 'refactor']",False,True
+345,"['test', 'build', 'refactor', 'fix', 'ci']","['test', 'build', 'refactor', 'feat', 'ci']",False,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['test', 'build', 'refactor', 'feat', 'ci']",False,True
+346,"['feat', 'build', 'fix', 'ci', 'test']","['build', 'refactor', 'feat', 'ci', 'test', 'docs']",False,True,"['feat', 'build', 'ci', 'test', 'refactor']",False,True,"['feat', 'build', 'feat', 'ci', 'test']",False,True
+347,"['build', 'test', 'refactor', 'feat', 'ci']","['build', 'test', 'feat', 'refactor', 'ci']",True,True,"['build', 'ci', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'test', 'fix', 'feat', 'ci']",False,True
+348,"['ci', 'refactor', 'docs', 'feat', 'fix']","['ci', 'feat', 'refactor', 'fix']",False,True,"['ci', 'feat', 'docs', 'refactor', 'build']",False,True,"['ci', 'feat', 'docs', 'refactor', 'fix']",True,True
+349,"['ci', 'fix', 'feat', 'docs', 'refactor']","['ci', 'docs', 'refactor', 'fix']",False,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs', 'refactor', 'fix', 'feat', 'fix']",False,True
+350,['fix'],['feat'],False,False,"['feat', 'refactor']",False,False,['refactor'],False,False
+351,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+352,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+353,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+354,['fix'],"['fix', 'refactor']",False,True,['fix'],True,True,['fix'],True,True
+355,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+356,['refactor'],['feat'],False,False,"['feat', 'refactor']",False,True,['feat'],False,False
+357,['feat'],['feat'],True,True,"['feat', 'refactor']",False,True,['feat'],True,True
+358,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+359,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+360,['feat'],['feat'],True,True,"['refactor', 'feat']",False,True,['feat'],True,True
+361,['build'],"['build', 'test']",False,True,"['build', 'test']",False,True,['build'],True,True
+362,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+363,['docs'],['docs'],True,True,"['fix', 'docs']",False,True,['docs'],True,True
+364,['feat'],['feat'],True,True,['feat'],True,True,['feat'],True,True
+365,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+366,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+367,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+368,['fix'],"['fix', 'refactor']",False,True,"['fix', 'refactor']",False,True,['fix'],True,True
+369,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+370,['feat'],['feat'],True,True,['feat'],True,True,['feat'],True,True
+371,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+372,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+373,['feat'],"['feat', 'docs']",False,True,"['feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,['feat'],True,True
+374,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+375,['ci'],['ci'],True,True,['ci'],True,True,['build'],False,False
+376,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+377,['test'],"['build', 'test']",False,True,['test'],True,True,['test'],True,True
+378,['docs'],['docs'],True,True,"['docs', 'feat']",False,True,['docs'],True,True
+379,['fix'],['fix'],True,True,['fix'],True,True,['fix'],True,True
+380,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+381,['fix'],['fix'],True,True,['fix'],True,True,['build'],False,False
+382,['build'],"['fix', 'build']",False,True,['build'],True,True,['build'],True,True
+383,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+384,['docs'],['docs'],True,True,"['feat', 'docs']",False,True,['docs'],True,True
+385,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+386,['docs'],['docs'],True,True,"['fix', 'test']",False,False,['docs'],True,True
+387,['fix'],['fix'],True,True,['fix'],True,True,['fix'],True,True
+388,['refactor'],['refactor'],True,True,"['refactor', 'docs']",False,True,['refactor'],True,True
+389,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+390,['refactor'],"['refactor', 'test']",False,True,['refactor'],True,True,['refactor'],True,True
+391,['fix'],['fix'],True,True,['fix'],True,True,['fix'],True,True
+392,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+393,['build'],['fix'],False,False,"['fix', 'build']",False,True,['build'],True,True
+394,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+395,['build'],['fix'],False,False,['build'],True,True,['build'],True,True
+396,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+397,['fix'],['fix'],True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,['fix'],True,True
+398,['fix'],['fix'],True,True,['refactor'],False,False,['fix'],True,True
+399,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+400,['build'],['build'],True,True,"['build', 'fix']",False,True,['build'],True,True
+401,['build'],['refactor'],False,False,"['refactor', 'build']",False,True,['build'],True,True
+402,['refactor'],['feat'],False,False,"['feat', 'docs']",False,False,['fix'],False,False
+403,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+404,['feat'],['fix'],False,False,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,['fix'],False,False
+405,['feat'],['feat'],True,True,"['feat', 'test', 'ci', 'build', 'docs']",False,True,['feat'],True,True
+406,['fix'],['feat'],False,False,"['feat', 'refactor']",False,False,['fix'],True,True
+407,['feat'],['feat'],True,True,"['feat', 'refactor']",False,True,['feat'],True,True
+408,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+409,['ci'],['ci'],True,True,"['ci', 'test']",False,True,['ci'],True,True
+410,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+411,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+412,['refactor'],"['feat', 'docs']",False,False,"['feat', 'refactor']",False,True,['docs'],False,False
+413,['refactor'],['docs'],False,False,"['refactor', 'docs']",False,True,['docs'],False,False
+414,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+415,['test'],['test'],True,True,"['fix', 'test']",False,True,['test'],True,True
+416,['feat'],"['feat', 'refactor']",False,True,"['feat', 'refactor']",False,True,['feat'],True,True
+417,['test'],['test'],True,True,"['feat', 'test']",False,True,"['build', 'test']",False,True
+418,['feat'],"['build', 'refactor', 'feat']",False,True,"['feat', 'build', 'test']",False,True,['feat'],True,True
+419,['docs'],['docs'],True,True,"['feat', 'docs']",False,True,['ci'],False,False
+420,"['feat', 'refactor']","['feat', 'refactor']",True,True,"['feat', 'refactor']",True,True,"['feat', 'refactor']",True,True
+421,"['ci', 'build']","['ci', 'build', 'fix']",False,True,"['ci', 'build']",True,True,"['build', 'build']",False,True
+422,"['refactor', 'docs']","['feat', 'docs']",False,True,"['feat', 'refactor', 'test']",False,True,"['feat', 'docs']",False,True
+423,"['feat', 'refactor']","['feat', 'fix', 'refactor']",False,True,"['feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'feat']",False,True
+424,"['ci', 'test']","['ci', 'test']",True,True,"['ci', 'test', 'refactor']",False,True,"['ci', 'test']",True,True
+425,"['test', 'ci']","['test', 'ci']",True,True,"['test', 'ci']",True,True,"['test', 'ci']",True,True
+426,"['ci', 'build']","['ci', 'build']",True,True,"['ci', 'build']",True,True,['build'],False,True
+427,"['feat', 'test']","['feat', 'test']",True,True,"['feat', 'test', 'refactor']",False,True,['refactor'],False,False
+428,"['fix', 'docs']","['fix', 'docs']",True,True,"['fix', 'ci']",False,True,"['docs', 'build']",False,True
+429,"['fix', 'ci']","['fix', 'ci']",True,True,"['fix', 'ci']",True,True,"['docs', 'ci']",False,True
+430,"['build', 'test']","['build', 'test']",True,True,"['build', 'test']",True,True,"['build', 'test']",True,True
+431,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'docs']",True,True,"['ci', 'docs']",True,True
+432,"['refactor', 'build']","['refactor', 'build']",True,True,"['refactor', 'build']",True,True,"['refactor', 'build']",True,True
+433,"['fix', 'refactor']","['fix', 'refactor']",True,True,"['feat', 'refactor', 'fix', 'ci', 'build', 'test', 'docs']",False,True,"['refactor', 'feat']",False,True
+434,"['build', 'ci']","['fix', 'ci']",False,True,"['fix', 'ci']",False,True,"['build', 'ci']",True,True
+435,"['build', 'refactor']","['build', 'feat']",False,True,"['build', 'feat', 'refactor']",False,True,"['docs', 'fix']",False,False
+436,"['feat', 'docs']","['feat', 'docs']",True,True,"['feat', 'ci']",False,True,"['fix', 'ci']",False,False
+437,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'docs']",True,True,"['ci', 'docs']",True,True
+438,"['fix', 'feat']","['fix', 'build', 'refactor', 'feat']",False,True,"['feat', 'build', 'test', 'refactor']",False,True,"['fix', 'feat', 'refactor']",False,True
+439,"['feat', 'ci']","['feat', 'ci']",True,True,"['feat', 'refactor', 'ci']",False,True,"['refactor', 'ci']",False,True
+440,"['docs', 'ci']","['docs', 'ci']",True,True,"['docs', 'ci']",True,True,"['docs', 'ci']",True,True
+441,"['test', 'docs']","['test', 'docs']",True,True,"['feat', 'docs']",False,True,['test'],False,True
+442,"['docs', 'feat']","['docs', 'feat']",True,True,"['docs', 'feat']",True,True,['docs'],False,True
+443,"['refactor', 'fix']","['refactor', 'fix']",True,True,"['refactor', 'test', 'ci', 'build', 'docs', 'feat', 'fix']",False,True,"['refactor', 'fix']",True,True
+444,"['build', 'ci']","['build', 'ci']",True,True,"['build', 'ci']",True,True,"['build', 'ci']",True,True
+445,"['build', 'refactor']","['fix', 'refactor']",False,True,"['build', 'refactor']",True,True,"['build', 'refactor']",True,True
+446,"['fix', 'test']","['feat', 'test']",False,True,"['feat', 'test']",False,True,"['feat', 'test']",False,True
+447,"['build', 'docs']","['build', 'docs']",True,True,"['fix', 'build', 'docs']",False,True,"['build', 'docs']",True,True
+448,"['fix', 'ci']","['fix', 'ci']",True,True,"['fix', 'ci']",True,True,"['fix', 'ci']",True,True
+449,"['fix', 'ci']","['fix', 'ci']",True,True,"['fix', 'ci']",True,True,"['docs', 'ci']",False,True
+450,"['docs', 'refactor']","['docs', 'refactor']",True,True,"['docs', 'refactor']",True,True,"['docs', 'refactor']",True,True
+451,"['fix', 'feat']","['fix', 'feat']",True,True,"['feat', 'refactor', 'docs']",False,True,"['fix', 'feat']",True,True
+452,"['fix', 'build']","['fix', 'build']",True,True,"['fix', 'build']",True,True,"['build', 'fix']",True,True
+453,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'build', 'test']",False,True,"['build', 'fix']",False,False
+454,"['ci', 'feat']","['ci', 'feat']",True,True,"['ci', 'feat']",True,True,"['ci', 'feat']",True,True
+455,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs']",True,True
+456,"['test', 'build']","['test', 'build']",True,True,"['test', 'ci']",False,True,"['test', 'build']",True,True
+457,"['docs', 'feat']","['docs', 'feat']",True,True,"['feat', 'docs']",True,True,"['docs', 'feat']",True,True
+458,"['refactor', 'build']","['refactor', 'fix', 'build']",False,True,"['refactor', 'build']",True,True,"['refactor', 'build']",True,True
+459,"['feat', 'refactor']","['feat', 'refactor']",True,True,"['feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['feat', 'refactor']",True,True
+460,"['feat', 'fix']","['build', 'refactor', 'fix']",False,True,"['feat', 'refactor', 'build', 'test', 'ci', 'docs']",False,True,"['fix', 'docs']",False,True
+461,"['build', 'docs']","['build', 'docs']",True,True,"['build', 'fix']",False,True,"['build', 'docs']",True,True
+462,"['test', 'refactor']","['build', 'test', 'feat', 'docs']",False,True,"['feat', 'test', 'ci', 'build', 'docs']",False,True,['test'],False,True
+463,"['refactor', 'fix']","['refactor', 'fix']",True,True,['refactor'],False,True,"['refactor', 'fix']",True,True
+464,"['build', 'ci']","['refactor', 'ci']",False,True,"['refactor', 'ci']",False,True,"['build', 'ci']",True,True
+465,"['fix', 'feat']","['fix', 'feat']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'feat']",True,True
+466,"['refactor', 'docs']","['refactor', 'docs']",True,True,"['refactor', 'docs']",True,True,"['docs', 'build']",False,True
+467,"['feat', 'fix']","['build', 'refactor', 'feat']",False,True,"['feat', 'refactor', 'build', 'test', 'ci', 'docs']",False,True,"['test', 'feat', 'refactor']",False,True
+468,"['refactor', 'test']","['refactor', 'test']",True,True,"['refactor', 'test']",True,True,"['refactor', 'test']",True,True
+469,"['test', 'refactor']","['test', 'feat']",False,True,"['test', 'feat']",False,True,"['test', 'feat']",False,True
+470,"['docs', 'build']","['docs', 'fix']",False,True,"['feat', 'refactor']",False,False,"['build', 'fix']",False,True
+471,"['refactor', 'build']","['refactor', 'build']",True,True,"['refactor', 'build']",True,True,"['refactor', 'build']",True,True
+472,"['docs', 'fix']","['docs', 'refactor', 'fix']",False,True,"['docs', 'refactor', 'build']",False,True,['docs'],False,True
+473,"['docs', 'ci']","['docs', 'ci']",True,True,"['fix', 'feat', 'ci', 'docs']",False,True,"['docs', 'ci']",True,True
+474,"['refactor', 'ci']","['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True
+475,"['test', 'fix']","['test', 'feat']",False,True,"['test', 'feat']",False,True,"['test', 'feat']",False,True
+476,"['feat', 'refactor']","['feat', 'refactor']",True,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['feat', 'fix', 'test', 'docs', 'fix']",False,True
+477,"['fix', 'ci']","['fix', 'ci']",True,True,"['refactor', 'fix', 'ci']",False,True,"['build', 'ci']",False,True
+478,"['build', 'ci']","['build', 'ci']",True,True,"['build', 'ci']",True,True,"['build', 'ci']",True,True
+479,"['build', 'test']","['build', 'test']",True,True,"['build', 'test', 'ci']",False,True,"['build', 'test']",True,True
+480,"['refactor', 'ci']","['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True
+481,"['fix', 'build']","['fix', 'build']",True,True,"['refactor', 'build']",False,True,"['fix', 'build']",True,True
+482,"['build', 'refactor']","['build', 'refactor', 'test']",False,True,"['build', 'refactor']",True,True,"['build', 'refactor']",True,True
+483,"['test', 'ci']","['build', 'test', 'ci']",False,True,"['test', 'ci', 'build', 'feat']",False,True,"['test', 'ci']",True,True
+484,"['test', 'refactor']","['test', 'refactor']",True,True,"['refactor', 'test']",True,True,"['test', 'refactor']",True,True
+485,"['ci', 'refactor']","['ci', 'feat']",False,True,"['ci', 'refactor', 'test', 'feat']",False,True,"['ci', 'feat']",False,True
+486,"['test', 'docs']","['test', 'docs']",True,True,"['test', 'docs']",True,True,"['test', 'fix']",False,True
+487,"['feat', 'fix']",['feat'],False,True,"['feat', 'refactor']",False,True,"['feat', 'fix']",True,True
+488,"['build', 'docs']","['refactor', 'docs']",False,True,"['refactor', 'ci']",False,False,"['docs', 'fix']",False,True
+489,"['feat', 'refactor']","['build', 'feat', 'fix', 'refactor']",False,True,"['feat', 'build', 'test', 'docs', 'refactor', 'ci']",False,True,"['build', 'feat']",False,True
+490,"['ci', 'fix', 'docs']","['ci', 'fix', 'docs']",True,True,"['ci', 'docs', 'refactor', 'test', 'feat', 'build', 'fix']",False,True,"['docs', 'fix', 'docs', 'docs']",False,True
+491,"['fix', 'refactor', 'feat']","['fix', 'refactor', 'build', 'feat']",False,True,"['refactor', 'test']",False,True,"['fix', 'refactor', 'feat']",True,True
+492,"['build', 'feat', 'ci']","['build', 'feat', 'ci']",True,True,"['build', 'feat', 'refactor']",False,True,"['build', 'feat', 'ci']",True,True
+493,"['ci', 'docs', 'feat']","['ci', 'docs', 'feat']",True,True,"['ci', 'feat', 'refactor', 'docs']",False,True,"['build', 'docs', 'feat']",False,True
+494,"['ci', 'docs', 'build']","['ci', 'docs', 'fix']",False,True,"['ci', 'build', 'docs', 'fix']",False,True,"['ci', 'docs', 'build']",True,True
+495,"['test', 'docs', 'fix']","['test', 'docs', 'fix']",True,True,"['test', 'ci', 'feat', 'refactor']",False,True,"['test', 'fix', 'docs']",True,True
+496,"['feat', 'docs', 'refactor']","['feat', 'docs', 'refactor']",True,True,"['feat', 'docs', 'refactor']",True,True,"['fix', 'docs', 'feat']",False,True
+497,"['docs', 'ci', 'test']","['docs', 'ci', 'test']",True,True,"['build', 'ci', 'docs', 'fix', 'refactor']",False,True,"['docs', 'build', 'test']",False,True
+498,"['build', 'fix', 'refactor']","['build', 'refactor', 'fix']",True,True,"['build', 'refactor']",False,True,"['docs', 'fix', 'refactor']",False,True
+499,"['test', 'fix', 'docs']","['test', 'fix', 'docs']",True,True,"['test', 'docs', 'refactor']",False,True,"['test', 'fix', 'docs']",True,True
+500,"['build', 'refactor', 'fix']","['build', 'refactor', 'fix']",True,True,"['build', 'ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['build', 'refactor', 'fix']",True,True
+501,"['test', 'docs', 'build']","['test', 'docs', 'build', 'fix']",False,True,"['test', 'refactor', 'ci']",False,True,"['test', 'docs', 'build']",True,True
+502,"['feat', 'test', 'refactor']","['build', 'refactor', 'feat', 'test']",False,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['feat', 'test', 'feat', 'refactor']",False,True
+503,"['docs', 'feat', 'fix']","['docs', 'feat', 'fix']",True,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['docs', 'feat', 'fix']",True,True
+504,"['ci', 'docs', 'fix']","['ci', 'docs', 'refactor', 'fix']",False,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs', 'fix']",True,True
+505,"['ci', 'docs', 'fix']","['ci', 'docs', 'fix']",True,True,"['ci', 'docs', 'refactor', 'test']",False,True,"['ci', 'docs', 'fix']",True,True
+506,"['test', 'fix', 'build']","['test', 'refactor', 'fix', 'build']",False,True,"['test', 'refactor', 'build']",False,True,"['test', 'fix', 'build', 'ci']",False,True
+507,"['docs', 'ci', 'fix']","['docs', 'ci', 'refactor', 'fix']",False,True,"['docs', 'ci', 'refactor', 'build']",False,True,"['build', 'ci', 'feat']",False,True
+508,"['build', 'ci', 'test']","['fix', 'ci', 'test']",False,True,"['fix', 'ci', 'test', 'build']",False,True,"['build', 'ci', 'test']",True,True
+509,"['refactor', 'feat', 'fix']",['feat'],False,True,"['feat', 'feat', 'feat']",False,True,"['refactor', 'fix', 'feat']",True,True
+510,"['ci', 'test', 'fix']","['ci', 'test', 'fix']",True,True,"['ci', 'test', 'refactor']",False,True,"['build', 'test', 'fix']",False,True
+511,"['feat', 'refactor', 'build']","['feat', 'refactor', 'build']",True,True,"['feat', 'refactor', 'test', 'build']",False,True,"['refactor', 'test', 'build']",False,True
+512,"['fix', 'feat', 'ci']","['fix', 'feat', 'ci']",True,True,"['feat', 'refactor', 'ci', 'build']",False,True,"['fix', 'feat', 'build']",False,True
+513,"['docs', 'refactor', 'test']","['docs', 'feat', 'test']",False,True,"['feat', 'docs', 'test', 'refactor']",False,True,"['docs', 'test', 'test']",False,True
+514,"['test', 'ci', 'feat']","['fix', 'ci', 'feat']",False,True,"['fix', 'ci', 'refactor', 'docs', 'test', 'build']",False,True,"['test', 'build', 'fix']",False,True
+515,"['feat', 'build', 'refactor']","['feat', 'fix', 'refactor', 'build']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'build', 'refactor']",True,True
+516,"['feat', 'build', 'docs']","['feat', 'build', 'docs']",True,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'build', 'fix']",False,True
+517,"['build', 'refactor', 'ci']","['build', 'refactor', 'ci']",True,True,"['fix', 'refactor', 'ci']",False,True,"['build', 'refactor', 'ci']",True,True
+518,"['docs', 'ci', 'build']","['docs', 'ci', 'build', 'test']",False,True,"['docs', 'build']",False,True,"['docs', 'ci', 'build']",True,True
+519,"['fix', 'test', 'build']","['fix', 'test', 'build']",True,True,"['fix', 'test', 'build']",True,True,"['fix', 'test', 'build']",True,True
+520,"['refactor', 'docs', 'feat']","['feat', 'docs', 'fix']",False,True,"['feat', 'docs', 'refactor', 'test', 'ci', 'build']",False,True,"['docs', 'fix', 'refactor']",False,True
+521,"['docs', 'refactor', 'test']","['docs', 'test', 'refactor']",True,True,"['fix', 'refactor', 'test']",False,True,"['docs', 'refactor', 'test']",True,True
+522,"['fix', 'docs', 'test']","['fix', 'docs', 'test']",True,True,"['fix', 'build', 'test']",False,True,"['build', 'docs', 'test']",False,True
+523,"['refactor', 'ci', 'test']","['refactor', 'ci', 'test']",True,True,"['refactor', 'ci', 'test']",True,True,"['refactor', 'ci', 'test']",True,True
+524,"['ci', 'test', 'docs']","['ci', 'test', 'docs']",True,True,"['ci', 'test', 'docs']",True,True,"['build', 'test', 'docs']",False,True
+525,"['feat', 'docs', 'fix']","['feat', 'docs', 'fix']",True,True,"['feat', 'build', 'refactor']",False,True,"['feat', 'docs', 'fix']",True,True
+526,"['test', 'fix', 'build']","['test', 'fix', 'build']",True,True,"['test', 'build']",False,True,"['test', 'fix', 'build', 'docs']",False,True
+527,"['feat', 'docs', 'refactor']","['feat', 'docs', 'refactor', 'fix']",False,True,"['feat', 'refactor', 'docs', 'build', 'ci', 'test']",False,True,"['feat', 'docs', 'refactor']",True,True
+528,"['fix', 'ci', 'build']","['fix', 'ci']",False,True,"['feat', 'build', 'refactor']",False,True,"['fix', 'build', 'fix']",False,True
+529,"['fix', 'refactor', 'docs']","['fix', 'feat', 'docs']",False,True,"['fix', 'feat', 'docs']",False,True,"['refactor', 'fix', 'test', 'docs']",False,True
+530,"['build', 'feat', 'fix']","['build', 'feat', 'fix']",True,True,"['build', 'fix']",False,True,"['build', 'fix']",False,True
+531,"['test', 'refactor', 'feat']","['test', 'refactor', 'feat']",True,True,"['test', 'refactor', 'feat']",True,True,"['test', 'refactor', 'feat']",True,True
+532,"['test', 'build', 'ci']","['test', 'build', 'ci']",True,True,"['test', 'ci', 'build']",True,True,"['test', 'build', 'ci', 'ci']",False,True
+533,"['test', 'fix', 'docs']","['test', 'fix', 'docs']",True,True,"['feat', 'test', 'refactor', 'docs']",False,True,"['test', 'fix', 'docs']",True,True
+534,"['fix', 'build', 'test']","['fix', 'build', 'test']",True,True,"['fix', 'refactor', 'test']",False,True,"['build', 'test', 'test']",False,True
+535,"['feat', 'fix', 'ci']","['feat', 'fix', 'ci']",True,True,"['feat', 'fix', 'ci']",True,True,"['feat', 'fix', 'ci']",True,True
+536,"['fix', 'docs', 'build']","['feat', 'docs', 'build']",False,True,"['feat', 'build', 'docs']",False,True,"['feat', 'docs', 'build']",False,True
+537,"['fix', 'ci', 'docs']","['feat', 'ci', 'docs']",False,True,"['feat', 'ci', 'docs']",False,True,"['refactor', 'ci', 'docs']",False,True
+538,"['feat', 'docs', 'fix']","['feat', 'docs', 'refactor', 'fix']",False,True,"['feat', 'docs', 'build']",False,True,"['feat', 'docs', 'fix']",True,True
+539,"['feat', 'fix', 'refactor']","['feat', 'refactor']",False,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['feat', 'feat', 'refactor']",False,True
+540,"['fix', 'docs', 'test']","['refactor', 'fix', 'docs', 'test']",False,True,"['fix', 'docs', 'build', 'test']",False,True,"['refactor', 'docs', 'test']",False,True
+541,"['docs', 'ci', 'feat']","['docs', 'ci', 'feat']",True,True,"['docs', 'ci', 'refactor']",False,True,"['docs', 'test', 'feat']",False,True
+542,"['build', 'ci', 'refactor']","['build', 'test', 'ci', 'refactor']",False,True,"['build', 'refactor']",False,True,"['build', 'ci', 'refactor']",True,True
+543,"['feat', 'fix', 'test']","['feat', 'fix', 'test', 'refactor']",False,True,"['feat', 'test', 'ci', 'build', 'docs', 'refactor']",False,True,"['feat', 'docs', 'test']",False,True
+544,"['docs', 'test', 'build']","['docs', 'test', 'build']",True,True,"['docs', 'test', 'ci', 'build']",False,True,"['docs', 'fix', 'build']",False,True
+545,"['fix', 'ci', 'test']","['fix', 'ci', 'test']",True,True,"['feat', 'ci', 'test']",False,True,"['fix', 'ci', 'test']",True,True
+546,"['docs', 'fix', 'ci']","['docs', 'ci', 'refactor']",False,True,"['docs', 'build', 'refactor']",False,True,"['docs', 'fix', 'build']",False,True
+547,"['ci', 'fix', 'docs']","['ci', 'fix', 'docs']",True,True,"['ci', 'refactor', 'docs']",False,True,"['ci', 'fix', 'docs']",True,True
+548,"['build', 'docs', 'refactor']","['build', 'docs', 'fix']",False,True,"['build', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'build', 'docs']",False,True
+549,"['fix', 'build', 'refactor']","['refactor', 'build']",False,True,"['fix', 'refactor', 'ci', 'build', 'docs', 'test']",False,True,"['docs', 'build', 'refactor']",False,True
+550,"['test', 'docs', 'build']","['test', 'docs', 'build']",True,True,"['test', 'ci', 'build', 'refactor']",False,True,"['test', 'fix', 'build']",False,True
+551,"['feat', 'fix', 'test']","['feat', 'fix', 'test']",True,True,"['feat', 'test', 'refactor', 'build']",False,True,"['feat', 'refactor', 'test']",False,True
+552,"['test', 'fix', 'feat']","['test', 'fix', 'feat']",True,True,"['test', 'feat', 'build']",False,True,"['test', 'fix', 'feat']",True,True
+553,"['feat', 'fix', 'docs']","['feat', 'fix', 'docs']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['refactor', 'fix', 'fix']",False,True
+554,"['ci', 'docs', 'test']","['ci', 'test', 'docs']",True,True,"['ci', 'feat', 'refactor', 'test']",False,True,"['build', 'fix', 'test']",False,True
+555,"['ci', 'fix', 'docs']","['ci', 'fix', 'docs']",True,True,"['ci', 'refactor', 'docs']",False,True,"['ci', 'fix', 'docs']",True,True
+556,"['feat', 'fix', 'test']","['feat', 'fix', 'test']",True,True,"['feat', 'test', 'ci', 'build']",False,True,"['feat', 'docs', 'fix', 'test']",False,True
+557,"['docs', 'ci', 'feat']","['docs', 'ci', 'feat']",True,True,"['feat', 'ci', 'refactor', 'docs', 'test', 'build']",False,True,"['docs', 'build', 'fix']",False,True
+558,"['ci', 'docs', 'build']","['ci', 'docs', 'fix']",False,True,"['ci', 'docs', 'feat', 'refactor']",False,True,"['ci', 'docs', 'fix']",False,True
+559,"['ci', 'feat', 'build']","['ci', 'fix', 'build']",False,True,"['ci', 'refactor', 'build']",False,True,"['build', 'fix', 'ci']",False,True
+560,"['test', 'build', 'fix', 'feat']","['test', 'build', 'fix', 'feat']",True,True,"['test', 'build', 'feat', 'fix']",True,True,"['test', 'build', 'fix', 'feat']",True,True
+561,"['ci', 'build', 'test', 'docs']","['ci', 'build', 'test', 'docs']",True,True,"['ci', 'docs', 'feat', 'refactor', 'test']",False,True,"['ci', 'build', 'test', 'docs']",True,True
+562,"['refactor', 'feat', 'docs', 'test']","['refactor', 'feat', 'docs', 'test']",True,True,"['refactor', 'docs', 'test', 'build']",False,True,"['refactor', 'fix', 'docs', 'test']",False,True
+563,"['fix', 'test', 'build', 'refactor']","['refactor', 'test', 'build', 'feat']",False,True,"['fix', 'build', 'refactor', 'test']",True,True,"['fix', 'test', 'build', 'feat']",False,True
+564,"['docs', 'build', 'ci', 'feat']","['docs', 'build', 'ci', 'feat']",True,True,"['build', 'ci', 'docs', 'refactor', 'test']",False,True,"['docs', 'build', 'refactor', 'feat']",False,True
+565,"['test', 'fix', 'refactor', 'ci']","['test', 'refactor', 'feat', 'ci']",False,True,"['feat', 'fix', 'test', 'ci', 'docs']",False,True,"['test', 'fix', 'feat', 'ci']",False,True
+566,"['ci', 'fix', 'feat', 'refactor']","['ci', 'fix', 'feat', 'refactor']",True,True,"['ci', 'feat', 'refactor', 'build']",False,True,['ci'],False,True
+567,"['docs', 'ci', 'test', 'refactor']","['docs', 'ci', 'test', 'refactor']",True,True,"['docs', 'ci', 'test', 'refactor']",True,True,"['docs', 'ci', 'test', 'refactor']",True,True
+568,"['fix', 'feat', 'build', 'docs']","['fix', 'feat', 'docs', 'build']",True,True,"['fix', 'feat', 'build', 'ci', 'docs', 'test', 'refactor']",False,True,"['fix', 'feat', 'build', 'docs']",True,True
+569,"['docs', 'feat', 'test', 'fix']","['docs', 'feat', 'test', 'fix']",True,True,"['fix', 'feat', 'test', 'ci', 'build', 'docs', 'refactor']",False,True,"['docs', 'fix', 'test', 'feat']",True,True
+570,"['build', 'refactor', 'test', 'ci']","['build', 'refactor', 'test', 'ci']",True,True,"['build', 'refactor', 'test']",False,True,"['build', 'docs', 'refactor', 'test', 'ci']",False,True
+571,"['feat', 'fix', 'test', 'refactor']","['feat', 'fix', 'test', 'refactor']",True,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['fix', 'test', 'refactor']",False,True
+572,"['refactor', 'docs', 'test', 'ci']","['feat', 'docs', 'test', 'ci']",False,True,"['feat', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'docs', 'test', 'ci']",False,True
+573,"['docs', 'refactor', 'test', 'fix']","['docs', 'refactor', 'test', 'fix']",True,True,"['docs', 'refactor', 'build']",False,True,"['docs', 'refactor', 'fix', 'fix']",False,True
+574,"['test', 'docs', 'build', 'ci']","['test', 'docs', 'build', 'ci']",True,True,"['test', 'docs', 'build', 'ci', 'feat']",False,True,"['test', 'docs', 'build']",False,True
+575,"['fix', 'refactor', 'docs', 'test']","['fix', 'refactor', 'test', 'docs']",True,True,"['refactor', 'test', 'ci', 'build', 'docs']",False,True,"['fix', 'refactor', 'docs', 'test']",True,True
+576,"['refactor', 'ci', 'docs', 'build']","['feat', 'ci', 'docs', 'build']",False,True,"['feat', 'docs', 'build', 'ci']",False,True,"['fix', 'ci', 'docs', 'build']",False,True
+577,"['ci', 'build', 'test', 'fix']","['ci', 'build', 'test', 'feat']",False,True,"['ci', 'test', 'feat', 'docs', 'refactor']",False,True,"['ci', 'build', 'test', 'feat']",False,True
+578,"['ci', 'build', 'feat', 'fix']","['ci', 'build', 'feat', 'fix']",True,True,"['ci', 'docs', 'refactor', 'test']",False,True,"['ci', 'build', 'feat', 'fix']",True,True
+579,"['test', 'build', 'fix', 'feat']","['test', 'build', 'fix', 'feat']",True,True,"['test', 'build', 'ci', 'refactor']",False,True,"['test', 'build', 'fix', 'refactor']",False,True
+580,"['fix', 'docs', 'test', 'refactor']","['refactor', 'docs', 'test']",False,True,"['fix', 'feat', 'test', 'refactor']",False,True,"['fix', 'docs', 'test', 'refactor']",True,True
+581,"['ci', 'docs', 'build', 'feat']","['ci', 'docs', 'fix', 'feat']",False,True,"['ci', 'feat', 'refactor', 'test']",False,True,"['ci', 'feat', 'fix', 'feat']",False,True
+582,"['fix', 'test', 'feat', 'docs']","['fix', 'test', 'feat', 'docs']",True,True,"['feat', 'fix', 'test', 'refactor', 'docs']",False,True,"['test', 'docs']",False,True
+583,"['ci', 'fix', 'test', 'docs']","['ci', 'fix', 'test', 'docs']",True,True,"['ci', 'test', 'refactor']",False,True,"['ci', 'fix', 'test', 'docs']",True,True
+584,"['feat', 'ci', 'refactor', 'fix']","['feat', 'refactor', 'ci', 'fix']",True,True,"['feat', 'refactor', 'ci', 'build', 'docs', 'test']",False,True,"['feat', 'build', 'refactor', 'fix']",False,True
+585,"['refactor', 'feat', 'docs', 'build']","['feat', 'refactor', 'docs', 'build']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['feat', 'test', 'docs', 'build']",False,True
+586,"['build', 'test', 'ci', 'refactor']","['build', 'ci', 'test', 'feat', 'fix']",False,True,"['build', 'test', 'refactor', 'ci', 'docs']",False,True,"['build', 'test', 'build', 'feat']",False,True
+587,"['build', 'docs', 'feat', 'fix']","['build', 'docs', 'feat', 'refactor']",False,True,"['build', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'docs', 'fix', 'refactor']",False,True
+588,"['build', 'test', 'ci', 'feat']","['build', 'test', 'ci', 'feat', 'refactor']",False,True,"['build', 'test', 'ci', 'refactor', 'feat']",False,True,"['build', 'build', 'test', 'ci', 'refactor']",False,True
+589,"['fix', 'build', 'docs', 'refactor']","['fix', 'build', 'docs', 'refactor']",True,True,"['refactor', 'build', 'docs', 'test', 'ci']",False,True,"['fix', 'build', 'docs', 'refactor']",True,True
+590,"['fix', 'feat', 'docs', 'ci']","['fix', 'feat', 'docs', 'ci']",True,True,"['refactor', 'feat', 'docs', 'test', 'ci']",False,True,"['fix', 'feat', 'docs', 'ci']",True,True
+591,"['docs', 'fix', 'feat', 'refactor']","['docs', 'fix', 'feat', 'refactor']",True,True,"['fix', 'feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['docs', 'fix', 'feat', 'refactor']",True,True
+592,"['fix', 'build', 'feat', 'ci']","['fix', 'feat', 'build', 'ci']",True,True,"['feat', 'build', 'refactor', 'ci', 'docs']",False,True,"['feat', 'fix', 'feat', 'build']",False,True
+593,"['feat', 'refactor', 'test', 'build']","['feat', 'refactor', 'test', 'build']",True,True,"['feat', 'refactor', 'fix', 'build']",False,True,"['fix', 'refactor', 'test']",False,True
+594,"['build', 'test', 'ci', 'fix']","['build', 'test', 'ci', 'fix', 'refactor']",False,True,"['build', 'test', 'fix', 'refactor', 'ci']",False,True,"['build', 'test', 'ci', 'fix']",True,True
+595,"['docs', 'feat', 'build', 'ci']","['docs', 'refactor', 'build', 'ci']",False,True,"['feat', 'build', 'test', 'refactor']",False,True,"['docs', 'feat', 'build', 'ci']",True,True
+596,"['docs', 'refactor', 'ci', 'build']","['docs', 'feat', 'ci', 'build']",False,True,"['docs', 'feat', 'build', 'ci', 'test']",False,True,"['docs', 'feat', 'fix', 'build', 'build']",False,True
+597,"['refactor', 'ci', 'fix', 'docs']","['feat', 'ci', 'refactor', 'docs']",False,True,"['feat', 'build', 'refactor', 'docs']",False,True,"['build', 'ci', 'fix', 'docs']",False,True
+598,"['test', 'ci', 'docs', 'feat']","['test', 'ci', 'docs', 'feat']",True,True,"['test', 'ci', 'docs', 'feat']",True,True,"['test', 'ci', 'docs', 'feat']",True,True
+599,"['refactor', 'fix', 'test', 'feat']","['refactor', 'feat', 'test']",False,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['refactor', 'feat', 'test', 'fix']",True,True
+600,"['docs', 'feat', 'ci', 'refactor']","['docs', 'ci', 'feat']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['build', 'feat', 'build', 'docs']",False,True
+601,"['refactor', 'feat', 'docs', 'ci']","['refactor', 'feat', 'ci']",False,True,"['refactor', 'ci', 'build']",False,True,"['refactor', 'fix', 'ci', 'docs']",False,True
+602,"['docs', 'ci', 'refactor', 'test']","['docs', 'ci', 'refactor', 'test']",True,True,"['docs', 'ci', 'build', 'test', 'refactor']",False,True,"['docs', 'refactor', 'fix', 'test']",False,True
+603,"['test', 'docs', 'ci', 'fix']","['test', 'docs', 'ci', 'fix']",True,True,"['test', 'ci', 'fix', 'refactor']",False,True,"['test', 'fix']",False,True
+604,"['ci', 'refactor', 'test', 'docs']","['ci', 'refactor', 'test', 'build', 'docs', 'feat']",False,True,"['ci', 'test', 'docs', 'refactor']",True,True,"['ci', 'refactor', 'test', 'docs']",True,True
+605,"['docs', 'feat', 'test', 'build']","['docs', 'feat', 'test', 'build']",True,True,"['feat', 'fix', 'docs', 'test', 'ci', 'build']",False,True,"['docs', 'feat', 'test', 'build']",True,True
+606,"['refactor', 'feat', 'test', 'fix']","['refactor', 'fix', 'test']",False,True,"['refactor', 'test', 'ci', 'build', 'feat', 'fix', 'docs']",False,True,"['refactor', 'fix', 'test', 'feat']",True,True
+607,"['build', 'ci', 'fix', 'refactor']","['build', 'ci', 'fix', 'feat']",False,True,"['build', 'ci', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'ci', 'fix', 'feat']",False,True
+608,"['test', 'refactor', 'docs', 'feat']","['test', 'docs', 'feat', 'build', 'refactor']",False,True,"['feat', 'test', 'docs', 'ci', 'build', 'refactor', 'fix']",False,True,"['test', 'fix', 'docs', 'refactor']",False,True
+609,"['build', 'refactor', 'fix', 'ci']","['build', 'docs', 'refactor', 'ci']",False,True,"['build', 'ci', 'refactor', 'test']",False,True,"['build', 'docs', 'fix', 'ci']",False,True
+610,"['feat', 'test', 'refactor', 'ci']","['fix', 'test', 'feat', 'ci']",False,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'test', 'feat', 'build']",False,True
+611,"['docs', 'fix', 'test', 'refactor']","['docs', 'test', 'refactor']",False,True,"['fix', 'refactor', 'ci', 'test', 'docs', 'build']",False,True,"['docs', 'fix', 'test', 'refactor']",True,True
+612,"['refactor', 'fix', 'docs', 'ci']","['refactor', 'fix', 'docs', 'ci']",True,True,"['fix', 'refactor', 'ci', 'build']",False,True,"['test', 'docs', 'build', 'fix']",False,True
+613,"['fix', 'build', 'ci', 'test']","['refactor', 'fix', 'build', 'ci', 'test']",False,True,"['fix', 'build', 'test', 'ci', 'refactor', 'docs']",False,True,"['docs', 'build', 'refactor', 'test']",False,True
+614,"['build', 'fix', 'ci', 'docs']","['build', 'ci', 'docs', 'refactor', 'fix']",False,True,"['build', 'ci', 'docs', 'refactor', 'test']",False,True,"['build', 'docs', 'test', 'fix']",False,True
+615,"['ci', 'refactor', 'fix', 'docs']","['ci', 'refactor', 'fix', 'docs']",True,True,"['ci', 'refactor', 'docs']",False,True,"['build', 'refactor', 'docs', 'docs']",False,True
+616,"['fix', 'ci', 'docs', 'refactor']","['fix', 'docs', 'ci', 'refactor']",True,True,"['feat', 'fix', 'docs', 'refactor', 'ci', 'build']",False,True,"['fix', 'build', 'docs', 'refactor']",False,True
+617,"['fix', 'feat', 'build', 'docs']","['fix', 'feat', 'build', 'docs']",True,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['fix', 'feat', 'build', 'docs']",True,True
+618,"['build', 'ci', 'test', 'feat']","['build', 'ci', 'test', 'feat']",True,True,"['feat', 'build', 'test', 'ci', 'refactor']",False,True,"['build', 'docs', 'fix', 'feat']",False,True
+619,"['ci', 'docs', 'feat', 'test']","['ci', 'feat', 'test']",False,True,"['ci', 'feat', 'refactor', 'test']",False,True,"['ci', 'fix', 'feat', 'test']",False,True
+620,"['refactor', 'docs', 'ci', 'test']","['refactor', 'docs', 'ci', 'test']",True,True,"['refactor', 'docs', 'ci', 'test']",True,True,"['refactor', 'docs', 'ci', 'build']",False,True
+621,"['docs', 'refactor', 'test', 'fix']","['docs', 'test', 'refactor', 'fix']",True,True,"['fix', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['docs', 'refactor', 'test', 'fix']",True,True
+622,"['ci', 'docs', 'refactor', 'test']","['ci', 'docs', 'refactor', 'test']",True,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs', 'refactor', 'test']",True,True
+623,"['fix', 'docs', 'ci', 'feat']","['fix', 'docs', 'ci', 'feat']",True,True,"['fix', 'refactor', 'ci', 'feat']",False,True,"['fix', 'docs', 'build', 'feat']",False,True
+624,"['docs', 'test', 'build', 'feat']","['docs', 'test', 'build', 'feat']",True,True,"['fix', 'feat', 'docs', 'test', 'ci', 'build']",False,True,"['docs', 'test', 'feat']",False,True
+625,"['docs', 'refactor', 'test', 'fix']","['docs', 'test', 'fix']",False,True,"['docs', 'refactor', 'test', 'build']",False,True,"['docs', 'refactor', 'test', 'fix']",True,True
+626,"['test', 'feat', 'docs', 'ci']","['test', 'feat', 'docs', 'ci']",True,True,"['test', 'feat', 'docs', 'build']",False,True,"['test', 'docs', 'docs', 'ci']",False,True
+627,"['refactor', 'build', 'feat', 'docs']","['feat', 'build', 'docs']",False,True,"['feat', 'build', 'refactor']",False,True,"['test', 'fix', 'feat', 'docs']",False,True
+628,"['build', 'fix', 'test', 'feat']","['build', 'test', 'fix', 'feat']",True,True,"['build', 'ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['build', 'fix', 'test', 'feat']",True,True
+629,"['refactor', 'ci', 'docs', 'build']","['refactor', 'build', 'ci', 'docs']",True,True,"['feat', 'docs', 'build', 'test', 'ci', 'refactor', 'fix']",False,True,"['refactor', 'ci', 'docs', 'build']",True,True
+630,"['fix', 'docs', 'refactor', 'ci', 'test']","['fix', 'docs', 'feat', 'ci', 'test']",False,True,"['fix', 'docs', 'feat', 'ci', 'test']",False,True,"['docs', 'fix', 'feat', 'build', 'test']",False,True
+631,"['test', 'docs', 'refactor', 'build', 'feat']","['test', 'docs', 'refactor', 'build', 'feat']",True,True,"['test', 'feat', 'docs', 'build', 'refactor']",True,True,"['test', 'refactor', 'docs']",False,True
+632,"['test', 'ci', 'fix', 'build', 'refactor']","['test', 'ci', 'build', 'refactor']",False,True,"['test', 'ci', 'refactor', 'docs']",False,True,"['test', 'ci', 'docs', 'build', 'refactor']",False,True
+633,"['ci', 'refactor', 'build', 'test', 'fix']","['ci', 'refactor', 'fix']",False,True,"['ci', 'test', 'refactor', 'fix', 'feat']",False,True,"['ci', 'fix', 'build', 'test', 'feat']",False,True
+634,"['build', 'fix', 'feat', 'refactor', 'docs']","['refactor', 'docs', 'feat']",False,True,"['refactor', 'docs']",False,True,"['refactor', 'fix', 'feat', 'feat', 'docs']",False,True
+635,"['docs', 'test', 'build', 'fix', 'feat']","['docs', 'test', 'build', 'fix', 'feat']",True,True,"['docs', 'test', 'build', 'refactor', 'feat']",False,True,"['docs', 'test', 'build', 'fix', 'feat']",True,True
+636,"['ci', 'build', 'fix', 'test', 'feat']","['ci', 'build', 'fix', 'test', 'feat']",True,True,"['ci', 'build', 'test', 'refactor']",False,True,"['ci', 'build', 'fix', 'test', 'feat']",True,True
+637,"['fix', 'test', 'build', 'ci', 'refactor']","['fix', 'test', 'build', 'ci', 'refactor']",True,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['fix', 'test', 'docs', 'refactor']",False,True
+638,"['docs', 'ci', 'refactor', 'test', 'fix']","['docs', 'ci', 'feat', 'fix']",False,True,"['fix', 'refactor', 'ci', 'docs', 'test', 'build']",False,True,"['docs', 'ci', 'feat', 'test', 'refactor']",False,True
+639,"['refactor', 'docs', 'build', 'feat', 'fix']","['refactor', 'docs', 'build', 'feat']",False,True,"['refactor', 'docs', 'build', 'ci', 'test']",False,True,"['refactor', 'docs', 'build', 'feat', 'feat']",False,True
+640,"['feat', 'build', 'fix', 'ci', 'test']","['feat', 'fix', 'refactor', 'build', 'ci', 'test']",False,True,"['feat', 'build', 'refactor', 'ci', 'test']",False,True,"['feat', 'build', 'fix', 'ci', 'test']",True,True
+641,"['ci', 'refactor', 'test', 'feat', 'fix']","['ci', 'fix', 'build', 'refactor', 'feat']",False,True,"['ci', 'test', 'refactor', 'feat', 'docs']",False,True,['ci'],False,True
+642,"['build', 'refactor', 'ci', 'docs', 'fix']","['build', 'ci', 'feat', 'docs', 'fix']",False,True,"['build', 'feat', 'refactor', 'ci', 'docs', 'test']",False,True,"['build', 'fix', 'feat', 'ci', 'docs']",False,True
+643,"['docs', 'ci', 'refactor', 'build', 'feat']","['docs', 'ci', 'refactor', 'feat', 'fix']",False,True,"['fix', 'feat', 'docs', 'ci', 'build', 'refactor']",False,True,"['docs', 'ci', 'feat', 'build', 'feat']",False,True
+644,"['test', 'feat', 'refactor', 'fix', 'docs']","['test', 'feat', 'refactor', 'fix', 'docs']",True,True,"['test', 'refactor', 'build', 'feat', 'ci', 'docs']",False,True,"['test', 'feat', 'refactor', 'fix', 'docs']",True,True
+645,"['docs', 'build', 'ci', 'fix', 'test']","['docs', 'build', 'ci', 'refactor', 'test', 'fix']",False,True,"['docs', 'ci', 'test', 'build', 'feat']",False,True,"['docs', 'fix', 'ci', 'build', 'test', 'feat']",False,True
+646,"['refactor', 'ci', 'docs', 'test', 'build']","['refactor', 'ci', 'docs', 'test', 'build']",True,True,"['refactor', 'ci', 'test', 'build']",False,True,"['refactor', 'ci', 'fix', 'build']",False,True
+647,"['test', 'feat', 'ci', 'refactor', 'fix']","['test', 'ci', 'fix', 'refactor']",False,True,"['test', 'refactor', 'ci', 'build']",False,True,"['test', 'fix', 'ci', 'refactor', 'fix']",False,True
+648,"['build', 'fix', 'ci', 'refactor', 'docs']","['build', 'ci', 'fix', 'refactor', 'test', 'docs']",False,True,"['build', 'ci', 'refactor', 'test']",False,True,"['build', 'refactor', 'ci', 'test', 'docs']",False,True
+649,"['build', 'docs', 'ci', 'test', 'feat']","['fix', 'docs', 'ci', 'test', 'feat']",False,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['build', 'docs', 'fix', 'test', 'feat']",False,True
+650,"['feat', 'fix', 'refactor', 'build', 'test']","['feat', 'fix', 'refactor', 'test']",False,True,"['feat', 'refactor', 'test', 'ci', 'build']",False,True,"['feat', 'fix', 'refactor', 'docs', 'build', 'test']",False,True
+651,"['refactor', 'build', 'ci', 'docs', 'test']","['refactor', 'build', 'ci', 'docs', 'test']",True,True,"['refactor', 'ci', 'build', 'docs', 'test']",True,True,"['refactor', 'build', 'ci', 'docs', 'test']",True,True
+652,"['build', 'test', 'refactor', 'ci', 'fix']","['build', 'test', 'ci', 'fix', 'refactor']",True,True,"['build', 'test', 'ci', 'refactor', 'fix']",True,True,"['build', 'test', 'refactor', 'ci', 'fix']",True,True
+653,"['build', 'docs', 'ci', 'test', 'fix']","['build', 'docs', 'ci', 'test', 'refactor', 'fix']",False,True,"['build', 'ci', 'docs', 'fix', 'refactor']",False,True,"['build', 'ci', 'fix', 'build', 'test', 'feat']",False,True
+654,"['fix', 'ci', 'feat', 'build', 'refactor']","['feat', 'ci', 'build', 'refactor']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'ci', 'refactor', 'test']",False,True
+655,"['fix', 'build', 'refactor', 'feat', 'test']","['refactor', 'fix', 'feat', 'build', 'test']",True,True,"['fix', 'refactor', 'ci', 'build', 'feat']",False,True,"['refactor', 'docs', 'fix', 'feat', 'test']",False,True
+656,"['fix', 'test', 'feat', 'docs', 'build']","['feat', 'test', 'docs', 'build']",False,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'test', 'feat', 'docs', 'build']",True,True
+657,"['test', 'docs', 'feat', 'build', 'fix']","['build', 'test', 'docs', 'feat', 'fix', 'refactor']",False,True,"['test', 'feat', 'docs', 'build', 'ci']",False,True,"['test', 'docs', 'feat', 'build', 'fix']",True,True
+658,"['docs', 'feat', 'build', 'refactor', 'test']","['docs', 'feat', 'build', 'test']",False,True,"['feat', 'ci', 'test', 'docs', 'refactor']",False,True,"['docs', 'feat', 'build', 'refactor', 'test']",True,True
+659,"['fix', 'feat', 'test', 'refactor', 'build']","['fix', 'feat', 'test', 'refactor', 'build']",True,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['fix', 'feat', 'test', 'refactor', 'build']",True,True
+660,"['fix', 'build', 'refactor', 'test', 'docs']","['fix', 'build', 'test', 'refactor', 'docs']",True,True,"['build', 'ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['fix', 'build', 'refactor', 'test', 'ci']",False,True
+661,"['fix', 'ci', 'docs', 'build', 'feat']","['fix', 'ci', 'docs', 'build', 'feat']",True,True,"['feat', 'build', 'docs', 'refactor', 'test']",False,True,"['fix', 'ci', 'docs', 'build', 'feat']",True,True
+662,"['feat', 'build', 'refactor', 'docs', 'fix']","['feat', 'fix', 'build', 'docs']",False,True,"['feat', 'fix', 'refactor', 'build']",False,True,"['feat', 'build', 'feat', 'docs', 'fix']",False,True
+663,"['test', 'docs', 'refactor', 'ci', 'feat']","['test', 'docs', 'refactor', 'ci', 'feat']",True,True,"['feat', 'test', 'ci', 'docs', 'refactor', 'build']",False,True,"['test', 'fix', 'refactor', 'ci', 'feat']",False,True
+664,"['build', 'docs', 'fix', 'test', 'refactor']","['build', 'docs', 'refactor', 'fix', 'test']",True,True,"['build', 'feat', 'fix', 'refactor', 'test']",False,True,"['build', 'feat', 'fix', 'docs']",False,True
+665,"['build', 'ci', 'docs', 'test', 'refactor']","['build', 'ci', 'docs', 'test', 'refactor']",True,True,"['build', 'ci', 'fix', 'test', 'docs']",False,True,"['build', 'ci', 'docs', 'test', 'refactor']",True,True
+666,"['build', 'ci', 'docs', 'refactor', 'fix']","['build', 'ci', 'docs', 'fix', 'refactor']",True,True,"['feat', 'docs', 'build', 'refactor', 'fix']",False,True,"['build', 'ci', 'docs', 'fix', 'refactor']",True,True
+667,"['test', 'docs', 'fix', 'feat', 'build']","['test', 'docs', 'fix', 'feat', 'build']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['test', 'docs', 'fix', 'feat', 'build']",True,True
+668,"['refactor', 'ci', 'test', 'build', 'feat']","['refactor', 'ci', 'test', 'build', 'feat']",True,True,"['refactor', 'ci', 'test', 'build', 'feat']",True,True,"['refactor', 'ci', 'test', 'build', 'feat']",True,True
+669,"['refactor', 'feat', 'build', 'fix', 'test']","['refactor', 'feat', 'fix', 'build', 'test']",True,True,"['refactor', 'test', 'ci', 'build', 'feat']",False,True,"['refactor', 'feat', 'build', 'fix', 'test']",True,True
+670,"['refactor', 'test', 'docs', 'feat', 'ci']","['refactor', 'test', 'docs', 'feat', 'ci']",True,True,"['refactor', 'test', 'ci', 'docs']",False,True,"['refactor', 'test', 'docs', 'feat', 'ci']",True,True
+671,"['test', 'ci', 'refactor', 'feat', 'fix']","['test', 'ci', 'build', 'feat', 'fix', 'refactor']",False,True,"['feat', 'ci', 'refactor', 'test', 'build']",False,True,"['test', 'ci', 'refactor', 'feat', 'fix']",True,True
+672,"['ci', 'refactor', 'docs', 'fix', 'feat']","['ci', 'fix', 'feat', 'docs', 'refactor']",True,True,"['ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['ci', 'feat', 'fix', 'docs', 'build', 'feat']",False,True
+673,"['docs', 'refactor', 'fix', 'test', 'build']","['docs', 'refactor', 'fix', 'test', 'build']",True,True,"['fix', 'refactor', 'test', 'ci', 'build']",False,True,"['docs', 'refactor', 'fix', 'test', 'build']",True,True
+674,"['test', 'ci', 'fix', 'docs', 'refactor']","['test', 'ci', 'docs', 'fix', 'refactor']",True,True,"['test', 'ci', 'feat', 'docs', 'refactor']",False,True,"['test', 'ci', 'fix', 'docs', 'refactor']",True,True
+675,"['build', 'ci', 'test', 'docs', 'feat']","['build', 'ci', 'test', 'docs', 'feat']",True,True,"['feat', 'fix', 'refactor', 'ci', 'build', 'docs', 'test']",False,True,"['build', 'docs', 'ci', 'test', 'feat']",True,True
+676,"['refactor', 'feat', 'test', 'fix', 'ci']","['feat', 'fix', 'test', 'refactor', 'ci']",True,True,"['feat', 'refactor', 'test', 'ci']",False,True,"['feat', 'fix', 'test', 'refactor', 'ci']",True,True
+677,"['ci', 'docs', 'refactor', 'build', 'test']","['ci', 'test', 'refactor', 'build']",False,True,"['ci', 'fix', 'refactor', 'test']",False,True,"['ci', 'fix', 'refactor', 'build', 'test']",False,True
+678,"['build', 'docs', 'refactor', 'test', 'feat']","['build', 'docs', 'refactor', 'test', 'feat']",True,True,"['build', 'docs', 'feat', 'refactor', 'test']",True,True,"['build', 'docs', 'refactor', 'test', 'feat']",True,True
+679,"['ci', 'feat', 'fix', 'docs', 'test']","['ci', 'feat', 'fix', 'docs', 'build', 'test']",False,True,"['ci', 'feat', 'fix', 'test', 'docs']",True,True,"['ci', 'feat', 'fix', 'docs', 'test']",True,True
+680,"['feat', 'build', 'test', 'docs', 'fix']","['feat', 'refactor', 'test', 'docs']",False,True,"['feat', 'build', 'test', 'refactor', 'docs']",False,True,"['test', 'build', 'fix', 'refactor']",False,True
+681,"['build', 'docs', 'test', 'fix', 'ci']","['refactor', 'docs', 'test', 'feat', 'ci']",False,True,"['refactor', 'docs', 'build', 'test', 'ci']",False,True,"['build', 'docs', 'test', 'feat', 'fix']",False,True
+682,"['feat', 'fix', 'ci', 'docs', 'test']","['feat', 'refactor', 'build', 'ci', 'docs', 'test', 'fix']",False,True,"['feat', 'fix', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'build', 'ci', 'docs', 'test']",False,True
+683,"['feat', 'refactor', 'build', 'fix', 'docs']","['feat', 'fix', 'build', 'docs']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'refactor', 'build', 'fix', 'docs']",True,True
+684,"['test', 'build', 'feat', 'fix', 'docs']","['test', 'build', 'refactor', 'fix', 'docs']",False,True,"['test', 'refactor', 'build', 'feat', 'docs']",False,True,"['test', 'build', 'fix', 'docs', 'docs']",False,True
+685,"['fix', 'feat', 'test', 'ci', 'docs']","['fix', 'build', 'feat', 'test', 'ci', 'docs']",False,True,"['feat', 'refactor', 'test', 'ci', 'docs', 'build']",False,True,"['fix', 'feat', 'test', 'ci', 'refactor']",False,True
+686,"['test', 'refactor', 'ci', 'build', 'fix']","['test', 'refactor', 'ci', 'build', 'fix']",True,True,"['test', 'refactor', 'build', 'feat']",False,True,"['test', 'refactor', 'build', 'fix']",False,True
+687,"['build', 'feat', 'refactor', 'ci', 'test']","['build', 'feat', 'refactor', 'ci', 'test']",True,True,"['build', 'ci', 'feat', 'refactor', 'test']",True,True,"['build', 'fix', 'test', 'ci', 'test']",False,True
+688,"['feat', 'refactor', 'test', 'ci', 'build']","['feat', 'fix', 'refactor', 'docs', 'ci', 'build', 'test']",False,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['feat', 'docs', 'fix', 'build', 'ci', 'build']",False,True
+689,"['test', 'fix', 'build', 'refactor', 'docs']","['test', 'fix', 'build', 'feat', 'docs']",False,True,"['test', 'refactor', 'build', 'feat', 'docs']",False,True,"['test', 'fix', 'build', 'feat', 'docs']",False,True
+690,"['ci', 'feat', 'build', 'fix', 'test']","['ci', 'build', 'refactor', 'test']",False,True,"['ci', 'test', 'build', 'feat', 'refactor']",False,True,"['ci', 'refactor', 'build', 'fix', 'test']",False,True
+691,"['ci', 'test', 'fix', 'feat', 'build']","['ci', 'test', 'fix', 'feat', 'build']",True,True,"['ci', 'test', 'refactor', 'build']",False,True,"['ci', 'test', 'fix', 'feat', 'build']",True,True
+692,"['test', 'build', 'feat', 'fix', 'ci']","['test', 'build', 'ci', 'refactor', 'fix', 'feat']",False,True,"['test', 'ci', 'refactor', 'build']",False,True,"['test', 'build', 'feat', 'fix', 'ci']",True,True
+693,"['test', 'build', 'refactor', 'docs', 'feat']","['test', 'build', 'refactor', 'docs', 'feat']",True,True,"['test', 'build', 'docs', 'feat']",False,True,"['test', 'build', 'refactor', 'docs', 'feat']",True,True
+694,"['build', 'ci', 'feat', 'docs', 'fix']","['build', 'ci', 'feat', 'docs', 'fix']",True,True,"['build', 'ci', 'refactor', 'test', 'docs']",False,True,"['build', 'ci', 'feat', 'docs', 'refactor']",False,True
+695,"['test', 'build', 'refactor', 'fix', 'ci']","['test', 'build', 'refactor', 'feat', 'ci']",False,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['test', 'build', 'refactor', 'feat', 'ci']",False,True
+696,"['feat', 'build', 'fix', 'ci', 'test']","['build', 'refactor', 'feat', 'ci', 'test', 'docs']",False,True,"['feat', 'build', 'ci', 'test', 'refactor']",False,True,"['feat', 'build', 'feat', 'ci', 'test']",False,True
+697,"['build', 'test', 'refactor', 'feat', 'ci']","['build', 'test', 'feat', 'refactor', 'ci']",True,True,"['build', 'ci', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'test', 'fix', 'feat', 'ci']",False,True
+698,"['ci', 'refactor', 'docs', 'feat', 'fix']","['ci', 'feat', 'refactor', 'fix']",False,True,"['ci', 'feat', 'docs', 'refactor', 'build']",False,True,"['ci', 'feat', 'docs', 'refactor', 'fix']",True,True
+699,"['ci', 'fix', 'feat', 'docs', 'refactor']","['ci', 'fix', 'refactor', 'docs']",False,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs', 'refactor', 'fix', 'feat', 'fix']",False,True
+700,['fix'],['feat'],False,False,"['feat', 'refactor']",False,False,['refactor'],False,False
+701,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+702,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+703,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+704,['fix'],"['fix', 'refactor']",False,True,['fix'],True,True,['fix'],True,True
+705,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+706,['refactor'],['feat'],False,False,"['feat', 'refactor']",False,True,['feat'],False,False
+707,['feat'],['feat'],True,True,"['feat', 'refactor']",False,True,['feat'],True,True
+708,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+709,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+710,['feat'],['feat'],True,True,"['refactor', 'feat']",False,True,['feat'],True,True
+711,['build'],"['build', 'test']",False,True,"['build', 'test']",False,True,['build'],True,True
+712,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+713,['docs'],['docs'],True,True,"['fix', 'docs']",False,True,['docs'],True,True
+714,['feat'],['feat'],True,True,['feat'],True,True,['feat'],True,True
+715,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+716,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+717,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+718,['fix'],"['fix', 'refactor']",False,True,"['fix', 'refactor']",False,True,['fix'],True,True
+719,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+720,['feat'],['feat'],True,True,['feat'],True,True,['feat'],True,True
+721,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+722,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+723,['feat'],"['feat', 'docs']",False,True,"['feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,['feat'],True,True
+724,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+725,['ci'],['ci'],True,True,['ci'],True,True,['build'],False,False
+726,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+727,['test'],"['build', 'test', 'feat']",False,True,['test'],True,True,['test'],True,True
+728,['docs'],['docs'],True,True,"['docs', 'feat']",False,True,['docs'],True,True
+729,['fix'],['fix'],True,True,['fix'],True,True,['fix'],True,True
+730,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+731,['fix'],['fix'],True,True,['fix'],True,True,['build'],False,False
+732,['build'],"['fix', 'build']",False,True,['build'],True,True,['build'],True,True
+733,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+734,['docs'],['docs'],True,True,"['feat', 'docs']",False,True,['docs'],True,True
+735,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+736,['docs'],['docs'],True,True,"['fix', 'test']",False,False,['docs'],True,True
+737,['fix'],['fix'],True,True,['fix'],True,True,['fix'],True,True
+738,['refactor'],['refactor'],True,True,"['refactor', 'docs']",False,True,['refactor'],True,True
+739,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+740,['refactor'],"['refactor', 'test']",False,True,['refactor'],True,True,['refactor'],True,True
+741,['fix'],['fix'],True,True,['fix'],True,True,['fix'],True,True
+742,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+743,['build'],['fix'],False,False,"['fix', 'build']",False,True,['build'],True,True
+744,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+745,['build'],['build'],True,True,['build'],True,True,['build'],True,True
+746,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+747,['fix'],['fix'],True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,['fix'],True,True
+748,['fix'],['fix'],True,True,['refactor'],False,False,['fix'],True,True
+749,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+750,['build'],['fix'],False,False,"['build', 'fix']",False,True,['build'],True,True
+751,['build'],['refactor'],False,False,"['refactor', 'build']",False,True,['build'],True,True
+752,['refactor'],['feat'],False,False,"['feat', 'docs']",False,False,['fix'],False,False
+753,['docs'],['docs'],True,True,['docs'],True,True,['docs'],True,True
+754,['feat'],['fix'],False,False,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,['fix'],False,False
+755,['feat'],['feat'],True,True,"['feat', 'test', 'ci', 'build', 'docs']",False,True,['feat'],True,True
+756,['fix'],['feat'],False,False,"['feat', 'refactor']",False,False,['fix'],True,True
+757,['feat'],['feat'],True,True,"['feat', 'refactor']",False,True,['feat'],True,True
+758,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+759,['ci'],['ci'],True,True,"['ci', 'test']",False,True,['ci'],True,True
+760,['ci'],['ci'],True,True,['ci'],True,True,['ci'],True,True
+761,['test'],['test'],True,True,['test'],True,True,['test'],True,True
+762,['refactor'],"['feat', 'docs']",False,False,"['feat', 'refactor']",False,True,['docs'],False,False
+763,['refactor'],['docs'],False,False,"['refactor', 'docs']",False,True,['docs'],False,False
+764,['refactor'],['refactor'],True,True,['refactor'],True,True,['refactor'],True,True
+765,['test'],['test'],True,True,"['fix', 'test']",False,True,['test'],True,True
+766,['feat'],"['feat', 'refactor']",False,True,"['feat', 'refactor']",False,True,['feat'],True,True
+767,['test'],"['test', 'build']",False,True,"['feat', 'test']",False,True,"['build', 'test']",False,True
+768,['feat'],"['build', 'feat', 'refactor']",False,True,"['feat', 'build', 'test']",False,True,['feat'],True,True
+769,['docs'],['docs'],True,True,"['feat', 'docs']",False,True,['ci'],False,False
+770,"['feat', 'refactor']","['feat', 'refactor']",True,True,"['feat', 'refactor']",True,True,"['feat', 'refactor']",True,True
+771,"['ci', 'build']","['ci', 'fix']",False,True,"['ci', 'build']",True,True,"['build', 'build']",False,True
+772,"['refactor', 'docs']","['feat', 'docs']",False,True,"['feat', 'refactor', 'test']",False,True,"['feat', 'docs']",False,True
+773,"['feat', 'refactor']","['feat', 'fix', 'refactor']",False,True,"['feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'feat']",False,True
+774,"['ci', 'test']","['ci', 'test']",True,True,"['ci', 'test', 'refactor']",False,True,"['ci', 'test']",True,True
+775,"['test', 'ci']","['test', 'ci']",True,True,"['test', 'ci']",True,True,"['test', 'ci']",True,True
+776,"['ci', 'build']","['ci', 'build']",True,True,"['ci', 'build']",True,True,['build'],False,True
+777,"['feat', 'test']","['feat', 'test']",True,True,"['feat', 'test', 'refactor']",False,True,['refactor'],False,False
+778,"['fix', 'docs']","['fix', 'docs']",True,True,"['fix', 'ci']",False,True,"['docs', 'build']",False,True
+779,"['fix', 'ci']","['fix', 'ci']",True,True,"['fix', 'ci']",True,True,"['docs', 'ci']",False,True
+780,"['build', 'test']","['build', 'test']",True,True,"['build', 'test']",True,True,"['build', 'test']",True,True
+781,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'docs']",True,True,"['ci', 'docs']",True,True
+782,"['refactor', 'build']","['refactor', 'build']",True,True,"['refactor', 'build']",True,True,"['refactor', 'build']",True,True
+783,"['fix', 'refactor']","['fix', 'refactor']",True,True,"['feat', 'refactor', 'fix', 'ci', 'build', 'test', 'docs']",False,True,"['refactor', 'feat']",False,True
+784,"['build', 'ci']","['fix', 'ci']",False,True,"['fix', 'ci']",False,True,"['build', 'ci']",True,True
+785,"['build', 'refactor']","['build', 'feat']",False,True,"['build', 'feat', 'refactor']",False,True,"['docs', 'fix']",False,False
+786,"['feat', 'docs']","['feat', 'docs']",True,True,"['feat', 'ci']",False,True,"['fix', 'ci']",False,False
+787,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'docs']",True,True,"['ci', 'docs']",True,True
+788,"['fix', 'feat']","['fix', 'build', 'refactor', 'feat']",False,True,"['feat', 'build', 'test', 'refactor']",False,True,"['fix', 'feat', 'refactor']",False,True
+789,"['feat', 'ci']","['feat', 'ci']",True,True,"['feat', 'refactor', 'ci']",False,True,"['refactor', 'ci']",False,True
+790,"['docs', 'ci']","['docs', 'ci']",True,True,"['docs', 'ci']",True,True,"['docs', 'ci']",True,True
+791,"['test', 'docs']","['test', 'docs']",True,True,"['feat', 'docs']",False,True,['test'],False,True
+792,"['docs', 'feat']","['docs', 'feat']",True,True,"['docs', 'feat']",True,True,['docs'],False,True
+793,"['refactor', 'fix']",['refactor'],False,True,"['refactor', 'test', 'ci', 'build', 'docs', 'feat', 'fix']",False,True,"['refactor', 'fix']",True,True
+794,"['build', 'ci']","['build', 'ci']",True,True,"['build', 'ci']",True,True,"['build', 'ci']",True,True
+795,"['build', 'refactor']","['fix', 'refactor']",False,True,"['build', 'refactor']",True,True,"['build', 'refactor']",True,True
+796,"['fix', 'test']","['feat', 'test']",False,True,"['feat', 'test']",False,True,"['feat', 'test']",False,True
+797,"['build', 'docs']","['build', 'docs']",True,True,"['fix', 'build', 'docs']",False,True,"['build', 'docs']",True,True
+798,"['fix', 'ci']","['fix', 'ci']",True,True,"['fix', 'ci']",True,True,"['fix', 'ci']",True,True
+799,"['fix', 'ci']","['fix', 'ci']",True,True,"['fix', 'ci']",True,True,"['docs', 'ci']",False,True
+800,"['docs', 'refactor']","['docs', 'refactor']",True,True,"['docs', 'refactor']",True,True,"['docs', 'refactor']",True,True
+801,"['fix', 'feat']","['fix', 'feat']",True,True,"['feat', 'refactor', 'docs']",False,True,"['fix', 'feat']",True,True
+802,"['fix', 'build']","['fix', 'build']",True,True,"['fix', 'build']",True,True,"['build', 'fix']",True,True
+803,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'build', 'test']",False,True,"['build', 'fix']",False,False
+804,"['ci', 'feat']","['ci', 'feat']",True,True,"['ci', 'feat']",True,True,"['ci', 'feat']",True,True
+805,"['ci', 'docs']","['ci', 'docs']",True,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs']",True,True
+806,"['test', 'build']","['test', 'build']",True,True,"['test', 'ci']",False,True,"['test', 'build']",True,True
+807,"['docs', 'feat']","['docs', 'feat']",True,True,"['feat', 'docs']",True,True,"['docs', 'feat']",True,True
+808,"['refactor', 'build']","['refactor', 'fix', 'build']",False,True,"['refactor', 'build']",True,True,"['refactor', 'build']",True,True
+809,"['feat', 'refactor']","['feat', 'refactor']",True,True,"['feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['feat', 'refactor']",True,True
+810,"['feat', 'fix']","['build', 'refactor', 'fix']",False,True,"['feat', 'refactor', 'build', 'test', 'ci', 'docs']",False,True,"['fix', 'docs']",False,True
+811,"['build', 'docs']","['build', 'docs']",True,True,"['build', 'fix']",False,True,"['build', 'docs']",True,True
+812,"['test', 'refactor']","['build', 'test', 'feat', 'docs']",False,True,"['feat', 'test', 'ci', 'build', 'docs']",False,True,['test'],False,True
+813,"['refactor', 'fix']","['refactor', 'fix']",True,True,['refactor'],False,True,"['refactor', 'fix']",True,True
+814,"['build', 'ci']","['refactor', 'ci', 'feat']",False,True,"['refactor', 'ci']",False,True,"['build', 'ci']",True,True
+815,"['fix', 'feat']","['fix', 'feat']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'feat']",True,True
+816,"['refactor', 'docs']","['feat', 'docs', 'refactor']",False,True,"['refactor', 'docs']",True,True,"['docs', 'build']",False,True
+817,"['feat', 'fix']","['build', 'refactor', 'feat']",False,True,"['feat', 'refactor', 'build', 'test', 'ci', 'docs']",False,True,"['test', 'feat', 'refactor']",False,True
+818,"['refactor', 'test']","['refactor', 'test']",True,True,"['refactor', 'test']",True,True,"['refactor', 'test']",True,True
+819,"['test', 'refactor']","['test', 'feat']",False,True,"['test', 'feat']",False,True,"['test', 'feat']",False,True
+820,"['docs', 'build']","['docs', 'fix']",False,True,"['feat', 'refactor']",False,False,"['build', 'fix']",False,True
+821,"['refactor', 'build']","['refactor', 'build']",True,True,"['refactor', 'build']",True,True,"['refactor', 'build']",True,True
+822,"['docs', 'fix']","['docs', 'fix', 'refactor']",False,True,"['docs', 'refactor', 'build']",False,True,['docs'],False,True
+823,"['docs', 'ci']","['docs', 'ci']",True,True,"['fix', 'feat', 'ci', 'docs']",False,True,"['docs', 'ci']",True,True
+824,"['refactor', 'ci']","['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True
+825,"['test', 'fix']","['test', 'feat']",False,True,"['test', 'feat']",False,True,"['test', 'feat']",False,True
+826,"['feat', 'refactor']","['feat', 'fix']",False,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['feat', 'fix', 'test', 'docs', 'fix']",False,True
+827,"['fix', 'ci']","['fix', 'ci']",True,True,"['refactor', 'fix', 'ci']",False,True,"['build', 'ci']",False,True
+828,"['build', 'ci']","['build', 'ci']",True,True,"['build', 'ci']",True,True,"['build', 'ci']",True,True
+829,"['build', 'test']","['build', 'test']",True,True,"['build', 'test', 'ci']",False,True,"['build', 'test']",True,True
+830,"['refactor', 'ci']","['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True,"['refactor', 'ci']",True,True
+831,"['fix', 'build']","['fix', 'build']",True,True,"['refactor', 'build']",False,True,"['fix', 'build']",True,True
+832,"['build', 'refactor']","['build', 'refactor', 'test']",False,True,"['build', 'refactor']",True,True,"['build', 'refactor']",True,True
+833,"['test', 'ci']","['build', 'test', 'feat', 'ci']",False,True,"['test', 'ci', 'build', 'feat']",False,True,"['test', 'ci']",True,True
+834,"['test', 'refactor']","['test', 'refactor']",True,True,"['refactor', 'test']",True,True,"['test', 'refactor']",True,True
+835,"['ci', 'refactor']","['ci', 'feat']",False,True,"['ci', 'refactor', 'test', 'feat']",False,True,"['ci', 'feat']",False,True
+836,"['test', 'docs']","['test', 'docs']",True,True,"['test', 'docs']",True,True,"['test', 'fix']",False,True
+837,"['feat', 'fix']",['feat'],False,True,"['feat', 'refactor']",False,True,"['feat', 'fix']",True,True
+838,"['build', 'docs']","['refactor', 'docs']",False,True,"['refactor', 'ci']",False,False,"['docs', 'fix']",False,True
+839,"['feat', 'refactor']","['build', 'refactor', 'feat', 'fix']",False,True,"['feat', 'build', 'test', 'docs', 'refactor', 'ci']",False,True,"['build', 'feat']",False,True
+840,"['ci', 'fix', 'docs']","['ci', 'fix', 'docs']",True,True,"['ci', 'docs', 'refactor', 'test', 'feat', 'build', 'fix']",False,True,"['docs', 'fix', 'docs', 'docs']",False,True
+841,"['fix', 'refactor', 'feat']","['fix', 'refactor', 'build', 'feat']",False,True,"['refactor', 'test']",False,True,"['fix', 'refactor', 'feat']",True,True
+842,"['build', 'feat', 'ci']","['fix', 'feat', 'ci']",False,True,"['build', 'feat', 'refactor']",False,True,"['build', 'feat', 'ci']",True,True
+843,"['ci', 'docs', 'feat']","['ci', 'docs', 'feat']",True,True,"['ci', 'feat', 'refactor', 'docs']",False,True,"['build', 'docs', 'feat']",False,True
+844,"['ci', 'docs', 'build']","['ci', 'docs', 'fix']",False,True,"['ci', 'build', 'docs', 'fix']",False,True,"['ci', 'docs', 'build']",True,True
+845,"['test', 'docs', 'fix']","['test', 'docs', 'refactor']",False,True,"['test', 'ci', 'feat', 'refactor']",False,True,"['test', 'fix', 'docs']",True,True
+846,"['feat', 'docs', 'refactor']","['feat', 'docs', 'refactor']",True,True,"['feat', 'docs', 'refactor']",True,True,"['fix', 'docs', 'feat']",False,True
+847,"['docs', 'ci', 'test']","['docs', 'ci', 'test']",True,True,"['build', 'ci', 'docs', 'fix', 'refactor']",False,True,"['docs', 'build', 'test']",False,True
+848,"['build', 'fix', 'refactor']","['build', 'fix', 'refactor']",True,True,"['build', 'refactor']",False,True,"['docs', 'fix', 'refactor']",False,True
+849,"['test', 'fix', 'docs']","['test', 'fix', 'docs']",True,True,"['test', 'docs', 'refactor']",False,True,"['test', 'fix', 'docs']",True,True
+850,"['build', 'refactor', 'fix']","['build', 'refactor', 'fix']",True,True,"['build', 'ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['build', 'refactor', 'fix']",True,True
+851,"['test', 'docs', 'build']","['test', 'docs', 'fix']",False,True,"['test', 'refactor', 'ci']",False,True,"['test', 'docs', 'build']",True,True
+852,"['feat', 'test', 'refactor']","['build', 'refactor', 'test', 'feat']",False,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['feat', 'test', 'feat', 'refactor']",False,True
+853,"['docs', 'feat', 'fix']","['docs', 'fix', 'feat']",True,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['docs', 'feat', 'fix']",True,True
+854,"['ci', 'docs', 'fix']","['ci', 'docs', 'refactor', 'fix']",False,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs', 'fix']",True,True
+855,"['ci', 'docs', 'fix']","['ci', 'docs', 'fix']",True,True,"['ci', 'docs', 'refactor', 'test']",False,True,"['ci', 'docs', 'fix']",True,True
+856,"['test', 'fix', 'build']","['test', 'refactor', 'fix', 'build']",False,True,"['test', 'refactor', 'build']",False,True,"['test', 'fix', 'build', 'ci']",False,True
+857,"['docs', 'ci', 'fix']","['docs', 'ci', 'refactor', 'fix']",False,True,"['docs', 'ci', 'refactor', 'build']",False,True,"['build', 'ci', 'feat']",False,True
+858,"['build', 'ci', 'test']","['fix', 'ci', 'test']",False,True,"['fix', 'ci', 'test', 'build']",False,True,"['build', 'ci', 'test']",True,True
+859,"['refactor', 'feat', 'fix']",['feat'],False,True,"['feat', 'feat', 'feat']",False,True,"['refactor', 'fix', 'feat']",True,True
+860,"['ci', 'test', 'fix']","['ci', 'test', 'fix']",True,True,"['ci', 'test', 'refactor']",False,True,"['build', 'test', 'fix']",False,True
+861,"['feat', 'refactor', 'build']","['fix', 'refactor', 'build']",False,True,"['feat', 'refactor', 'test', 'build']",False,True,"['refactor', 'test', 'build']",False,True
+862,"['fix', 'feat', 'ci']","['fix', 'feat', 'ci']",True,True,"['feat', 'refactor', 'ci', 'build']",False,True,"['fix', 'feat', 'build']",False,True
+863,"['docs', 'refactor', 'test']","['docs', 'feat', 'test']",False,True,"['feat', 'docs', 'test', 'refactor']",False,True,"['docs', 'test', 'test']",False,True
+864,"['test', 'ci', 'feat']","['fix', 'ci', 'feat']",False,True,"['fix', 'ci', 'refactor', 'docs', 'test', 'build']",False,True,"['test', 'build', 'fix']",False,True
+865,"['feat', 'build', 'refactor']","['feat', 'fix', 'refactor', 'build']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'build', 'refactor']",True,True
+866,"['feat', 'build', 'docs']","['feat', 'build', 'docs']",True,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'build', 'fix']",False,True
+867,"['build', 'refactor', 'ci']","['build', 'refactor', 'ci']",True,True,"['fix', 'refactor', 'ci']",False,True,"['build', 'refactor', 'ci']",True,True
+868,"['docs', 'ci', 'build']","['docs', 'ci', 'build']",True,True,"['docs', 'build']",False,True,"['docs', 'ci', 'build']",True,True
+869,"['fix', 'test', 'build']","['fix', 'test', 'build']",True,True,"['fix', 'test', 'build']",True,True,"['fix', 'test', 'build']",True,True
+870,"['refactor', 'docs', 'feat']","['feat', 'docs', 'fix']",False,True,"['feat', 'docs', 'refactor', 'test', 'ci', 'build']",False,True,"['docs', 'fix', 'refactor']",False,True
+871,"['docs', 'refactor', 'test']","['docs', 'test', 'refactor']",True,True,"['fix', 'refactor', 'test']",False,True,"['docs', 'refactor', 'test']",True,True
+872,"['fix', 'docs', 'test']","['fix', 'docs', 'test']",True,True,"['fix', 'build', 'test']",False,True,"['build', 'docs', 'test']",False,True
+873,"['refactor', 'ci', 'test']","['refactor', 'ci', 'test']",True,True,"['refactor', 'ci', 'test']",True,True,"['refactor', 'ci', 'test']",True,True
+874,"['ci', 'test', 'docs']","['ci', 'test', 'docs']",True,True,"['ci', 'test', 'docs']",True,True,"['build', 'test', 'docs']",False,True
+875,"['feat', 'docs', 'fix']","['feat', 'docs', 'fix']",True,True,"['feat', 'build', 'refactor']",False,True,"['feat', 'docs', 'fix']",True,True
+876,"['test', 'fix', 'build']","['test', 'fix', 'build']",True,True,"['test', 'build']",False,True,"['test', 'fix', 'build', 'docs']",False,True
+877,"['feat', 'docs', 'refactor']","['feat', 'docs', 'refactor', 'fix']",False,True,"['feat', 'refactor', 'docs', 'build', 'ci', 'test']",False,True,"['feat', 'docs', 'refactor']",True,True
+878,"['fix', 'ci', 'build']","['fix', 'ci']",False,True,"['feat', 'build', 'refactor']",False,True,"['fix', 'build', 'fix']",False,True
+879,"['fix', 'refactor', 'docs']","['fix', 'feat', 'docs']",False,True,"['fix', 'feat', 'docs']",False,True,"['refactor', 'fix', 'test', 'docs']",False,True
+880,"['build', 'feat', 'fix']","['build', 'feat', 'fix']",True,True,"['build', 'fix']",False,True,"['build', 'fix']",False,True
+881,"['test', 'refactor', 'feat']","['test', 'refactor', 'feat']",True,True,"['test', 'refactor', 'feat']",True,True,"['test', 'refactor', 'feat']",True,True
+882,"['test', 'build', 'ci']","['test', 'build', 'ci']",True,True,"['test', 'ci', 'build']",True,True,"['test', 'build', 'ci', 'ci']",False,True
+883,"['test', 'fix', 'docs']","['test', 'fix', 'docs']",True,True,"['feat', 'test', 'refactor', 'docs']",False,True,"['test', 'fix', 'docs']",True,True
+884,"['fix', 'build', 'test']","['fix', 'build', 'test']",True,True,"['fix', 'refactor', 'test']",False,True,"['build', 'test', 'test']",False,True
+885,"['feat', 'fix', 'ci']","['feat', 'fix', 'ci']",True,True,"['feat', 'fix', 'ci']",True,True,"['feat', 'fix', 'ci']",True,True
+886,"['fix', 'docs', 'build']","['feat', 'docs', 'build']",False,True,"['feat', 'build', 'docs']",False,True,"['feat', 'docs', 'build']",False,True
+887,"['fix', 'ci', 'docs']","['feat', 'ci', 'docs']",False,True,"['feat', 'ci', 'docs']",False,True,"['refactor', 'ci', 'docs']",False,True
+888,"['feat', 'docs', 'fix']","['feat', 'docs', 'refactor', 'fix']",False,True,"['feat', 'docs', 'build']",False,True,"['feat', 'docs', 'fix']",True,True
+889,"['feat', 'fix', 'refactor']","['feat', 'refactor']",False,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['feat', 'feat', 'refactor']",False,True
+890,"['fix', 'docs', 'test']","['refactor', 'fix', 'docs', 'test']",False,True,"['fix', 'docs', 'build', 'test']",False,True,"['refactor', 'docs', 'test']",False,True
+891,"['docs', 'ci', 'feat']","['docs', 'ci', 'feat']",True,True,"['docs', 'ci', 'refactor']",False,True,"['docs', 'test', 'feat']",False,True
+892,"['build', 'ci', 'refactor']","['build', 'test', 'ci', 'refactor']",False,True,"['build', 'refactor']",False,True,"['build', 'ci', 'refactor']",True,True
+893,"['feat', 'fix', 'test']","['feat', 'fix', 'test', 'refactor']",False,True,"['feat', 'test', 'ci', 'build', 'docs', 'refactor']",False,True,"['feat', 'docs', 'test']",False,True
+894,"['docs', 'test', 'build']","['docs', 'test', 'build']",True,True,"['docs', 'test', 'ci', 'build']",False,True,"['docs', 'fix', 'build']",False,True
+895,"['fix', 'ci', 'test']","['fix', 'ci', 'test']",True,True,"['feat', 'ci', 'test']",False,True,"['fix', 'ci', 'test']",True,True
+896,"['docs', 'fix', 'ci']","['docs', 'ci']",False,True,"['docs', 'build', 'refactor']",False,True,"['docs', 'fix', 'build']",False,True
+897,"['ci', 'fix', 'docs']","['ci', 'fix', 'docs']",True,True,"['ci', 'refactor', 'docs']",False,True,"['ci', 'fix', 'docs']",True,True
+898,"['build', 'docs', 'refactor']","['build', 'docs', 'fix']",False,True,"['build', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'build', 'docs']",False,True
+899,"['fix', 'build', 'refactor']","['refactor', 'build']",False,True,"['fix', 'refactor', 'ci', 'build', 'docs', 'test']",False,True,"['docs', 'build', 'refactor']",False,True
+900,"['test', 'docs', 'build']","['test', 'docs', 'build']",True,True,"['test', 'ci', 'build', 'refactor']",False,True,"['test', 'fix', 'build']",False,True
+901,"['feat', 'fix', 'test']","['feat', 'fix', 'test']",True,True,"['feat', 'test', 'refactor', 'build']",False,True,"['feat', 'refactor', 'test']",False,True
+902,"['test', 'fix', 'feat']","['test', 'fix', 'feat']",True,True,"['test', 'feat', 'build']",False,True,"['test', 'fix', 'feat']",True,True
+903,"['feat', 'fix', 'docs']","['feat', 'fix', 'docs']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['refactor', 'fix', 'fix']",False,True
+904,"['ci', 'docs', 'test']","['ci', 'test', 'docs']",True,True,"['ci', 'feat', 'refactor', 'test']",False,True,"['build', 'fix', 'test']",False,True
+905,"['ci', 'fix', 'docs']","['ci', 'fix', 'build', 'docs']",False,True,"['ci', 'refactor', 'docs']",False,True,"['ci', 'fix', 'docs']",True,True
+906,"['feat', 'fix', 'test']","['feat', 'fix', 'test']",True,True,"['feat', 'test', 'ci', 'build']",False,True,"['feat', 'docs', 'fix', 'test']",False,True
+907,"['docs', 'ci', 'feat']","['docs', 'ci', 'feat', 'fix']",False,True,"['feat', 'ci', 'refactor', 'docs', 'test', 'build']",False,True,"['docs', 'build', 'fix']",False,True
+908,"['ci', 'docs', 'build']","['ci', 'docs', 'fix']",False,True,"['ci', 'docs', 'feat', 'refactor']",False,True,"['ci', 'docs', 'fix']",False,True
+909,"['ci', 'feat', 'build']","['ci', 'fix', 'build']",False,True,"['ci', 'refactor', 'build']",False,True,"['build', 'fix', 'ci']",False,True
+910,"['test', 'build', 'fix', 'feat']","['test', 'build', 'fix', 'feat']",True,True,"['test', 'build', 'feat', 'fix']",True,True,"['test', 'build', 'fix', 'feat']",True,True
+911,"['ci', 'build', 'test', 'docs']","['ci', 'build', 'test', 'docs']",True,True,"['ci', 'docs', 'feat', 'refactor', 'test']",False,True,"['ci', 'build', 'test', 'docs']",True,True
+912,"['refactor', 'feat', 'docs', 'test']","['refactor', 'feat', 'docs', 'test']",True,True,"['refactor', 'docs', 'test', 'build']",False,True,"['refactor', 'fix', 'docs', 'test']",False,True
+913,"['fix', 'test', 'build', 'refactor']","['refactor', 'test', 'build', 'feat']",False,True,"['fix', 'build', 'refactor', 'test']",True,True,"['fix', 'test', 'build', 'feat']",False,True
+914,"['docs', 'build', 'ci', 'feat']","['docs', 'build', 'ci', 'feat']",True,True,"['build', 'ci', 'docs', 'refactor', 'test']",False,True,"['docs', 'build', 'refactor', 'feat']",False,True
+915,"['test', 'fix', 'refactor', 'ci']","['test', 'refactor', 'fix', 'feat', 'ci']",False,True,"['feat', 'fix', 'test', 'ci', 'docs']",False,True,"['test', 'fix', 'feat', 'ci']",False,True
+916,"['ci', 'fix', 'feat', 'refactor']","['ci', 'fix', 'feat', 'refactor']",True,True,"['ci', 'feat', 'refactor', 'build']",False,True,['ci'],False,True
+917,"['docs', 'ci', 'test', 'refactor']","['docs', 'ci', 'test', 'refactor']",True,True,"['docs', 'ci', 'test', 'refactor']",True,True,"['docs', 'ci', 'test', 'refactor']",True,True
+918,"['fix', 'feat', 'build', 'docs']","['fix', 'feat', 'refactor', 'docs', 'build']",False,True,"['fix', 'feat', 'build', 'ci', 'docs', 'test', 'refactor']",False,True,"['fix', 'feat', 'build', 'docs']",True,True
+919,"['docs', 'feat', 'test', 'fix']","['docs', 'feat', 'test']",False,True,"['fix', 'feat', 'test', 'ci', 'build', 'docs', 'refactor']",False,True,"['docs', 'fix', 'test', 'feat']",True,True
+920,"['build', 'refactor', 'test', 'ci']","['build', 'refactor', 'test', 'ci']",True,True,"['build', 'refactor', 'test']",False,True,"['build', 'docs', 'refactor', 'test', 'ci']",False,True
+921,"['feat', 'fix', 'test', 'refactor']","['feat', 'fix', 'test', 'refactor']",True,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['fix', 'test', 'refactor']",False,True
+922,"['refactor', 'docs', 'test', 'ci']","['feat', 'fix', 'docs', 'test', 'ci']",False,True,"['feat', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'docs', 'test', 'ci']",False,True
+923,"['docs', 'refactor', 'test', 'fix']","['docs', 'refactor', 'test', 'fix']",True,True,"['docs', 'refactor', 'build']",False,True,"['docs', 'refactor', 'fix', 'fix']",False,True
+924,"['test', 'docs', 'build', 'ci']","['test', 'docs', 'build', 'ci', 'fix']",False,True,"['test', 'docs', 'build', 'ci', 'feat']",False,True,"['test', 'docs', 'build']",False,True
+925,"['fix', 'refactor', 'docs', 'test']","['fix', 'refactor', 'test', 'docs']",True,True,"['refactor', 'test', 'ci', 'build', 'docs']",False,True,"['fix', 'refactor', 'docs', 'test']",True,True
+926,"['refactor', 'ci', 'docs', 'build']","['feat', 'ci', 'docs', 'build']",False,True,"['feat', 'docs', 'build', 'ci']",False,True,"['fix', 'ci', 'docs', 'build']",False,True
+927,"['ci', 'build', 'test', 'fix']","['ci', 'build', 'test', 'feat']",False,True,"['ci', 'test', 'feat', 'docs', 'refactor']",False,True,"['ci', 'build', 'test', 'feat']",False,True
+928,"['ci', 'build', 'feat', 'fix']","['ci', 'build', 'feat', 'fix']",True,True,"['ci', 'docs', 'refactor', 'test']",False,True,"['ci', 'build', 'feat', 'fix']",True,True
+929,"['test', 'build', 'fix', 'feat']","['test', 'build', 'fix', 'feat']",True,True,"['test', 'build', 'ci', 'refactor']",False,True,"['test', 'build', 'fix', 'refactor']",False,True
+930,"['fix', 'docs', 'test', 'refactor']","['refactor', 'docs', 'test']",False,True,"['fix', 'feat', 'test', 'refactor']",False,True,"['fix', 'docs', 'test', 'refactor']",True,True
+931,"['ci', 'docs', 'build', 'feat']","['ci', 'docs', 'fix', 'feat']",False,True,"['ci', 'feat', 'refactor', 'test']",False,True,"['ci', 'feat', 'fix', 'feat']",False,True
+932,"['fix', 'test', 'feat', 'docs']","['fix', 'test', 'feat', 'docs']",True,True,"['feat', 'fix', 'test', 'refactor', 'docs']",False,True,"['test', 'docs']",False,True
+933,"['ci', 'fix', 'test', 'docs']","['ci', 'fix', 'test', 'docs']",True,True,"['ci', 'test', 'refactor']",False,True,"['ci', 'fix', 'test', 'docs']",True,True
+934,"['feat', 'ci', 'refactor', 'fix']","['feat', 'refactor', 'ci']",False,True,"['feat', 'refactor', 'ci', 'build', 'docs', 'test']",False,True,"['feat', 'build', 'refactor', 'fix']",False,True
+935,"['refactor', 'feat', 'docs', 'build']","['feat', 'refactor', 'docs', 'build']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['feat', 'test', 'docs', 'build']",False,True
+936,"['build', 'test', 'ci', 'refactor']","['build', 'ci', 'test', 'feat', 'fix']",False,True,"['build', 'test', 'refactor', 'ci', 'docs']",False,True,"['build', 'test', 'build', 'feat']",False,True
+937,"['build', 'docs', 'feat', 'fix']","['build', 'docs', 'feat', 'refactor']",False,True,"['build', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'docs', 'fix', 'refactor']",False,True
+938,"['build', 'test', 'ci', 'feat']","['build', 'test', 'ci', 'feat', 'refactor']",False,True,"['build', 'test', 'ci', 'refactor', 'feat']",False,True,"['build', 'build', 'test', 'ci', 'refactor']",False,True
+939,"['fix', 'build', 'docs', 'refactor']","['fix', 'build', 'docs', 'refactor']",True,True,"['refactor', 'build', 'docs', 'test', 'ci']",False,True,"['fix', 'build', 'docs', 'refactor']",True,True
+940,"['fix', 'feat', 'docs', 'ci']","['fix', 'feat', 'docs', 'ci']",True,True,"['refactor', 'feat', 'docs', 'test', 'ci']",False,True,"['fix', 'feat', 'docs', 'ci']",True,True
+941,"['docs', 'fix', 'feat', 'refactor']","['docs', 'fix', 'feat']",False,True,"['fix', 'feat', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['docs', 'fix', 'feat', 'refactor']",True,True
+942,"['fix', 'build', 'feat', 'ci']","['fix', 'feat', 'ci']",False,True,"['feat', 'build', 'refactor', 'ci', 'docs']",False,True,"['feat', 'fix', 'feat', 'build']",False,True
+943,"['feat', 'refactor', 'test', 'build']","['feat', 'refactor', 'test', 'build']",True,True,"['feat', 'refactor', 'fix', 'build']",False,True,"['fix', 'refactor', 'test']",False,True
+944,"['build', 'test', 'ci', 'fix']","['build', 'test', 'ci', 'fix', 'refactor']",False,True,"['build', 'test', 'fix', 'refactor', 'ci']",False,True,"['build', 'test', 'ci', 'fix']",True,True
+945,"['docs', 'feat', 'build', 'ci']","['docs', 'feat', 'build', 'test', 'ci']",False,True,"['feat', 'build', 'test', 'refactor']",False,True,"['docs', 'feat', 'build', 'ci']",True,True
+946,"['docs', 'refactor', 'ci', 'build']","['docs', 'feat', 'ci', 'build']",False,True,"['docs', 'feat', 'build', 'ci', 'test']",False,True,"['docs', 'feat', 'fix', 'build', 'build']",False,True
+947,"['refactor', 'ci', 'fix', 'docs']","['feat', 'ci', 'refactor', 'docs']",False,True,"['feat', 'build', 'refactor', 'docs']",False,True,"['build', 'ci', 'fix', 'docs']",False,True
+948,"['test', 'ci', 'docs', 'feat']","['test', 'ci', 'docs', 'feat']",True,True,"['test', 'ci', 'docs', 'feat']",True,True,"['test', 'ci', 'docs', 'feat']",True,True
+949,"['refactor', 'fix', 'test', 'feat']","['refactor', 'feat', 'test']",False,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['refactor', 'feat', 'test', 'fix']",True,True
+950,"['docs', 'feat', 'ci', 'refactor']","['docs', 'ci', 'feat']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['build', 'feat', 'build', 'docs']",False,True
+951,"['refactor', 'feat', 'docs', 'ci']","['refactor', 'feat', 'ci']",False,True,"['refactor', 'ci', 'build']",False,True,"['refactor', 'fix', 'ci', 'docs']",False,True
+952,"['docs', 'ci', 'refactor', 'test']","['docs', 'ci', 'refactor', 'test']",True,True,"['docs', 'ci', 'build', 'test', 'refactor']",False,True,"['docs', 'refactor', 'fix', 'test']",False,True
+953,"['test', 'docs', 'ci', 'fix']","['test', 'docs', 'ci', 'fix']",True,True,"['test', 'ci', 'fix', 'refactor']",False,True,"['test', 'fix']",False,True
+954,"['ci', 'refactor', 'test', 'docs']","['ci', 'refactor', 'test', 'build', 'docs', 'feat']",False,True,"['ci', 'test', 'docs', 'refactor']",True,True,"['ci', 'refactor', 'test', 'docs']",True,True
+955,"['docs', 'feat', 'test', 'build']","['docs', 'feat', 'test', 'build']",True,True,"['feat', 'fix', 'docs', 'test', 'ci', 'build']",False,True,"['docs', 'feat', 'test', 'build']",True,True
+956,"['refactor', 'feat', 'test', 'fix']","['refactor', 'fix', 'test']",False,True,"['refactor', 'test', 'ci', 'build', 'feat', 'fix', 'docs']",False,True,"['refactor', 'fix', 'test', 'feat']",True,True
+957,"['build', 'ci', 'fix', 'refactor']","['build', 'ci', 'fix', 'refactor']",True,True,"['build', 'ci', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'ci', 'fix', 'feat']",False,True
+958,"['test', 'refactor', 'docs', 'feat']","['test', 'docs', 'feat', 'build', 'refactor']",False,True,"['feat', 'test', 'docs', 'ci', 'build', 'refactor', 'fix']",False,True,"['test', 'fix', 'docs', 'refactor']",False,True
+959,"['build', 'refactor', 'fix', 'ci']","['build', 'docs', 'refactor', 'ci']",False,True,"['build', 'ci', 'refactor', 'test']",False,True,"['build', 'docs', 'fix', 'ci']",False,True
+960,"['feat', 'test', 'refactor', 'ci']","['fix', 'test', 'feat', 'ci']",False,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'test', 'feat', 'build']",False,True
+961,"['docs', 'fix', 'test', 'refactor']","['docs', 'test', 'refactor']",False,True,"['fix', 'refactor', 'ci', 'test', 'docs', 'build']",False,True,"['docs', 'fix', 'test', 'refactor']",True,True
+962,"['refactor', 'fix', 'docs', 'ci']","['refactor', 'fix', 'docs', 'ci']",True,True,"['fix', 'refactor', 'ci', 'build']",False,True,"['test', 'docs', 'build', 'fix']",False,True
+963,"['fix', 'build', 'ci', 'test']","['refactor', 'fix', 'build', 'ci', 'test']",False,True,"['fix', 'build', 'test', 'ci', 'refactor', 'docs']",False,True,"['docs', 'build', 'refactor', 'test']",False,True
+964,"['build', 'fix', 'ci', 'docs']","['build', 'ci', 'docs', 'refactor', 'fix']",False,True,"['build', 'ci', 'docs', 'refactor', 'test']",False,True,"['build', 'docs', 'test', 'fix']",False,True
+965,"['ci', 'refactor', 'fix', 'docs']","['ci', 'refactor', 'fix', 'docs']",True,True,"['ci', 'refactor', 'docs']",False,True,"['build', 'refactor', 'docs', 'docs']",False,True
+966,"['fix', 'ci', 'docs', 'refactor']","['fix', 'docs', 'ci', 'refactor']",True,True,"['feat', 'fix', 'docs', 'refactor', 'ci', 'build']",False,True,"['fix', 'build', 'docs', 'refactor']",False,True
+967,"['fix', 'feat', 'build', 'docs']","['fix', 'feat', 'build', 'docs']",True,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['fix', 'feat', 'build', 'docs']",True,True
+968,"['build', 'ci', 'test', 'feat']","['build', 'ci', 'test', 'fix', 'feat']",False,True,"['feat', 'build', 'test', 'ci', 'refactor']",False,True,"['build', 'docs', 'fix', 'feat']",False,True
+969,"['ci', 'docs', 'feat', 'test']","['ci', 'feat', 'test']",False,True,"['ci', 'feat', 'refactor', 'test']",False,True,"['ci', 'fix', 'feat', 'test']",False,True
+970,"['refactor', 'docs', 'ci', 'test']","['refactor', 'docs', 'ci', 'test']",True,True,"['refactor', 'docs', 'ci', 'test']",True,True,"['refactor', 'docs', 'ci', 'build']",False,True
+971,"['docs', 'refactor', 'test', 'fix']","['docs', 'test', 'refactor', 'fix']",True,True,"['fix', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['docs', 'refactor', 'test', 'fix']",True,True
+972,"['ci', 'docs', 'refactor', 'test']","['ci', 'docs', 'refactor', 'test']",True,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs', 'refactor', 'test']",True,True
+973,"['fix', 'docs', 'ci', 'feat']","['fix', 'docs', 'ci', 'feat']",True,True,"['fix', 'refactor', 'ci', 'feat']",False,True,"['fix', 'docs', 'build', 'feat']",False,True
+974,"['docs', 'test', 'build', 'feat']","['docs', 'test', 'build', 'feat']",True,True,"['fix', 'feat', 'docs', 'test', 'ci', 'build']",False,True,"['docs', 'test', 'feat']",False,True
+975,"['docs', 'refactor', 'test', 'fix']","['docs', 'test', 'fix']",False,True,"['docs', 'refactor', 'test', 'build']",False,True,"['docs', 'refactor', 'test', 'fix']",True,True
+976,"['test', 'feat', 'docs', 'ci']","['test', 'feat', 'docs', 'ci']",True,True,"['test', 'feat', 'docs', 'build']",False,True,"['test', 'docs', 'docs', 'ci']",False,True
+977,"['refactor', 'build', 'feat', 'docs']","['feat', 'build', 'refactor', 'docs']",True,True,"['feat', 'build', 'refactor']",False,True,"['test', 'fix', 'feat', 'docs']",False,True
+978,"['build', 'fix', 'test', 'feat']","['build', 'fix', 'test', 'feat']",True,True,"['build', 'ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['build', 'fix', 'test', 'feat']",True,True
+979,"['refactor', 'ci', 'docs', 'build']","['refactor', 'build', 'ci', 'docs']",True,True,"['feat', 'docs', 'build', 'test', 'ci', 'refactor', 'fix']",False,True,"['refactor', 'ci', 'docs', 'build']",True,True
+980,"['fix', 'docs', 'refactor', 'ci', 'test']","['fix', 'docs', 'feat', 'ci', 'test']",False,True,"['fix', 'docs', 'feat', 'ci', 'test']",False,True,"['docs', 'fix', 'feat', 'build', 'test']",False,True
+981,"['test', 'docs', 'refactor', 'build', 'feat']","['test', 'docs', 'refactor', 'build', 'feat']",True,True,"['test', 'feat', 'docs', 'build', 'refactor']",True,True,"['test', 'refactor', 'docs']",False,True
+982,"['test', 'ci', 'fix', 'build', 'refactor']","['test', 'ci', 'build', 'refactor']",False,True,"['test', 'ci', 'refactor', 'docs']",False,True,"['test', 'ci', 'docs', 'build', 'refactor']",False,True
+983,"['ci', 'refactor', 'build', 'test', 'fix']","['ci', 'refactor', 'fix']",False,True,"['ci', 'test', 'refactor', 'fix', 'feat']",False,True,"['ci', 'fix', 'build', 'test', 'feat']",False,True
+984,"['build', 'fix', 'feat', 'refactor', 'docs']","['refactor', 'docs', 'feat']",False,True,"['refactor', 'docs']",False,True,"['refactor', 'fix', 'feat', 'feat', 'docs']",False,True
+985,"['docs', 'test', 'build', 'fix', 'feat']","['docs', 'test', 'build', 'fix', 'feat']",True,True,"['docs', 'test', 'build', 'refactor', 'feat']",False,True,"['docs', 'test', 'build', 'fix', 'feat']",True,True
+986,"['ci', 'build', 'fix', 'test', 'feat']","['ci', 'build', 'fix', 'test', 'feat']",True,True,"['ci', 'build', 'test', 'refactor']",False,True,"['ci', 'build', 'fix', 'test', 'feat']",True,True
+987,"['fix', 'test', 'build', 'ci', 'refactor']","['fix', 'test', 'build', 'ci', 'refactor']",True,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['fix', 'test', 'docs', 'refactor']",False,True
+988,"['docs', 'ci', 'refactor', 'test', 'fix']","['docs', 'ci', 'feat', 'fix']",False,True,"['fix', 'refactor', 'ci', 'docs', 'test', 'build']",False,True,"['docs', 'ci', 'feat', 'test', 'refactor']",False,True
+989,"['refactor', 'docs', 'build', 'feat', 'fix']","['refactor', 'docs', 'build', 'feat']",False,True,"['refactor', 'docs', 'build', 'ci', 'test']",False,True,"['refactor', 'docs', 'build', 'feat', 'feat']",False,True
+990,"['feat', 'build', 'fix', 'ci', 'test']","['feat', 'fix', 'refactor', 'build', 'ci', 'test']",False,True,"['feat', 'build', 'refactor', 'ci', 'test']",False,True,"['feat', 'build', 'fix', 'ci', 'test']",True,True
+991,"['ci', 'refactor', 'test', 'feat', 'fix']","['ci', 'fix', 'build', 'test', 'feat']",False,True,"['ci', 'test', 'refactor', 'feat', 'docs']",False,True,['ci'],False,True
+992,"['build', 'refactor', 'ci', 'docs', 'fix']","['build', 'ci', 'docs', 'feat', 'fix']",False,True,"['build', 'feat', 'refactor', 'ci', 'docs', 'test']",False,True,"['build', 'fix', 'feat', 'ci', 'docs']",False,True
+993,"['docs', 'ci', 'refactor', 'build', 'feat']","['docs', 'ci', 'refactor', 'feat', 'fix']",False,True,"['fix', 'feat', 'docs', 'ci', 'build', 'refactor']",False,True,"['docs', 'ci', 'feat', 'build', 'feat']",False,True
+994,"['test', 'feat', 'refactor', 'fix', 'docs']","['test', 'feat', 'refactor', 'fix', 'docs']",True,True,"['test', 'refactor', 'build', 'feat', 'ci', 'docs']",False,True,"['test', 'feat', 'refactor', 'fix', 'docs']",True,True
+995,"['docs', 'build', 'ci', 'fix', 'test']","['docs', 'build', 'ci', 'refactor', 'fix', 'test']",False,True,"['docs', 'ci', 'test', 'build', 'feat']",False,True,"['docs', 'fix', 'ci', 'build', 'test', 'feat']",False,True
+996,"['refactor', 'ci', 'docs', 'test', 'build']","['refactor', 'ci', 'docs', 'test', 'build']",True,True,"['refactor', 'ci', 'test', 'build']",False,True,"['refactor', 'ci', 'fix', 'build']",False,True
+997,"['test', 'feat', 'ci', 'refactor', 'fix']","['test', 'ci', 'fix', 'refactor']",False,True,"['test', 'refactor', 'ci', 'build']",False,True,"['test', 'fix', 'ci', 'refactor', 'fix']",False,True
+998,"['build', 'fix', 'ci', 'refactor', 'docs']","['build', 'test', 'fix', 'ci', 'refactor', 'docs']",False,True,"['build', 'ci', 'refactor', 'test']",False,True,"['build', 'refactor', 'ci', 'test', 'docs']",False,True
+999,"['build', 'docs', 'ci', 'test', 'feat']","['fix', 'docs', 'ci', 'test', 'feat']",False,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['build', 'docs', 'fix', 'test', 'feat']",False,True
+1000,"['feat', 'fix', 'refactor', 'build', 'test']","['feat', 'fix', 'refactor', 'test']",False,True,"['feat', 'refactor', 'test', 'ci', 'build']",False,True,"['feat', 'fix', 'refactor', 'docs', 'build', 'test']",False,True
+1001,"['refactor', 'build', 'ci', 'docs', 'test']","['refactor', 'build', 'ci', 'docs', 'test']",True,True,"['refactor', 'ci', 'build', 'docs', 'test']",True,True,"['refactor', 'build', 'ci', 'docs', 'test']",True,True
+1002,"['build', 'test', 'refactor', 'ci', 'fix']","['build', 'test', 'ci', 'fix', 'refactor']",True,True,"['build', 'test', 'ci', 'refactor', 'fix']",True,True,"['build', 'test', 'refactor', 'ci', 'fix']",True,True
+1003,"['build', 'docs', 'ci', 'test', 'fix']","['build', 'docs', 'ci', 'test', 'refactor', 'fix']",False,True,"['build', 'ci', 'docs', 'fix', 'refactor']",False,True,"['build', 'ci', 'fix', 'build', 'test', 'feat']",False,True
+1004,"['fix', 'ci', 'feat', 'build', 'refactor']","['feat', 'ci', 'build', 'refactor']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'ci', 'refactor', 'test']",False,True
+1005,"['fix', 'build', 'refactor', 'feat', 'test']","['refactor', 'fix', 'feat', 'build', 'test']",True,True,"['fix', 'refactor', 'ci', 'build', 'feat']",False,True,"['refactor', 'docs', 'fix', 'feat', 'test']",False,True
+1006,"['fix', 'test', 'feat', 'docs', 'build']","['feat', 'test', 'docs', 'build', 'refactor']",False,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['fix', 'test', 'feat', 'docs', 'build']",True,True
+1007,"['test', 'docs', 'feat', 'build', 'fix']","['build', 'test', 'docs', 'feat', 'fix', 'refactor']",False,True,"['test', 'feat', 'docs', 'build', 'ci']",False,True,"['test', 'docs', 'feat', 'build', 'fix']",True,True
+1008,"['docs', 'feat', 'build', 'refactor', 'test']","['docs', 'feat', 'build', 'test']",False,True,"['feat', 'ci', 'test', 'docs', 'refactor']",False,True,"['docs', 'feat', 'build', 'refactor', 'test']",True,True
+1009,"['fix', 'feat', 'test', 'refactor', 'build']","['fix', 'feat', 'test', 'refactor', 'build']",True,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['fix', 'feat', 'test', 'refactor', 'build']",True,True
+1010,"['fix', 'build', 'refactor', 'test', 'docs']","['fix', 'build', 'test', 'refactor', 'docs']",True,True,"['build', 'ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['fix', 'build', 'refactor', 'test', 'ci']",False,True
+1011,"['fix', 'ci', 'docs', 'build', 'feat']","['fix', 'ci', 'docs', 'build', 'feat']",True,True,"['feat', 'build', 'docs', 'refactor', 'test']",False,True,"['fix', 'ci', 'docs', 'build', 'feat']",True,True
+1012,"['feat', 'build', 'refactor', 'docs', 'fix']","['feat', 'fix', 'build', 'docs']",False,True,"['feat', 'fix', 'refactor', 'build']",False,True,"['feat', 'build', 'feat', 'docs', 'fix']",False,True
+1013,"['test', 'docs', 'refactor', 'ci', 'feat']","['test', 'docs', 'refactor', 'ci', 'feat']",True,True,"['feat', 'test', 'ci', 'docs', 'refactor', 'build']",False,True,"['test', 'fix', 'refactor', 'ci', 'feat']",False,True
+1014,"['build', 'docs', 'fix', 'test', 'refactor']","['build', 'docs', 'refactor', 'fix', 'test']",True,True,"['build', 'feat', 'fix', 'refactor', 'test']",False,True,"['build', 'feat', 'fix', 'docs']",False,True
+1015,"['build', 'ci', 'docs', 'test', 'refactor']","['build', 'ci', 'docs', 'test', 'refactor']",True,True,"['build', 'ci', 'fix', 'test', 'docs']",False,True,"['build', 'ci', 'docs', 'test', 'refactor']",True,True
+1016,"['build', 'ci', 'docs', 'refactor', 'fix']","['build', 'ci', 'docs', 'fix', 'refactor']",True,True,"['feat', 'docs', 'build', 'refactor', 'fix']",False,True,"['build', 'ci', 'docs', 'fix', 'refactor']",True,True
+1017,"['test', 'docs', 'fix', 'feat', 'build']","['test', 'docs', 'fix', 'feat', 'build']",True,True,"['feat', 'fix', 'refactor', 'docs', 'test', 'ci', 'build']",False,True,"['test', 'docs', 'fix', 'feat', 'build']",True,True
+1018,"['refactor', 'ci', 'test', 'build', 'feat']","['refactor', 'ci', 'test', 'build', 'feat']",True,True,"['refactor', 'ci', 'test', 'build', 'feat']",True,True,"['refactor', 'ci', 'test', 'build', 'feat']",True,True
+1019,"['refactor', 'feat', 'build', 'fix', 'test']","['refactor', 'feat', 'fix', 'test', 'build']",True,True,"['refactor', 'test', 'ci', 'build', 'feat']",False,True,"['refactor', 'feat', 'build', 'fix', 'test']",True,True
+1020,"['refactor', 'test', 'docs', 'feat', 'ci']","['refactor', 'test', 'docs', 'feat', 'build', 'ci']",False,True,"['refactor', 'test', 'ci', 'docs']",False,True,"['refactor', 'test', 'docs', 'feat', 'ci']",True,True
+1021,"['test', 'ci', 'refactor', 'feat', 'fix']","['test', 'ci', 'build', 'feat', 'fix', 'refactor']",False,True,"['feat', 'ci', 'refactor', 'test', 'build']",False,True,"['test', 'ci', 'refactor', 'feat', 'fix']",True,True
+1022,"['ci', 'refactor', 'docs', 'fix', 'feat']","['ci', 'fix', 'feat', 'docs', 'refactor']",True,True,"['ci', 'docs', 'feat', 'fix', 'refactor', 'test']",False,True,"['ci', 'feat', 'fix', 'docs', 'build', 'feat']",False,True
+1023,"['docs', 'refactor', 'fix', 'test', 'build']","['docs', 'refactor', 'fix', 'test', 'build']",True,True,"['fix', 'refactor', 'test', 'ci', 'build']",False,True,"['docs', 'refactor', 'fix', 'test', 'build']",True,True
+1024,"['test', 'ci', 'fix', 'docs', 'refactor']","['test', 'ci', 'docs', 'fix', 'refactor']",True,True,"['test', 'ci', 'feat', 'docs', 'refactor']",False,True,"['test', 'ci', 'fix', 'docs', 'refactor']",True,True
+1025,"['build', 'ci', 'test', 'docs', 'feat']","['build', 'ci', 'test', 'docs', 'feat']",True,True,"['feat', 'fix', 'refactor', 'ci', 'build', 'docs', 'test']",False,True,"['build', 'docs', 'ci', 'test', 'feat']",True,True
+1026,"['refactor', 'feat', 'test', 'fix', 'ci']","['feat', 'fix', 'test', 'refactor', 'ci']",True,True,"['feat', 'refactor', 'test', 'ci']",False,True,"['feat', 'fix', 'test', 'refactor', 'ci']",True,True
+1027,"['ci', 'docs', 'refactor', 'build', 'test']","['ci', 'docs', 'refactor', 'build', 'test']",True,True,"['ci', 'fix', 'refactor', 'test']",False,True,"['ci', 'fix', 'refactor', 'build', 'test']",False,True
+1028,"['build', 'docs', 'refactor', 'test', 'feat']","['build', 'docs', 'test', 'refactor', 'feat']",True,True,"['build', 'docs', 'feat', 'refactor', 'test']",True,True,"['build', 'docs', 'refactor', 'test', 'feat']",True,True
+1029,"['ci', 'feat', 'fix', 'docs', 'test']","['ci', 'feat', 'fix', 'docs', 'build', 'test']",False,True,"['ci', 'feat', 'fix', 'test', 'docs']",True,True,"['ci', 'feat', 'fix', 'docs', 'test']",True,True
+1030,"['feat', 'build', 'test', 'docs', 'fix']","['feat', 'refactor', 'test', 'docs']",False,True,"['feat', 'build', 'test', 'refactor', 'docs']",False,True,"['test', 'build', 'fix', 'refactor']",False,True
+1031,"['build', 'docs', 'test', 'fix', 'ci']","['refactor', 'docs', 'test', 'feat', 'ci']",False,True,"['refactor', 'docs', 'build', 'test', 'ci']",False,True,"['build', 'docs', 'test', 'feat', 'fix']",False,True
+1032,"['feat', 'fix', 'ci', 'docs', 'test']","['feat', 'refactor', 'build', 'ci', 'docs', 'test', 'fix']",False,True,"['feat', 'fix', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'build', 'ci', 'docs', 'test']",False,True
+1033,"['feat', 'refactor', 'build', 'fix', 'docs']","['feat', 'fix', 'build', 'docs']",False,True,"['feat', 'refactor', 'ci', 'build', 'test', 'docs']",False,True,"['feat', 'refactor', 'build', 'fix', 'docs']",True,True
+1034,"['test', 'build', 'feat', 'fix', 'docs']","['test', 'build', 'refactor', 'fix', 'docs']",False,True,"['test', 'refactor', 'build', 'feat', 'docs']",False,True,"['test', 'build', 'fix', 'docs', 'docs']",False,True
+1035,"['fix', 'feat', 'test', 'ci', 'docs']","['fix', 'build', 'feat', 'test', 'ci', 'docs']",False,True,"['feat', 'refactor', 'test', 'ci', 'docs', 'build']",False,True,"['fix', 'feat', 'test', 'ci', 'refactor']",False,True
+1036,"['test', 'refactor', 'ci', 'build', 'fix']","['test', 'refactor', 'ci', 'build', 'fix']",True,True,"['test', 'refactor', 'build', 'feat']",False,True,"['test', 'refactor', 'build', 'fix']",False,True
+1037,"['build', 'feat', 'refactor', 'ci', 'test']","['build', 'feat', 'refactor', 'ci', 'test']",True,True,"['build', 'ci', 'feat', 'refactor', 'test']",True,True,"['build', 'fix', 'test', 'ci', 'test']",False,True
+1038,"['feat', 'refactor', 'test', 'ci', 'build']","['feat', 'fix', 'refactor', 'docs', 'build', 'test', 'ci']",False,True,"['feat', 'refactor', 'test', 'ci', 'build', 'docs']",False,True,"['feat', 'docs', 'fix', 'build', 'ci', 'build']",False,True
+1039,"['test', 'fix', 'build', 'refactor', 'docs']","['test', 'fix', 'build', 'feat', 'docs']",False,True,"['test', 'refactor', 'build', 'feat', 'docs']",False,True,"['test', 'fix', 'build', 'feat', 'docs']",False,True
+1040,"['ci', 'feat', 'build', 'fix', 'test']","['ci', 'build', 'refactor', 'test', 'fix']",False,True,"['ci', 'test', 'build', 'feat', 'refactor']",False,True,"['ci', 'refactor', 'build', 'fix', 'test']",False,True
+1041,"['ci', 'test', 'fix', 'feat', 'build']","['ci', 'test', 'fix', 'feat', 'build']",True,True,"['ci', 'test', 'refactor', 'build']",False,True,"['ci', 'test', 'fix', 'feat', 'build']",True,True
+1042,"['test', 'build', 'feat', 'fix', 'ci']","['test', 'build', 'ci', 'refactor', 'fix', 'feat']",False,True,"['test', 'ci', 'refactor', 'build']",False,True,"['test', 'build', 'feat', 'fix', 'ci']",True,True
+1043,"['test', 'build', 'refactor', 'docs', 'feat']","['test', 'build', 'refactor', 'docs', 'feat']",True,True,"['test', 'build', 'docs', 'feat']",False,True,"['test', 'build', 'refactor', 'docs', 'feat']",True,True
+1044,"['build', 'ci', 'feat', 'docs', 'fix']","['build', 'ci', 'feat', 'docs', 'fix']",True,True,"['build', 'ci', 'refactor', 'test', 'docs']",False,True,"['build', 'ci', 'feat', 'docs', 'refactor']",False,True
+1045,"['test', 'build', 'refactor', 'fix', 'ci']","['test', 'build', 'refactor', 'feat', 'ci']",False,True,"['feat', 'fix', 'refactor', 'test', 'ci', 'build']",False,True,"['test', 'build', 'refactor', 'feat', 'ci']",False,True
+1046,"['feat', 'build', 'fix', 'ci', 'test']","['build', 'refactor', 'feat', 'ci', 'test']",False,True,"['feat', 'build', 'ci', 'test', 'refactor']",False,True,"['feat', 'build', 'feat', 'ci', 'test']",False,True
+1047,"['build', 'test', 'refactor', 'feat', 'ci']","['build', 'test', 'feat', 'refactor', 'ci']",True,True,"['build', 'ci', 'docs', 'feat', 'refactor', 'test']",False,True,"['build', 'test', 'fix', 'feat', 'ci']",False,True
+1048,"['ci', 'refactor', 'docs', 'feat', 'fix']","['ci', 'feat', 'refactor', 'fix']",False,True,"['ci', 'feat', 'docs', 'refactor', 'build']",False,True,"['ci', 'feat', 'docs', 'refactor', 'fix']",True,True
+1049,"['ci', 'fix', 'feat', 'docs', 'refactor']","['ci', 'docs', 'refactor', 'fix']",False,True,"['ci', 'docs', 'refactor']",False,True,"['ci', 'docs', 'refactor', 'fix', 'feat', 'fix']",False,True

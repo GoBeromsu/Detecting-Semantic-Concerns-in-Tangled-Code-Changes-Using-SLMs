@@ -1,0 +1,16 @@
+model_a,model_b,group,p_value,effect_size,significant
+GPT-4.1,Qwen3,1,0.022,0.431,True
+GPT-4.1,Qwen3-FT,1,0.003,0.563,True
+Qwen3,Qwen3-FT,1,$<$ 0.001,0.633,True
+GPT-4.1,Qwen3,2,$<$ 0.001,0.353,True
+GPT-4.1,Qwen3-FT,2,0.001,0.446,True
+Qwen3,Qwen3-FT,2,$<$ 0.001,0.598,True
+GPT-4.1,Qwen3,3,$<$ 0.001,0.155,True
+GPT-4.1,Qwen3-FT,3,$<$ 0.001,0.399,True
+Qwen3,Qwen3-FT,3,$<$ 0.001,0.751,True
+GPT-4.1,Qwen3,4,$<$ 0.001,0.150,True
+GPT-4.1,Qwen3-FT,4,$<$ 0.001,0.343,True
+Qwen3,Qwen3-FT,4,$<$ 0.001,0.691,True
+GPT-4.1,Qwen3,5,$<$ 0.001,0.237,True
+GPT-4.1,Qwen3-FT,5,$<$ 0.001,0.440,True
+Qwen3,Qwen3-FT,5,$<$ 0.001,0.676,True

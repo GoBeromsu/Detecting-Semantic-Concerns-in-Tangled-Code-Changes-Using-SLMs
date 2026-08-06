@@ -1,0 +1,30 @@
+{
+  "by_model": {
+    "GPT-4.1": {
+      "p_value": "0.005",
+      "effect_size": "0.532",
+      "significant": true
+    },
+    "Qwen3": {
+      "p_value": "$<$ 0.001",
+      "effect_size": "0.533",
+      "significant": true
+    },
+    "Qwen3-FT": {
+      "p_value": "$<$ 0.001",
+      "effect_size": "0.669",
+      "significant": true
+    }
+  },
+  "summary": {
+    "test_method": "Wilcoxon Signed-Rank Test (two-sided, paired)",
+    "effect_size_metric": "Vargha-Delaney A12",
+    "significance_threshold": 0.05,
+    "models": [
+      "GPT-4.1",
+      "Qwen3",
+      "Qwen3-FT"
+    ],
+    "comparison": "Without Message vs With Message"
+  }
+}
