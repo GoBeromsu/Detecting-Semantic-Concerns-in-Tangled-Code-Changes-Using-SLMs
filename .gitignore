@@ -6,7 +6,8 @@ __pycache__/
 
 # Project specific
 models/llama.cpp
-results/
+# results/ is tracked: every sweep costs either API spend or GPU hours, and the run
+# directories are the only copy — nothing regenerates them. Model weights stay ignored below.
 CLAUDE.md
 wandb/
 outputs/

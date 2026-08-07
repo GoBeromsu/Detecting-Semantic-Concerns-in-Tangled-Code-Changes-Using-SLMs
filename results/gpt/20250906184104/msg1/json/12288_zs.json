@@ -1,0 +1,68 @@
+{
+  "experiment_id": "12288_12288_yes_20250921",
+  "model": "12288",
+  "context_length": 12288,
+  "with_message": true,
+  "num_samples": 350,
+  "metrics_macro": {
+    "accuracy": 0.5685714285714286,
+    "precision": 0.867938775510204,
+    "recall": 0.8915714285714285,
+    "f1": 0.8713731189445476,
+    "hamming_loss": 0.09795918367346937,
+    "inference_time_avg": 1.0047493512289865
+  },
+  "metrics_by_concern": [
+    {
+      "concern_count": 1,
+      "accuracy": 0.7142857142857143,
+      "precision": 0.780952380952381,
+      "recall": 0.8571428571428571,
+      "f1": 0.8047619047619048,
+      "hamming_loss": 0.06734693877551019,
+      "inference_time_avg": 0.9237981796264648,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 2,
+      "accuracy": 0.6285714285714286,
+      "precision": 0.8297619047619048,
+      "recall": 0.8714285714285714,
+      "f1": 0.840952380952381,
+      "hamming_loss": 0.1020408163265306,
+      "inference_time_avg": 0.9235693216323853,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 3,
+      "accuracy": 0.5285714285714286,
+      "precision": 0.8821428571428571,
+      "recall": 0.9,
+      "f1": 0.883469387755102,
+      "hamming_loss": 0.09999999999999998,
+      "inference_time_avg": 0.9801557234355381,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 4,
+      "accuracy": 0.5142857142857142,
+      "precision": 0.9230952380952382,
+      "recall": 0.9178571428571428,
+      "f1": 0.9151133786848072,
+      "hamming_loss": 0.09795918367346937,
+      "inference_time_avg": 1.0769310406276158,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 5,
+      "accuracy": 0.45714285714285713,
+      "precision": 0.9237414965986395,
+      "recall": 0.9114285714285715,
+      "f1": 0.9125685425685427,
+      "hamming_loss": 0.1224489795918367,
+      "inference_time_avg": 1.1192924908229283,
+      "num_samples": 70
+    }
+  ],
+  "created_at": "2025-09-21T20:06:15.664947+00:00"
+}

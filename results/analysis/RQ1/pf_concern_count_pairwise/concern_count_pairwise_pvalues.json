@@ -1,0 +1,106 @@
+{
+  "by_concern_count": {
+    "1": {
+      "LLM vs SLM": {
+        "p_value": "0.258",
+        "effect_size": "0.534",
+        "significant": false
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.643",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.609",
+        "significant": true
+      }
+    },
+    "2": {
+      "LLM vs SLM": {
+        "p_value": "0.650",
+        "effect_size": "0.493",
+        "significant": false
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "0.019",
+        "effect_size": "0.575",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "0.034",
+        "effect_size": "0.583",
+        "significant": true
+      }
+    },
+    "3": {
+      "LLM vs SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.436",
+        "significant": true
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.605",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.653",
+        "significant": true
+      }
+    },
+    "4": {
+      "LLM vs SLM": {
+        "p_value": "0.019",
+        "effect_size": "0.440",
+        "significant": true
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.617",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.670",
+        "significant": true
+      }
+    },
+    "5": {
+      "LLM vs SLM": {
+        "p_value": "0.029",
+        "effect_size": "0.445",
+        "significant": true
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.668",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.710",
+        "significant": true
+      }
+    }
+  },
+  "summary": {
+    "test_method": "Wilcoxon Signed-Rank Test (two-sided, paired)",
+    "effect_size_metric": "Vargha-Delaney A12",
+    "significance_threshold": 0.05,
+    "models": [
+      "LLM",
+      "SLM",
+      "Fine-tuned SLM"
+    ],
+    "concern_counts": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  }
+}

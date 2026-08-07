@@ -1,0 +1,106 @@
+{
+  "by_context_length": {
+    "1024": {
+      "LLM vs SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.474",
+        "significant": true
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.564",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.588",
+        "significant": true
+      }
+    },
+    "2048": {
+      "LLM vs SLM": {
+        "p_value": "0.015",
+        "effect_size": "0.481",
+        "significant": true
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.588",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.606",
+        "significant": true
+      }
+    },
+    "4096": {
+      "LLM vs SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.464",
+        "significant": true
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.594",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.625",
+        "significant": true
+      }
+    },
+    "8192": {
+      "LLM vs SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.462",
+        "significant": true
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.608",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.640",
+        "significant": true
+      }
+    },
+    "12288": {
+      "LLM vs SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.472",
+        "significant": true
+      },
+      "LLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.618",
+        "significant": true
+      },
+      "SLM vs Fine-tuned SLM": {
+        "p_value": "$<$ 0.001",
+        "effect_size": "0.638",
+        "significant": true
+      }
+    }
+  },
+  "summary": {
+    "test_method": "Wilcoxon Signed-Rank Test (two-sided, paired)",
+    "effect_size_metric": "Vargha-Delaney A12",
+    "significance_threshold": 0.05,
+    "models": [
+      "LLM",
+      "SLM",
+      "Fine-tuned SLM"
+    ],
+    "context_lengths": [
+      1024,
+      2048,
+      4096,
+      8192,
+      12288
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "experiment_id": "2048_2048_yes_20250921",
+  "model": "2048",
+  "context_length": 2048,
+  "with_message": true,
+  "num_samples": 350,
+  "metrics_macro": {
+    "accuracy": 0.5457142857142857,
+    "precision": 0.8599931972789115,
+    "recall": 0.8745238095238095,
+    "f1": 0.8588641517212945,
+    "hamming_loss": 0.10775510204081631,
+    "inference_time_avg": 0.9505260910306658
+  },
+  "metrics_by_concern": [
+    {
+      "concern_count": 1,
+      "accuracy": 0.7,
+      "precision": 0.7642857142857142,
+      "recall": 0.8428571428571429,
+      "f1": 0.7880952380952381,
+      "hamming_loss": 0.07346938775510203,
+      "inference_time_avg": 0.8692500148500715,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 2,
+      "accuracy": 0.5857142857142857,
+      "precision": 0.8059523809523809,
+      "recall": 0.8642857142857143,
+      "f1": 0.8257142857142856,
+      "hamming_loss": 0.11020408163265305,
+      "inference_time_avg": 0.9144650936126709,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 3,
+      "accuracy": 0.5857142857142857,
+      "precision": 0.8904761904761905,
+      "recall": 0.8904761904761905,
+      "f1": 0.8837414965986394,
+      "hamming_loss": 0.09795918367346937,
+      "inference_time_avg": 0.9056597437177386,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 4,
+      "accuracy": 0.5285714285714286,
+      "precision": 0.9188095238095237,
+      "recall": 0.9035714285714286,
+      "f1": 0.906156462585034,
+      "hamming_loss": 0.10612244897959182,
+      "inference_time_avg": 1.0151735748563493,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 5,
+      "accuracy": 0.32857142857142857,
+      "precision": 0.9204421768707483,
+      "recall": 0.8714285714285714,
+      "f1": 0.8906132756132757,
+      "hamming_loss": 0.15102040816326529,
+      "inference_time_avg": 1.0480820281164986,
+      "num_samples": 70
+    }
+  ],
+  "created_at": "2025-09-21T20:06:15.239938+00:00"
+}

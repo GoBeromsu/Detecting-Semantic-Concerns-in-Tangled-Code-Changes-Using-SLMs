@@ -24,7 +24,7 @@ import argparse
 import numpy as np
 
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
-from ..stats_utils import compute_pairwise_stats
+from ..stats_utils import align_paired, compute_pairwise_stats
 P_VALUE_THRESHOLD = 0.05
 
 
@@ -49,10 +49,11 @@ def load_data():
             df_msg1 = pd.read_csv(msg1_path)
 
             if "hamming_loss" in df_msg0.columns and "hamming_loss" in df_msg1.columns:
-                csv_data[model_name] = {
-                    "msg0": df_msg0,
-                    "msg1": df_msg1
-                }
+                # This test pairs a model against itself, so with_message is the treatment
+                # rather than part of the row's identity and must stay out of the key.
+                csv_data[model_name] = align_paired(
+                    {"msg0": df_msg0, "msg1": df_msg1}, key=("context_len",)
+                )
 
     return csv_data
 

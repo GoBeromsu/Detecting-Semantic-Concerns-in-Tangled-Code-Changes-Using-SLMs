@@ -15,6 +15,9 @@ Statistical Test Choice (following Arcuri & Briand 2014):
   4. Makes no distributional assumptions about metric values
 """
 
+import ast
+import json
+
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
@@ -22,6 +25,72 @@ from scipy.stats import rankdata, wilcoxon
 
 # Default threshold for outlier detection
 OUTLIER_THRESHOLD_IQR = 1.5
+
+# Columns that, together with the commit, identify one evaluated row
+DEFAULT_PAIR_KEY = ("context_len", "with_message")
+
+
+def commit_key(cell) -> str:
+    """Normalize a `shas` cell into a key that is stable across both result pipelines.
+
+    The GPT pipeline writes the Python repr of the sha list (single quotes) while the
+    unsloth pipeline writes JSON (double quotes). Joining on the raw string would match
+    zero rows between the two, which reads as "these models share no commits" rather than
+    as an encoding mismatch.
+    """
+    value = cell
+    for _ in range(4):
+        if isinstance(value, list):
+            return "|".join(map(str, value))
+        if not isinstance(value, str):
+            return str(cell)
+        try:
+            value = json.loads(value)
+            continue
+        except (ValueError, TypeError):
+            pass
+        try:
+            value = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            return value
+    return str(value)
+
+
+def align_paired(frames: dict, key=DEFAULT_PAIR_KEY) -> dict:
+    """Restrict every frame to the rows they all share, aligned row-for-row.
+
+    The paired tests below read `.values` positionally. That was safe only while every
+    model emitted the same commits, in the same order, for every sweep — an assumption that
+    holds until a model refuses to answer. The LoRA arm rejects a handful of generations per
+    sweep, which shifts every later row, so a positional pair can compare two different
+    commits while still passing the equal-length check.
+
+    Rows are keyed by commit plus `key` plus an occurrence index, so the repeated sweeps of
+    one commit stay distinct. When no rows are missing this reproduces the positional
+    pairing exactly, which is why it can be applied to the published results unchanged.
+    """
+    key = list(key)
+    keyed = {}
+    for name, df in frames.items():
+        df = df.copy()
+        df["_commit"] = df["shas"].map(commit_key)
+        df["_repeat"] = df.groupby(["_commit"] + key).cumcount()
+        keyed[name] = df.set_index(["_commit"] + key + ["_repeat"])
+
+    common = None
+    for df in keyed.values():
+        common = df.index if common is None else common.intersection(df.index)
+
+    # Keep the first frame's original row order rather than the intersection's. The tests
+    # are order-invariant, but preserving it means a complete set of results comes back
+    # untouched, so this can be applied to the published runs without moving their numbers.
+    first = next(iter(keyed.values())).index
+    common = first[first.isin(common)]
+
+    return {
+        name: df.loc[common].reset_index().drop(columns=["_commit", "_repeat"])
+        for name, df in keyed.items()
+    }
 
 
 def vargha_delaney_a(model_a: ArrayLike, model_b: ArrayLike) -> float:

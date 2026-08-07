@@ -152,8 +152,10 @@ def main():
         "--model",
         type=str,
         default="all",
-        choices=["gpt", "Qwen", "Qwen3-14B-LoRA", "all"],
-        help="Model to process (default: all)",
+        help=(
+            "Directory name under results/ to process, or 'all' to process every "
+            "model directory found there (default: all)"
+        ),
     )
     parser.add_argument(
         "--aggregated-basename",
@@ -169,7 +171,13 @@ def main():
     print(f"Target model(s): {args.model}")
 
     if args.model == "all":
-        models = ["gpt", "Qwen", "Qwen3-14B-LoRA"]
+        # Discovered rather than listed: every rerun on a new dataset adds a results/
+        # directory, and a hardcoded list silently skips the arm you just finished.
+        models = sorted(
+            d.name
+            for d in RESULTS_DIR.iterdir()
+            if d.is_dir() and d.name != "analysis" and not d.name.startswith(".")
+        )
     else:
         models = [args.model]
 

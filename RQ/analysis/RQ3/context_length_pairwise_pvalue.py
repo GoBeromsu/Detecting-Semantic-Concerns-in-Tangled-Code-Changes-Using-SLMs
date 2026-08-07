@@ -25,7 +25,7 @@ from itertools import combinations
 import numpy as np
 
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
-from ..stats_utils import compute_pairwise_stats
+from ..stats_utils import align_paired, compute_pairwise_stats
 
 # Constants
 P_VALUE_THRESHOLD = 0.05
@@ -55,6 +55,8 @@ def load_data():
                 df = pd.read_csv(csv_path)
                 if "hamming_loss" in df.columns:
                     csv_data[context_length][model_name] = df
+
+        csv_data[context_length] = align_paired(csv_data[context_length])
 
     return csv_data, context_lengths
 

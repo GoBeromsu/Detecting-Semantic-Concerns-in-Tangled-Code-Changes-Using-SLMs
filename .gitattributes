@@ -1,0 +1,5 @@
+# Result trees are an archive, not source. Git's eol normalization would rewrite them:
+# the unsloth (27B) writer emits CRLF while the GPT and 14B writers emit LF, and with
+# core.autocrlf=input the committed blob stopped matching the bytes the run produced.
+# Store them verbatim so a checkout reproduces exactly what the sweep wrote.
+results/** -text

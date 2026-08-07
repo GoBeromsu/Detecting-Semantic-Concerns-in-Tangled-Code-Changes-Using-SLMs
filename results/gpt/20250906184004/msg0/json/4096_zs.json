@@ -1,0 +1,68 @@
+{
+  "experiment_id": "4096_4096_no_20250921",
+  "model": "4096",
+  "context_length": 4096,
+  "with_message": false,
+  "num_samples": 350,
+  "metrics_macro": {
+    "accuracy": 0.5114285714285715,
+    "precision": 0.8578571428571429,
+    "recall": 0.8842857142857142,
+    "f1": 0.8602317048031333,
+    "hamming_loss": 0.11061224489795916,
+    "inference_time_avg": 1.0041058771950857
+  },
+  "metrics_by_concern": [
+    {
+      "concern_count": 1,
+      "accuracy": 0.6714285714285714,
+      "precision": 0.7738095238095237,
+      "recall": 0.8857142857142857,
+      "f1": 0.8095238095238095,
+      "hamming_loss": 0.06734693877551019,
+      "inference_time_avg": 0.9845814670835222,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 2,
+      "accuracy": 0.5428571428571428,
+      "precision": 0.8033333333333333,
+      "recall": 0.8642857142857143,
+      "f1": 0.8191156462585033,
+      "hamming_loss": 0.11428571428571427,
+      "inference_time_avg": 0.8712005274636405,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 3,
+      "accuracy": 0.5571428571428572,
+      "precision": 0.9023809523809524,
+      "recall": 0.9142857142857143,
+      "f1": 0.8995238095238095,
+      "hamming_loss": 0.08571428571428569,
+      "inference_time_avg": 0.9787257773535593,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 4,
+      "accuracy": 0.44285714285714284,
+      "precision": 0.8921428571428572,
+      "recall": 0.8857142857142857,
+      "f1": 0.8831179138321996,
+      "hamming_loss": 0.13469387755102039,
+      "inference_time_avg": 1.1156789302825927,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 5,
+      "accuracy": 0.34285714285714286,
+      "precision": 0.9176190476190477,
+      "recall": 0.8714285714285714,
+      "f1": 0.8898773448773449,
+      "hamming_loss": 0.15102040816326529,
+      "inference_time_avg": 1.0703426837921142,
+      "num_samples": 70
+    }
+  ],
+  "created_at": "2025-09-21T20:06:14.282722+00:00"
+}

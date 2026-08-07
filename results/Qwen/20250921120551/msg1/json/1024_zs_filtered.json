@@ -1,0 +1,74 @@
+{
+  "experiment_id": "1024_1024_yes_20250921",
+  "model": "1024",
+  "context_length": 1024,
+  "with_message": true,
+  "num_samples": 350,
+  "metrics_macro": {
+    "accuracy": 0.25787965616045844,
+    "precision": 0.7029062627916496,
+    "recall": 0.84116523400191,
+    "f1": 0.7453617220092863,
+    "hamming_loss": 0.2550143266475644,
+    "inference_time_avg": 0.7620158598552802
+  },
+  "metrics_by_concern": [
+    {
+      "concern_count": 1,
+      "accuracy": 0.5428571428571428,
+      "precision": 0.7168027210884353,
+      "recall": 0.9285714285714286,
+      "f1": 0.7790816326530612,
+      "hamming_loss": 0.11224489795918365,
+      "inference_time_avg": 0.47217502593994143,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 2,
+      "accuracy": 0.4142857142857143,
+      "precision": 0.6766326530612244,
+      "recall": 0.8357142857142857,
+      "f1": 0.72078231292517,
+      "hamming_loss": 0.23265306122448978,
+      "inference_time_avg": 0.6550913538251605,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 3,
+      "accuracy": 0.08571428571428572,
+      "precision": 0.631734693877551,
+      "recall": 0.7523809523809524,
+      "f1": 0.6661111111111111,
+      "hamming_loss": 0.3326530612244898,
+      "inference_time_avg": 0.7899705716541835,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 4,
+      "accuracy": 0.12857142857142856,
+      "precision": 0.7022789115646259,
+      "recall": 0.8428571428571429,
+      "f1": 0.7532519068233353,
+      "hamming_loss": 0.31632653061224486,
+      "inference_time_avg": 0.9152089936392648,
+      "num_samples": 70
+    },
+    {
+      "concern_count": 5,
+      "accuracy": 0.11594202898550725,
+      "precision": 0.7883022774327123,
+      "recall": 0.8463768115942029,
+      "f1": 0.8084833845703411,
+      "hamming_loss": 0.28157349896480327,
+      "inference_time_avg": 0.980758245440497,
+      "num_samples": 69
+    }
+  ],
+  "created_at": "2025-09-21T20:06:16.254089+00:00",
+  "outliers": {
+    "indices": [
+      307
+    ],
+    "count": 1
+  }
+}

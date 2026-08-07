@@ -50,7 +50,10 @@ def load_individual_csv_data(csv_paths: list) -> Dict[str, pd.DataFrame]:
         # Determine model name based on CSV path
         if "gpt" in str(csv_path).lower():
             model_name = "GPT-4.1"
-        elif "Qwen3-14B-LoRA" in str(csv_path):
+        # Match on the adapter marker, not the model size: the base and fine-tuned runs
+        # share a directory prefix, so a version-specific string silently sends the LoRA
+        # results into the base model's column instead of failing.
+        elif "LoRA" in str(csv_path):
             model_name = "Qwen (Fine-tuned)"
         elif "Qwen" in str(csv_path):
             model_name = "Qwen"
