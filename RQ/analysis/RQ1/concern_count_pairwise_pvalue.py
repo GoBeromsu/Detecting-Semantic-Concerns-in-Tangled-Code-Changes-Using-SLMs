@@ -24,7 +24,7 @@ import argparse
 from itertools import combinations
 import numpy as np
 
-from ..stats_utils import compute_pairwise_stats
+from ..stats_utils import align_paired, compute_pairwise_stats
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
 
 # Constants
@@ -50,7 +50,7 @@ def load_data():
             if all(col in df.columns for col in ["hamming_loss", "concern_count"]):
                 csv_data[model_name] = df
 
-    return csv_data
+    return align_paired(csv_data)
 
 
 # =============================================================================

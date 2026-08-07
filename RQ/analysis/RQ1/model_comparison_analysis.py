@@ -14,6 +14,7 @@ import argparse
 from datetime import datetime
 
 from . import PROJECT_ROOT, ANALYSIS_OUTPUT_DIR, CONFIG_PATH
+from ..stats_utils import align_paired
 
 
 def load_config():
@@ -45,12 +46,9 @@ def check_any_label_match(predicted_types: list, actual_types: list) -> bool:
     return bool(set(predicted_types) & set(actual_types))
 
 
-def load_model_results(csv_path: Path, model_name: str) -> pd.DataFrame:
-    """Load and preprocess model results from CSV file."""
-    if not csv_path.exists():
-        raise FileNotFoundError(f"CSV file not found: {csv_path}")
-
-    df = pd.read_csv(csv_path)
+def preprocess_model_results(df: pd.DataFrame, model_name: str) -> pd.DataFrame:
+    """Preprocess one model's already-aligned results."""
+    df = df.copy()
 
     # Parse types columns
     df["predicted_types_parsed"] = df["predicted_types"].apply(parse_json_types)
@@ -82,7 +80,7 @@ def create_comparison_dataset(
 ) -> pd.DataFrame:
     """Create combined dataset with all model predictions and match results."""
 
-    # Combine all model results by index (all CSV files have same order)
+    # Safe to combine by index: the frames were aligned commit-for-commit at load time
     dataset = pd.DataFrame(
         {
             "Row_Index": range(len(llm_df)),
@@ -274,7 +272,7 @@ def main():
     print("📊 Loading model results...")
 
     # Load model results from config
-    model_results = {}
+    raw_results = {}
     model_paths = {}
 
     for model_name, model_config in script_config["models"].items():
@@ -288,7 +286,14 @@ def main():
 
         # Load results with simplified model names for processing
         simple_name = model_name.replace(" ", "_").replace("-", "_")
-        model_results[simple_name] = load_model_results(csv_path, simple_name)
+        raw_results[simple_name] = pd.read_csv(csv_path)
+
+    # This comparison reads model A's row i against model B's row i, so the frames have to
+    # be restricted to the commits all three actually answered before they are lined up.
+    aligned = align_paired(raw_results)
+    model_results = {
+        name: preprocess_model_results(df, name) for name, df in aligned.items()
+    }
 
     # Extract the specific model DataFrames
     llm_df = model_results["LLM"]
