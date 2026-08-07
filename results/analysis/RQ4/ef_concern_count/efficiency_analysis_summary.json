@@ -1,30 +1,27 @@
 {
   "analysis_info": {
-    "timestamp": "2026-01-16T16:49:51.666458+00:00",
+    "timestamp": "2026-08-06T11:10:03.770050+00:00",
     "analysis_type": "efficiency_concern_count_correlation",
     "input_files": [
-      "/Users/beomsu/Documents/EMSE/Concern-is-All-You-Need/results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv"
+      "/Users/beomsu/Documents/01_Project/EMSE/Concern-is-All-You-Need/results/Qwen3.6-27B-LoRA/avg_result/msg1/12288_zs.csv"
     ]
   },
   "correlation_analysis": {
-    "pearson_r": 0.8098,
-    "p_value": 6.029997111169969e-245,
+    "pearson_r": 0.6191,
+    "p_value": 1.6468107328276121e-111,
     "significant": true
   },
   "outlier_analysis": {
     "method": "IQR",
-    "count": 2,
-    "values": [
-      1.88,
-      1.88
-    ]
+    "count": 0,
+    "values": []
   },
   "inference_time": {
-    "mean": 0.7554,
-    "std": 0.3576,
-    "min": 0.2241,
-    "max": 1.8848,
+    "mean": 1.8174,
+    "std": 0.8487,
+    "min": 0.5194,
+    "max": 4.087,
     "unit": "seconds"
   },
-  "sample_size": 1050
+  "sample_size": 1044
 }

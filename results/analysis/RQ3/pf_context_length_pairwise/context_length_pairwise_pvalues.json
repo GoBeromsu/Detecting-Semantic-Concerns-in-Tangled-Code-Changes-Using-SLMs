@@ -1,87 +1,87 @@
 {
   "by_context_length": {
     "1024": {
-      "GPT-4.1 vs Qwen3": {
+      "LLM vs SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.285",
+        "effect_size": "0.474",
         "significant": true
       },
-      "GPT-4.1 vs Qwen3-FT": {
+      "LLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.433",
+        "effect_size": "0.564",
         "significant": true
       },
-      "Qwen3 vs Qwen3-FT": {
+      "SLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.641",
+        "effect_size": "0.588",
         "significant": true
       }
     },
     "2048": {
-      "GPT-4.1 vs Qwen3": {
-        "p_value": "$<$ 0.001",
-        "effect_size": "0.277",
+      "LLM vs SLM": {
+        "p_value": "0.015",
+        "effect_size": "0.481",
         "significant": true
       },
-      "GPT-4.1 vs Qwen3-FT": {
+      "LLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.430",
+        "effect_size": "0.588",
         "significant": true
       },
-      "Qwen3 vs Qwen3-FT": {
+      "SLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.651",
+        "effect_size": "0.606",
         "significant": true
       }
     },
     "4096": {
-      "GPT-4.1 vs Qwen3": {
+      "LLM vs SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.274",
+        "effect_size": "0.464",
         "significant": true
       },
-      "GPT-4.1 vs Qwen3-FT": {
+      "LLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.437",
+        "effect_size": "0.594",
         "significant": true
       },
-      "Qwen3 vs Qwen3-FT": {
+      "SLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.654",
+        "effect_size": "0.625",
         "significant": true
       }
     },
     "8192": {
-      "GPT-4.1 vs Qwen3": {
+      "LLM vs SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.280",
+        "effect_size": "0.462",
         "significant": true
       },
-      "GPT-4.1 vs Qwen3-FT": {
+      "LLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.440",
+        "effect_size": "0.608",
         "significant": true
       },
-      "Qwen3 vs Qwen3-FT": {
+      "SLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.654",
+        "effect_size": "0.640",
         "significant": true
       }
     },
     "12288": {
-      "GPT-4.1 vs Qwen3": {
+      "LLM vs SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.273",
+        "effect_size": "0.472",
         "significant": true
       },
-      "GPT-4.1 vs Qwen3-FT": {
+      "LLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.441",
+        "effect_size": "0.618",
         "significant": true
       },
-      "Qwen3 vs Qwen3-FT": {
+      "SLM vs Fine-tuned SLM": {
         "p_value": "$<$ 0.001",
-        "effect_size": "0.662",
+        "effect_size": "0.638",
         "significant": true
       }
     }
@@ -91,9 +91,9 @@
     "effect_size_metric": "Vargha-Delaney A12",
     "significance_threshold": 0.05,
     "models": [
-      "GPT-4.1",
-      "Qwen3",
-      "Qwen3-FT"
+      "LLM",
+      "SLM",
+      "Fine-tuned SLM"
     ],
     "context_lengths": [
       1024,

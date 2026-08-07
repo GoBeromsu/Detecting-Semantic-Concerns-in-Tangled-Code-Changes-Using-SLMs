@@ -1,16 +1,6 @@
-model_a,model_b,group,p_value,effect_size,significant
-GPT-4.1,Qwen3,1,0.022,0.431,True
-GPT-4.1,Qwen3-FT,1,0.003,0.563,True
-Qwen3,Qwen3-FT,1,$<$ 0.001,0.633,True
-GPT-4.1,Qwen3,2,$<$ 0.001,0.353,True
-GPT-4.1,Qwen3-FT,2,0.001,0.446,True
-Qwen3,Qwen3-FT,2,$<$ 0.001,0.598,True
-GPT-4.1,Qwen3,3,$<$ 0.001,0.155,True
-GPT-4.1,Qwen3-FT,3,$<$ 0.001,0.399,True
-Qwen3,Qwen3-FT,3,$<$ 0.001,0.751,True
-GPT-4.1,Qwen3,4,$<$ 0.001,0.150,True
-GPT-4.1,Qwen3-FT,4,$<$ 0.001,0.343,True
-Qwen3,Qwen3-FT,4,$<$ 0.001,0.691,True
-GPT-4.1,Qwen3,5,$<$ 0.001,0.237,True
-GPT-4.1,Qwen3-FT,5,$<$ 0.001,0.440,True
-Qwen3,Qwen3-FT,5,$<$ 0.001,0.676,True
+concerns,A_LLM_SLM,p_LLM_SLM,A_LLM_FT,p_LLM_FT,A_SLM_FT,p_SLM_FT
+1,0.534,0.258,0.643,$<$ 0.001,0.609,$<$ 0.001
+2,0.493,0.650,0.575,0.019,0.583,0.034
+3,0.436,$<$ 0.001,0.605,$<$ 0.001,0.653,$<$ 0.001
+4,0.440,0.019,0.617,$<$ 0.001,0.670,$<$ 0.001
+5,0.445,0.029,0.668,$<$ 0.001,0.710,$<$ 0.001
