@@ -20,16 +20,16 @@ METRIC_KEY = "hamming_loss"
 
 DEFAULT_MODEL_CONFIGS = {
     "GPT-4.1": {
-        "msg0_path": "results/gpt/avg_result/msg0/12288_zs.csv",
-        "msg1_path": "results/gpt/avg_result/msg1/12288_zs.csv",
+        "msg0_path": "results/gpt-seed43/avg_result/msg0/12288_zs.csv",
+        "msg1_path": "results/gpt-seed43/avg_result/msg1/12288_zs.csv",
     },
     "Qwen": {
-        "msg0_path": "results/Qwen/avg_result/msg0/12288_zs.csv",
-        "msg1_path": "results/Qwen/avg_result/msg1/12288_zs.csv",
+        "msg0_path": "results/Qwen3.6-27B/avg_result/msg0/12288_zs.csv",
+        "msg1_path": "results/Qwen3.6-27B/avg_result/msg1/12288_zs.csv",
     },
     "Qwen (FT)": {
-        "msg0_path": "results/Qwen3-14B-LoRA/avg_result/msg0/12288_zs.csv",
-        "msg1_path": "results/Qwen3-14B-LoRA/avg_result/msg1/12288_zs.csv",
+        "msg0_path": "results/Qwen3.6-27B-LoRA/avg_result/msg0/12288_zs.csv",
+        "msg1_path": "results/Qwen3.6-27B-LoRA/avg_result/msg1/12288_zs.csv",
     },
 }
 
