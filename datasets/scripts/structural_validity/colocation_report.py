@@ -107,18 +107,30 @@ def format_latex_table(rows: Sequence[SummaryRow]) -> str:
 
 
 def build_factual_summary(rows: Sequence[SummaryRow]) -> str:
-    """Build the legacy bounded factual description."""
-    dir_range = _range(tuple(row.pct_pairs_same_dir for row in rows))
-    file_range = _range(tuple(row.pct_pairs_same_file for row in rows))
-    function_range = _range(tuple(row.pct_pairs_same_function for row in rows))
+    """Build the legacy bounded factual description.
+
+    Every quantity that can be absent is reported as absent rather than
+    suppressed, so a run over strata with no measurable line gaps still states
+    what it did and did not observe.
+    """
+    if not rows:
+        return "No stratum was summarised, so no co-location range can be reported."
+    dir_low, dir_high = _bounds(tuple(row.pct_pairs_same_dir for row in rows))
+    file_low, file_high = _bounds(tuple(row.pct_pairs_same_file for row in rows))
+    function_low, function_high = _bounds(tuple(row.pct_pairs_same_function for row in rows))
     gap_range = _range(
         tuple(row.pct_gap_le10 for row in rows if row.pct_gap_le10 is not None)
     )
+    gap_sentence = (
+        f"Among pairs that do share a file, the minimum edit-to-edit line gap has a median in the tens of lines, with {gap_range[0]:.1f}-{gap_range[1]:.1f}% of sharing pairs landing within 10 lines of each other across strata."
+        if gap_range is not None
+        else "No stratum contained a file-sharing pair with a measurable minimum line gap, so no within-10-lines rate is reported."
+    )
     return " ".join(
         (
-            f"Across k=2..5 and both splits, {dir_range[0]:.1f}-{dir_range[1]:.1f}% of cross-concern pairs touch a common directory, {file_range[0]:.1f}-{file_range[1]:.1f}% touch a common file, and {function_range[0]:.1f}-{function_range[1]:.1f}% touch a common function context.",
+            f"Across k=2..5 and both splits, {dir_low:.1f}-{dir_high:.1f}% of cross-concern pairs touch a common directory, {file_low:.1f}-{file_high:.1f}% touch a common file, and {function_low:.1f}-{function_high:.1f}% touch a common function context.",
             "Row-level rates (whether at least one pair in the tangled commit co-locates) are higher than pair-level rates, as expected since a row's probability of containing at least one co-locating pair grows with the number of pairs it contains.",
-            f"Among pairs that do share a file, the minimum edit-to-edit line gap has a median in the tens of lines, with {gap_range[0]:.1f}-{gap_range[1]:.1f}% of sharing pairs landing within 10 lines of each other across strata.",
+            gap_sentence,
             "Co-location rates at all three granularities (directory, file, function) generally do not increase monotonically with k, since a larger k spreads the same commit's diff across more constituent atomics without proportionally increasing shared-location edits per pair.",
         )
     )
@@ -181,5 +193,17 @@ def _iqr(row: SummaryRow) -> str:
     return f"[{row.q1_min_line_gap:.1f}, {row.q3_min_line_gap:.1f}]"
 
 
-def _range(values: Sequence[float]) -> tuple[float, float]:
-    return min(values), max(values)
+def _range(values: Sequence[float]) -> tuple[float, float] | None:
+    """Min and max of `values`, or None when there is nothing to summarise.
+
+    `pct_gap_le10` is None for any stratum with no file-sharing pair carrying a
+    measurable line gap, so the filtered sequence is legitimately empty. The
+    sibling `colocation_data` guards every analogous empty collection; reporting
+    must not be the one place that raises instead.
+    """
+    return (min(values), max(values)) if values else None
+
+
+def _bounds(values: Sequence[float]) -> tuple[float, float]:
+    """Min and max of a sequence a non-empty `rows` always populates."""
+    return (min(values), max(values)) if values else (0.0, 0.0)

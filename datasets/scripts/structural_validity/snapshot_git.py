@@ -133,18 +133,24 @@ def read_blob(runner: GitRunner, repository: Path, blob_id: str) -> bytes | None
     return result.stdout
 
 
-def first_parent(runner: GitRunner, repository: Path, sha: str) -> tuple[str | None, int]:
-    """Return (first parent sha, parent count) for a commit.
+def first_parent(runner: GitRunner, repository: Path, sha: str) -> tuple[str | None, int] | None:
+    """Return (first parent sha, parent count) for a commit, or None on git failure.
 
     Merge commits keep the first parent, matching the provenance lane's
     recorded `parent_policy=first_parent`; a root commit yields (None, 0).
+
+    A root commit and a failed lookup must not share a return value. Both would
+    otherwise fall back to the empty tree, and diffing against the empty tree
+    succeeds, so a broken mirror would be reported as a resolved snapshot in
+    which every path is freshly added. `None` keeps the failure distinguishable
+    the way the provenance lane's `GIT_ERROR` does.
     """
     result = runner.run(repository, "rev-list", "--parents", "-n", "1", sha)
     if result.returncode != 0:
-        return (None, 0)
+        return None
     tokens = result.stdout.decode("utf-8", errors="replace").split()
     if not tokens or tokens[0] != sha:
-        return (None, 0)
+        return None
     parents = tokens[1:]
     return ((parents[0], len(parents)) if parents else (None, 0))
 

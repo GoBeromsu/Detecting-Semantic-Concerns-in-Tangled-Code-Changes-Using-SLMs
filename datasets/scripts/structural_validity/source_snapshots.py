@@ -150,9 +150,15 @@ def resolve_commit_snapshot(
     repository = mirror_path(mirror_root, repo)
     if not revision_exists(active_runner, repository, sha):
         return _failed(repo, sha, parent or "", SnapshotStatus.MISSING_REVISION)
-    resolved_parent = parent if parent is not None else first_parent(active_runner, repository, sha)[0]
-    if parent is not None and not revision_exists(active_runner, repository, parent):
-        return _failed(repo, sha, parent, SnapshotStatus.MISSING_REVISION)
+    if parent is not None:
+        if not revision_exists(active_runner, repository, parent):
+            return _failed(repo, sha, parent, SnapshotStatus.MISSING_REVISION)
+        resolved_parent = parent
+    else:
+        lookup = first_parent(active_runner, repository, sha)
+        if lookup is None:
+            return _failed(repo, sha, "", SnapshotStatus.GIT_ERROR)
+        resolved_parent = lookup[0]
     changes = list_changes(active_runner, repository, resolved_parent or EMPTY_TREE, sha)
     if changes is None:
         return _failed(repo, sha, resolved_parent or "", SnapshotStatus.GIT_ERROR)

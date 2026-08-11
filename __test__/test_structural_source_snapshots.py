@@ -74,6 +74,18 @@ class _BlobLosingRunner:
         return self.inner.run(repository, *arguments)
 
 
+@dataclass(slots=True)
+class _ParentLosingRunner:
+    """Fails only the parent lookup, the way a corrupt or truncated mirror does."""
+
+    inner: SubprocessGitRunner = field(default_factory=SubprocessGitRunner)
+
+    def run(self, repository: Path, *arguments: str) -> GitOutput:
+        if arguments[:2] == ("rev-list", "--parents"):
+            return GitOutput(128, b"", "fatal: bad object")
+        return self.inner.run(repository, *arguments)
+
+
 def _git(repository: Path, *arguments: str) -> str:
     completed = subprocess.run(
         ("git", "-C", str(repository), *arguments),
@@ -314,6 +326,40 @@ def test_snapshot_when_repository_is_absent_reports_missing_revision(tmp_path: P
     )
     assert snapshot.status is SnapshotStatus.MISSING_REVISION
     assert snapshot.rows == ()
+
+
+def test_snapshot_when_parent_lookup_fails_reports_git_error_instead_of_diffing_the_empty_tree(
+    history: tuple[Path, dict[str, str], SnapshotCache],
+) -> None:
+    """A failed parent lookup must not be mistaken for a root commit.
+
+    Both once returned (None, 0), and the empty-tree fallback diffs cleanly, so
+    a corrupt mirror produced a RESOLVED snapshot listing every path as added.
+    """
+    snapshot = _resolve(history, "modified", runner=_ParentLosingRunner())
+    assert snapshot.status is SnapshotStatus.GIT_ERROR
+    assert snapshot.rows == ()
+
+
+def test_snapshot_when_parent_lookup_fails_does_not_cache_the_failure(
+    history: tuple[Path, dict[str, str], SnapshotCache],
+) -> None:
+    _, shas, cache = history
+    failed = _resolve(history, "modified", runner=_ParentLosingRunner())
+    assert failed.status is SnapshotStatus.GIT_ERROR
+    assert not cache.manifest_path(REPO, shas["modified"], AUTO_PARENT).exists()
+    recovered = _resolve(history, "modified")
+    assert recovered.status is SnapshotStatus.RESOLVED
+
+
+def test_snapshot_when_commit_is_the_root_still_resolves_against_the_empty_tree(
+    history: tuple[Path, dict[str, str], SnapshotCache],
+) -> None:
+    """The genuine root commit keeps the empty-tree comparison it always had."""
+    snapshot = _resolve(history, "root")
+    assert snapshot.status is SnapshotStatus.RESOLVED
+    assert {row.path for row in snapshot.rows} == {"alpha.py", "notes.txt"}
+    assert all(row.change_kind is ChangeKind.ADD for row in snapshot.rows)
 
 
 def test_snapshot_when_revision_is_unknown_reports_missing_revision(
