@@ -1,0 +1,227 @@
+"""Figure candidates for the C1.1 structural-proximity study.
+
+Renders four independent views of the same artifact so the manuscript can pick
+one. Each stands alone; they are not meant to be printed together.
+
+  forest    every estimand on one axis, scaled by its own null mean. The claim
+            "observed proximity is what the sampling constraints already imply"
+            is one glance: all dots on the 1.0 line, repo-free far left.
+  ladder    the pair-level shared-depth distribution, so "same directory" is
+            graded rather than binary.
+  bars      the same three conditions as plain grouped bars, for readers who
+            prefer percentages on the y-axis over a ratio scale.
+  by_k      concern share stratified by k, showing the measure is not k-neutral.
+
+Reads the JSON written by `proximity_study`; runs no analysis of its own.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any
+
+import matplotlib.pyplot as plt
+import numpy as np
+from plot_utils import COLORS, HATCH_PATTERNS, PLOT_STYLE, setup_plot_style
+
+Artifact = dict[str, Any]
+DPI = PLOT_STYLE["dpi"]
+
+LABELS = {
+    "commit_file_any": "Commit shares a file",
+    "commit_directory_any": "Commit shares a directory",
+    "mean_file_share": "Concern share (file)",
+    "mean_directory_share": "Concern share (directory)",
+    "pair_file_rate": "Pair shares a file",
+    "pair_directory_rate": "Pair shares a directory",
+    "mean_max_depth": "Mean deepest shared path",
+}
+SHORT_LABELS = {
+    "commit_file_any": "Commit\nsame file",
+    "commit_directory_any": "Commit\nsame dir.",
+    "mean_file_share": "Concern share\nsame file",
+    "mean_directory_share": "Concern share\nsame dir.",
+    "pair_file_rate": "Pair\nsame file",
+    "pair_directory_rate": "Pair\nsame dir.",
+}
+PERCENT_KEYS = tuple(key for key in LABELS if key != "mean_max_depth")
+OBSERVED_STYLE = {"color": COLORS["secondary"], "zorder": 5}
+
+
+def _summary(artifact: Artifact, name: str) -> dict[str, Any]:
+    """Nulls nest their summary under a key; observed and per-k blocks are bare."""
+    block = artifact[name]
+    return block.get("summary", block)
+
+
+def _interval(artifact: Artifact, name: str) -> dict[str, Sequence[float]]:
+    return artifact[name]["interval"]
+
+
+def plot_forest(artifact: Artifact, out: Path) -> None:
+    """Every estimand relative to its own same-repository null mean.
+
+    Dividing by the null mean is what lets a percentage and a path depth share
+    one axis. The 1.0 line is "exactly what the sampling constraints produce";
+    the log scale keeps the repository-free null visible without crushing it.
+    """
+    observed, null, band = _summary(artifact, "observed"), _summary(artifact, "null_same_repo"), _interval(artifact, "null_same_repo")
+    free = _summary(artifact, "null_repo_free")
+    keys = list(LABELS)
+    figure, axes = plt.subplots(figsize=(10, 5.5))
+    for row, key in enumerate(keys):
+        scale = null[key]
+        low, high = band[key][0] / scale, band[key][1] / scale
+        _ = axes.plot([low, high], [row, row], color=COLORS["primary"], linewidth=7, alpha=0.35,
+                      solid_capstyle="butt", zorder=2)
+        _ = axes.scatter([observed[key] / scale], [row], s=110, marker="o",
+                         label="Observed corpus" if row == 0 else None, **OBSERVED_STYLE)
+        _ = axes.scatter([free[key] / scale], [row], s=110, marker="D", facecolors="none",
+                         edgecolors=COLORS["text"], linewidths=1.6, zorder=4,
+                         label="Null: repository constraint dropped" if row == 0 else None)
+        # The ratio axis hides magnitude, so the absolute observed value rides along.
+        unit = "" if key == "mean_max_depth" else "%"
+        _ = axes.annotate(f"{observed[key]:.2f}{unit}", (2.6, row), va="center", fontsize=13,
+                          color=COLORS["text"], annotation_clip=False)
+    _ = axes.axvline(1.0, color=COLORS["text"], linestyle="--", linewidth=1.2, zorder=1)
+    _ = axes.set_xscale("log")
+    _ = axes.set_xlim(0.06, 2.2)
+    _ = axes.set_xticks([0.1, 0.25, 0.5, 1.0, 2.0])
+    _ = axes.set_xticklabels(["0.1x", "0.25x", "0.5x", "1x", "2x"])
+    _ = axes.set_yticks(range(len(keys)))
+    _ = axes.set_yticklabels([LABELS[key] for key in keys])
+    _ = axes.invert_yaxis()
+    _ = axes.set_xlabel("Value relative to the same-repository null mean")
+    _ = axes.set_title("Structural proximity is fully explained by the sampling constraints")
+    # The band was drawn once per row without a label, so it needs a proxy handle.
+    handles, texts = axes.get_legend_handles_labels()
+    band_proxy = plt.Line2D([], [], color=COLORS["primary"], linewidth=7, alpha=0.35)
+    _ = axes.legend([*handles, band_proxy], [*texts, "Null: repository and type fixed (95%)"],
+                    loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=3, frameon=False, fontsize=12)
+    _ = axes.grid(axis="x", alpha=PLOT_STYLE["grid_alpha"])
+    figure.tight_layout()
+    figure.savefig(out, dpi=DPI)
+    plt.close(figure)
+
+
+def plot_ladder(artifact: Artifact, out: Path) -> None:
+    """How deep the shared directory prefix goes, over all 7,000 concern pairs.
+
+    Drawn as a survival curve rather than a histogram. The depth-0 bin holds
+    four fifths of the pairs, which on a linear histogram flattens every rung
+    that actually distinguishes the three conditions. Reading "at least depth d"
+    on a log axis keeps the rare deep rungs legible, and the two curves that lie
+    on top of each other are the finding.
+    """
+    series = [
+        ("Observed corpus", "observed", COLORS["secondary"], "-", "o"),
+        ("Null: repository and type fixed", "null_same_repo", COLORS["primary"], "--", "s"),
+        ("Null: repository constraint dropped", "null_repo_free", COLORS["accent"], ":", "D"),
+    ]
+    pairs = int(_summary(artifact, "observed")["pairs"])
+    curves = {
+        name: [sum(_summary(artifact, name)["depth_histogram"][depth:])
+               for depth in range(len(_summary(artifact, name)["depth_histogram"]))]
+        for _label, name, _color, _dashes, _marker in series
+    }
+    # Past the point where the observed corpus holds fewer than ten pairs, a log
+    # axis magnifies single-pair noise into an apparent divergence. The tail is
+    # cut and its total stated instead of being drawn as if it were resolved.
+    observed_curve = curves["observed"]
+    span = next((depth for depth, percent in enumerate(observed_curve) if percent / 100 * pairs < 10),
+                len(observed_curve) - 1)
+    figure, axes = plt.subplots(figsize=PLOT_STYLE["figure_size"])
+    for label, name, color, dashes, marker in series:
+        survival = curves[name][:span]
+        _ = axes.plot(range(len(survival)), survival, label=label, color=color, linestyle=dashes,
+                      marker=marker, markersize=7, linewidth=PLOT_STYLE["line_width"])
+    _ = axes.annotate(f"depth $\\geq${span}: {observed_curve[span]:.2f}% of observed pairs "
+                      f"({round(observed_curve[span] * pairs / 100)} of {pairs:,})",
+                      (0.5, 0.03), xycoords="axes fraction", ha="center", fontsize=12, color=COLORS["text"])
+    _ = axes.set_yscale("log")
+    _ = axes.set_xticks(range(span))
+    _ = axes.set_xlabel("Shared directory prefix of at least this depth")
+    _ = axes.set_ylabel("Concern pairs (%, log scale)")
+    _ = axes.set_title("Sharing any directory at all is rare, and matches the constrained null")
+    _ = axes.legend(frameon=True, loc="upper right")
+    _ = axes.grid(alpha=PLOT_STYLE["grid_alpha"])
+    figure.tight_layout()
+    figure.savefig(out, dpi=DPI)
+    plt.close(figure)
+
+
+def plot_bars(artifact: Artifact, out: Path) -> None:
+    """The percentage estimands as grouped bars, with the null's 95% interval."""
+    observed, null, band = _summary(artifact, "observed"), _summary(artifact, "null_same_repo"), _interval(artifact, "null_same_repo")
+    free = _summary(artifact, "null_repo_free")
+    positions = np.arange(len(PERCENT_KEYS))
+    width = 0.27
+    figure, axes = plt.subplots(figsize=(11, 6))
+    _ = axes.bar(positions - width, [free[key] for key in PERCENT_KEYS], width,
+                 label="Null: repository constraint dropped", color=COLORS["accent"],
+                 hatch=HATCH_PATTERNS[2], edgecolor="white", linewidth=0.8)
+    _ = axes.bar(positions, [observed[key] for key in PERCENT_KEYS], width, label="Observed corpus",
+                 color=COLORS["secondary"], hatch=HATCH_PATTERNS[0], edgecolor="white", linewidth=0.8)
+    heights = [null[key] for key in PERCENT_KEYS]
+    errors = np.array([[null[key] - band[key][0] for key in PERCENT_KEYS],
+                       [band[key][1] - null[key] for key in PERCENT_KEYS]])
+    _ = axes.bar(positions + width, heights, width, yerr=errors, capsize=4,
+                 label="Null: repository and type fixed (95%)", color=COLORS["primary"],
+                 hatch=HATCH_PATTERNS[1], edgecolor="white", linewidth=0.8,
+                 error_kw={"ecolor": COLORS["text"], "linewidth": 1.4})
+    _ = axes.set_xticks(positions)
+    _ = axes.set_xticklabels([SHORT_LABELS[key] for key in PERCENT_KEYS], fontsize=13)
+    _ = axes.set_ylabel("Percent")
+    _ = axes.set_title("Observed proximity matches the constrained null on every estimand")
+    _ = axes.legend(frameon=True)
+    _ = axes.grid(axis="y", alpha=PLOT_STYLE["grid_alpha"])
+    figure.tight_layout()
+    figure.savefig(out, dpi=DPI)
+    plt.close(figure)
+
+
+def plot_by_k(artifact: Artifact, out: Path) -> None:
+    """Concern share by k: normalising the denominator does not remove k-inflation."""
+    by_k = artifact["by_concern_count"]
+    counts = sorted(by_k, key=int)
+    positions = np.arange(len(counts))
+    width = 0.35
+    figure, (left, right) = plt.subplots(1, 2, figsize=(11, 5))
+    for axes, key, title in ((left, "mean_file_share", "Same file"), (right, "mean_directory_share", "Same directory")):
+        _ = axes.bar(positions, [by_k[k][key] for k in counts], width * 2, color=COLORS["secondary"],
+                     hatch=HATCH_PATTERNS[0], edgecolor="white", linewidth=0.8)
+        _ = axes.set_xticks(positions)
+        _ = axes.set_xticklabels([f"k={k}\n(n={int(by_k[k]['commits'])})" for k in counts], fontsize=12)
+        _ = axes.set_title(title)
+        _ = axes.set_ylabel("Concerns sharing ground with another (%)")
+        _ = axes.grid(axis="y", alpha=PLOT_STYLE["grid_alpha"])
+    # Directory share climbs monotonically; file share does not (k=5 sits below
+    # k=4), so the title claims dependence on k rather than a rising trend.
+    _ = figure.suptitle("Concern share depends on k, so every estimate is reported k-stratified")
+    figure.tight_layout()
+    figure.savefig(out, dpi=DPI)
+    plt.close(figure)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Render C1.1 figure candidates")
+    _ = parser.add_argument("--artifact", type=Path, default=Path("results/structural_validity/proximity_seed43.json"))
+    _ = parser.add_argument("--out", type=Path, default=Path("results/structural_validity/figures"))
+    arguments = parser.parse_args(argv)
+    out: Path = arguments.out
+    artifact = json.loads(Path(arguments.artifact).read_text(encoding="utf-8"))
+
+    setup_plot_style()
+    out.mkdir(parents=True, exist_ok=True)
+    for name, render in (("forest", plot_forest), ("ladder", plot_ladder), ("bars", plot_bars), ("by_k", plot_by_k)):
+        target = out / f"structural_proximity_{name}.png"
+        render(artifact, target)
+        print(f"wrote {target}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
