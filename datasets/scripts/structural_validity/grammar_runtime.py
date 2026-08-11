@@ -15,7 +15,12 @@ import tree_sitter
 import tree_sitter_language_pack as language_pack
 
 from .grammar_rules import KNOWN_ABSENT_GRAMMARS, RULES
-from .grammar_types import GrammarLoadError, ParseScore, RuntimeMetadata, UnknownGrammarError
+from .grammar_types import (
+    GrammarLoadError,
+    ParseScore,
+    RuntimeMetadata,
+    UnknownGrammarError,
+)
 
 
 def registered_grammars() -> frozenset[str]:

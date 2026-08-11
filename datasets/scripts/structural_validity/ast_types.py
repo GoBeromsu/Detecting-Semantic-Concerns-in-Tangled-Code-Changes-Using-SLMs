@@ -1,6 +1,6 @@
 """Typed vocabulary for AST and structured-tree proximity evidence.
 
-The primary observable is `name_matched_entity_co_touch`: two atomic commits
+The primary observable is `shares_function`: two atomic commits
 touched an entity carrying the same normalized qualified name, in the same file
 path, on revisions that both parsed. That is a co-touch of a *name*, not a claim
 that the entity is the same function across history, and it says nothing about
@@ -148,23 +148,25 @@ class FileEvidence:
 class PairFileEvidence:
     """One path touched by both atomic commits of a pair.
 
-    `name_matched_entity_co_touch` is None -- not False -- whenever the file is
-    not source-classified or either side lacks usable evidence, so a structured
-    file and a genuinely unmatched source file never share a cell.
+    `shares_function` is None -- not False -- whenever the file is not
+    source-classified or either side lacks usable evidence, so a structured file
+    and a genuinely unmatched source file never share a cell. `shares_config_key`
+    is the same observable for structured files, and exactly one of the two is
+    ever populated.
+
+    `shared_names` lists what the two sides have in common: matched entity names
+    for source files, matched schema keys for structured ones. It is a list
+    rather than a flag so "one method in common" and "every method in common"
+    stay distinguishable.
     """
 
     path: str
     status: ComparisonStatus
-    name_matched_entity_co_touch: bool | None
-    schema_path_co_touch: bool | None
-    matched_entities: tuple[str, ...]
-    syntax_identifier_string_overlap: float | None
-    entity_span_overlap: float | None
+    shares_function: bool | None
+    shares_config_key: bool | None
+    shared_names: tuple[str, ...]
+    shared_identifier_ratio: float | None
 
-
-@dataclass(frozen=True, slots=True)
-class ForbiddenClaimError(Exception):
-    """A rendered claim used vocabulary this study cannot support."""
-
-    phrase: str
-    text: str
+    @property
+    def shared_name_count(self) -> int:
+        return len(self.shared_names)

@@ -4,71 +4,17 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from enum import Enum
 from itertools import combinations
-from typing import Final, NewType, TypedDict
+from typing import TypedDict
 
-CommitId = NewType("CommitId", str)
-PRIMARY_COMMIT_COUNT: Final[int] = 1_400
-SECONDARY_PAIR_COUNT: Final[int] = 7_000
-PRIMARY_K_VALUES: Final[tuple[int, ...]] = (2, 3, 4, 5)
-
-
-class Split(str, Enum):
-    TRAIN = "train"
-    TEST = "test"
-
-
-class ObservationUnit(str, Enum):
-    COMMIT = "commit"
-    PAIR = "pair"
-    SAME_FILE_MEASURABLE_PAIR = "same_file_measurable_pair"
-    PATH_MATCHED_RESOLVED_AST_PAIR = "path_matched_resolved_ast_pair"
-    SOURCE_CLASSIFIED_FILE = "source_classified_file"
-
-
-class CoverageStatus(str, Enum):
-    SOURCE_AST = "source_ast"
-    STRUCTURED_PARSE_TREE = "structured_parse_tree"
-    TEXT_ONLY = "text_only"
-    BINARY_GENERATED = "binary_generated"
-    AMBIGUOUS = "ambiguous"
-    UNRESOLVED_SOURCE = "unresolved_source"
-
-
-class ReasonCode(str, Enum):
-    INVALID_CONCERN_COUNT = "invalid_concern_count"
-    SHA_COUNT_MISMATCH = "sha_count_mismatch"
-    DUPLICATE_SHA = "duplicate_sha"
-    PAIR_CONSERVATION = "pair_conservation"
-    MISSING_SHA = "missing_sha"
-    REPO_MISMATCH = "repo_mismatch"
-    SPLIT_MISMATCH = "split_mismatch"
-    MISSING_OBJECT = "missing_object"
-    MISSING_REVISION = "missing_revision"
-    MISSING_BLOB = "missing_blob"
-    UNAVAILABLE_PARENT = "unavailable_parent"
-    MERGE_PARENT = "merge_parent"
-    RENAME = "rename"
-    DELETION = "deletion"
-    COPY = "copy"
-    BINARY_GENERATED = "binary_generated"
-    SUBMODULE = "submodule"
-    UNRESOLVED_PATH = "unresolved_path"
-    AMBIGUOUS_PATH = "ambiguous_path"
-    AMBIGUOUS = "ambiguous"
-    UNSUPPORTED_SOURCE = "unsupported_source"
-    PARSE_FAILED_QUALITY = "parse_failed_quality"
-
-
-@dataclass(frozen=True, slots=True)
-class StructuralContractError(Exception):
-    commit_id: CommitId
-    reason: ReasonCode
-    detail: str
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "args", (f"{self.commit_id}: {self.reason.value}: {self.detail}",))
+from .contract_types import (
+    PRIMARY_K_VALUES,
+    CommitId,
+    CoverageStatus,
+    ReasonCode,
+    Split,
+    StructuralContractError,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,20 +49,38 @@ class SyntheticCommit:
 
 @dataclass(frozen=True, slots=True)
 class PairPathMetrics:
+    """How close the changed paths of two constituent concerns are.
+
+    Counts, not flags. `shares_file` used to be the only file observable, which
+    made "one file in common out of twenty" and "every file in common" the same
+    measurement. The booleans are derived so they can never disagree with the
+    counts they summarise.
+    """
+
     concern_a: int
     concern_b: int
-    same_file: bool
-    same_leaf_directory: bool
-    common_parent_prefix_depth: int
+    shared_file_count: int
+    shared_directory_count: int
+    shared_path_depth: int
     reason_codes: tuple[ReasonCode, ...] = ()
+
+    @property
+    def shares_file(self) -> bool:
+        return self.shared_file_count > 0
+
+    @property
+    def shares_directory(self) -> bool:
+        return self.shared_directory_count > 0
 
     def __post_init__(self) -> None:
         if self.concern_a < 0 or self.concern_a >= self.concern_b:
             raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, f"expected 0 <= concern_a < concern_b, got {(self.concern_a, self.concern_b)}")
-        if self.common_parent_prefix_depth < 0:
-            raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, "prefix depth cannot be negative")
-        if self.reason_codes and (self.same_file or self.same_leaf_directory or self.common_parent_prefix_depth != 0):
-            raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, "reason-coded path failures must remain false with depth 0")
+        if self.shared_file_count < 0 or self.shared_directory_count < 0 or self.shared_path_depth < 0:
+            raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, "shared counts and depth cannot be negative")
+        if self.shared_file_count > 0 and self.shared_directory_count == 0:
+            raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, f"a shared file implies a shared directory, got {self.shared_file_count} files in 0 directories")
+        if self.reason_codes and (self.shared_file_count or self.shared_directory_count or self.shared_path_depth):
+            raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, "reason-coded path failures must remain zero")
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,10 +94,19 @@ class HunkLineEvidence:
 
 @dataclass(frozen=True, slots=True)
 class AstEvidence:
+    """Whether two concerns' edits landed on the same named entity.
+
+    `shares_function` reports that both edits fell inside an entity with the
+    same normalised qualified name, role, and arity. It is a name match, not
+    function identity across history, and not evidence that either edit depends
+    on the other. `shared_identifier_ratio` is a string comparison kept for
+    robustness only and stays out of the headline.
+    """
+
     coverage_status: CoverageStatus
-    name_matched_entity_co_touch: bool | None
-    syntax_identifier_string_overlap: float | None
-    entity_span_overlap: bool | None
+    shares_function: bool | None
+    shared_function_count: int | None
+    shared_identifier_ratio: float | None
     reason_codes: tuple[ReasonCode, ...] = ()
 
 
@@ -145,9 +118,11 @@ class PairRecordJson(TypedDict):
     concern_b: int
     sha_a: str
     sha_b: str
-    same_file: bool
-    same_leaf_directory: bool
-    common_parent_prefix_depth: int
+    shares_file: bool
+    shared_file_count: int
+    shares_directory: bool
+    shared_directory_count: int
+    shared_path_depth: int
     reason_codes: list[str]
 
 
@@ -169,42 +144,79 @@ class PairRecord:
         return cls(commit.commit_id, commit.split, commit.concern_count, commit.shas[path.concern_a], commit.shas[path.concern_b], path)
 
     def as_json(self) -> PairRecordJson:
-        return PairRecordJson(commit_id=self.commit_id, split=self.split.value, concern_count=self.concern_count, concern_a=self.path.concern_a, concern_b=self.path.concern_b, sha_a=self.sha_a, sha_b=self.sha_b, same_file=self.path.same_file, same_leaf_directory=self.path.same_leaf_directory, common_parent_prefix_depth=self.path.common_parent_prefix_depth, reason_codes=[reason.value for reason in self.path.reason_codes])
+        return PairRecordJson(
+            commit_id=self.commit_id,
+            split=self.split.value,
+            concern_count=self.concern_count,
+            concern_a=self.path.concern_a,
+            concern_b=self.path.concern_b,
+            sha_a=self.sha_a,
+            sha_b=self.sha_b,
+            shares_file=self.path.shares_file,
+            shared_file_count=self.path.shared_file_count,
+            shares_directory=self.path.shares_directory,
+            shared_directory_count=self.path.shared_directory_count,
+            shared_path_depth=self.path.shared_path_depth,
+            reason_codes=[reason.value for reason in self.path.reason_codes],
+        )
 
 
 @dataclass(frozen=True, slots=True)
 class CommitMetrics:
+    """One tangled commit's proximity, counted over concerns rather than pairs.
+
+    `concerns_sharing_file` is how many of the commit's k concerns land on
+    ground some other concern also touched -- the "3 of the 5" reading. Pooling
+    over pairs instead would let a k=5 commit contribute ten observations to a
+    k=2 commit's one; here every commit contributes exactly one, the way
+    Hamming loss normalises within an instance before averaging across them.
+
+    Normalising the denominator does not make the measure k-neutral: a concern
+    has more potential partners as k grows, so `file_share` still rises with k
+    and must be reported k-stratified.
+    """
+
     commit_id: CommitId
-    same_file_any: bool
-    same_file_all_concerns: bool
-    same_file_all_pairs: bool
-    same_leaf_directory_any: bool
-    same_leaf_directory_all_concerns: bool
-    same_leaf_directory_all_pairs: bool
-    common_parent_prefix_depth: int
-    strict_common_parent_prefix_depth: int
+    concern_count: int
+    concerns_sharing_file: int
+    concerns_sharing_directory: int
+    all_pairs_share_file: bool
+    all_pairs_share_directory: bool
+    max_shared_path_depth: int
+    min_shared_path_depth: int
     reason_codes: tuple[ReasonCode, ...]
 
+    @property
+    def any_pair_shares_file(self) -> bool:
+        return self.concerns_sharing_file > 0
 
-def common_parent_prefix_depth(paths_a: Sequence[str], paths_b: Sequence[str]) -> int:
-    """Return the maximum shared parent-component depth across two path sets."""
-    maximum = 0
-    for path_a in paths_a:
-        parent_a = tuple(part for part in path_a.split("/")[:-1] if part and part != ".")
-        for path_b in paths_b:
-            parent_b = tuple(part for part in path_b.split("/")[:-1] if part and part != ".")
-            depth = 0
-            for left, right in zip(parent_a, parent_b):
-                if left != right:
-                    break
-                depth += 1
-            maximum = max(maximum, depth)
-    return maximum
+    @property
+    def any_pair_shares_directory(self) -> bool:
+        return self.concerns_sharing_directory > 0
+
+    @property
+    def all_concerns_share_file(self) -> bool:
+        return self.concerns_sharing_file == self.concern_count
+
+    @property
+    def all_concerns_share_directory(self) -> bool:
+        return self.concerns_sharing_directory == self.concern_count
+
+    @property
+    def file_share(self) -> float:
+        return self.concerns_sharing_file / self.concern_count
+
+    @property
+    def directory_share(self) -> float:
+        return self.concerns_sharing_directory / self.concern_count
 
 
-def _all_concerns(concern_count: int, edges: Sequence[tuple[int, int]]) -> bool:
-    degrees = tuple(sum(vertex in edge for edge in edges) for vertex in range(concern_count))
-    return all(degree >= 1 for degree in degrees)
+def _connected_concerns(concern_count: int, edges: Sequence[tuple[int, int]]) -> int:
+    """How many concerns share with at least one other concern.
+
+    Sharing is symmetric, so this is 0 or at least 2 -- never exactly 1.
+    """
+    return sum(1 for vertex in range(concern_count) if any(vertex in edge for edge in edges))
 
 
 def aggregate_commit_metrics(commit: SyntheticCommit, pairs: Sequence[PairPathMetrics]) -> CommitMetrics:
@@ -213,94 +225,18 @@ def aggregate_commit_metrics(commit: SyntheticCommit, pairs: Sequence[PairPathMe
     measured_pairs = tuple((pair.concern_a, pair.concern_b) for pair in pairs)
     if len(measured_pairs) != len(expected_pairs) or frozenset(measured_pairs) != expected_pairs:
         raise StructuralContractError(commit.commit_id, ReasonCode.PAIR_CONSERVATION, f"expected pairs {sorted(expected_pairs)}, got {sorted(measured_pairs)}")
-    file_edges = tuple(edge for edge, pair in zip(measured_pairs, pairs) if pair.same_file)
-    directory_edges = tuple(edge for edge, pair in zip(measured_pairs, pairs) if pair.same_leaf_directory)
-    nearest_depths = tuple(max(pair.common_parent_prefix_depth for pair in pairs if vertex in (pair.concern_a, pair.concern_b)) for vertex in range(commit.concern_count))
+    file_edges = tuple(edge for edge, pair in zip(measured_pairs, pairs) if pair.shares_file)
+    directory_edges = tuple(edge for edge, pair in zip(measured_pairs, pairs) if pair.shares_directory)
+    nearest_depths = tuple(max(pair.shared_path_depth for pair in pairs if vertex in (pair.concern_a, pair.concern_b)) for vertex in range(commit.concern_count))
     reasons = tuple(dict.fromkeys(reason for pair in pairs for reason in pair.reason_codes))
     return CommitMetrics(
         commit_id=commit.commit_id,
-        same_file_any=bool(file_edges),
-        same_file_all_concerns=_all_concerns(commit.concern_count, file_edges),
-        same_file_all_pairs=all(pair.same_file for pair in pairs),
-        same_leaf_directory_any=bool(directory_edges),
-        same_leaf_directory_all_concerns=_all_concerns(commit.concern_count, directory_edges),
-        same_leaf_directory_all_pairs=all(pair.same_leaf_directory for pair in pairs),
-        common_parent_prefix_depth=max(pair.common_parent_prefix_depth for pair in pairs),
-        strict_common_parent_prefix_depth=min(nearest_depths),
+        concern_count=commit.concern_count,
+        concerns_sharing_file=_connected_concerns(commit.concern_count, file_edges),
+        concerns_sharing_directory=_connected_concerns(commit.concern_count, directory_edges),
+        all_pairs_share_file=all(pair.shares_file for pair in pairs),
+        all_pairs_share_directory=all(pair.shares_directory for pair in pairs),
+        max_shared_path_depth=max(pair.shared_path_depth for pair in pairs),
+        min_shared_path_depth=min(nearest_depths),
         reason_codes=reasons,
     )
-
-
-class HeadlineJson(TypedDict):
-    wording: str
-    commit_denominator: int
-    pair_denominator: int
-    concern_counts: tuple[int, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class HeadlineContract:
-    wording: str
-    commit_denominator: int
-    pair_denominator: int
-    concern_counts: tuple[int, ...]
-
-    def as_json(self) -> HeadlineJson:
-        return HeadlineJson(wording=self.wording, commit_denominator=self.commit_denominator, pair_denominator=self.pair_denominator, concern_counts=self.concern_counts)
-
-
-class DenominatorJson(TypedDict):
-    estimand: str
-    unit: str
-    expected_count: int | None
-    inclusion_rule: str
-    failure_policy: str
-    headline: bool
-
-
-@dataclass(frozen=True, slots=True)
-class DenominatorContract:
-    estimand: str
-    unit: ObservationUnit
-    expected_count: int | None
-    inclusion_rule: str
-    failure_policy: str
-    headline: bool
-
-    def as_json(self) -> DenominatorJson:
-        return DenominatorJson(estimand=self.estimand, unit=self.unit.value, expected_count=self.expected_count, inclusion_rule=self.inclusion_rule, failure_policy=self.failure_policy, headline=self.headline)
-
-
-class ArtifactSchemaJson(TypedDict):
-    name: str
-    unit: str
-    required_fields: tuple[str, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class ArtifactSchema:
-    name: str
-    unit: ObservationUnit
-    required_fields: tuple[str, ...]
-
-    def as_json(self) -> ArtifactSchemaJson:
-        return ArtifactSchemaJson(name=self.name, unit=self.unit.value, required_fields=self.required_fields)
-
-
-HEADLINE_CONTRACT: Final[HeadlineContract] = HeadlineContract(
-    wording="Across N = 1,400 multi-concern synthetic commits with k=2–5, X% contain at least one constituent-concern pair that shares a changed file path, Y% contain at least one pair that shares a leaf directory, and mean commit-level maximum common-prefix depth is Z.",
-    commit_denominator=PRIMARY_COMMIT_COUNT,
-    pair_denominator=SECONDARY_PAIR_COUNT,
-    concern_counts=PRIMARY_K_VALUES,
-)
-DENOMINATOR_CONTRACTS: Final[tuple[DenominatorContract, ...]] = (
-    DenominatorContract("same_file_any", ObservationUnit.COMMIT, PRIMARY_COMMIT_COUNT, "all multi-concern commits with k=2..5", "retain_false_or_zero", True),
-    DenominatorContract("same_leaf_directory_any", ObservationUnit.COMMIT, PRIMARY_COMMIT_COUNT, "all multi-concern commits with k=2..5", "retain_false_or_zero", True),
-    DenominatorContract("mean_commit_max_common_parent_prefix_depth", ObservationUnit.COMMIT, PRIMARY_COMMIT_COUNT, "all multi-concern commits with k=2..5", "retain_false_or_zero", True),
-    DenominatorContract("pair_same_file_rate", ObservationUnit.PAIR, SECONDARY_PAIR_COUNT, "all unordered constituent-concern pairs", "retain_false_or_zero", False),
-    DenominatorContract("pair_same_leaf_directory_rate", ObservationUnit.PAIR, SECONDARY_PAIR_COUNT, "all unordered constituent-concern pairs", "retain_false_or_zero", False),
-    DenominatorContract("min_line_gap", ObservationUnit.SAME_FILE_MEASURABLE_PAIR, None, "same-file pairs with measurable new-side coordinates", "exclude_with_reason", False),
-    DenominatorContract("name_matched_entity_co_touch", ObservationUnit.PATH_MATCHED_RESOLVED_AST_PAIR, None, "path-matched pairs where both concerns resolve source entities", "exclude_with_reason", False),
-)
-COMMIT_ARTIFACT_SCHEMA: Final[ArtifactSchema] = ArtifactSchema("commit_metrics.csv", ObservationUnit.COMMIT, ("commit_id", "split", "repo", "concern_count", "same_file_any", "same_file_all_concerns", "same_file_all_pairs", "same_leaf_directory_any", "same_leaf_directory_all_concerns", "same_leaf_directory_all_pairs", "common_parent_prefix_depth", "strict_common_parent_prefix_depth", "reason_codes"))
-PAIR_ARTIFACT_SCHEMA: Final[ArtifactSchema] = ArtifactSchema("pair_metrics.csv", ObservationUnit.PAIR, ("commit_id", "split", "concern_count", "concern_a", "concern_b", "sha_a", "sha_b", "same_file", "same_leaf_directory", "common_parent_prefix_depth", "reason_codes"))

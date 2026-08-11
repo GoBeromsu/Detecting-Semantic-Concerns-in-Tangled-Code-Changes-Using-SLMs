@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from collections.abc import Sequence
 from typing import Final, TypeAlias
 
 from .diff_path import (

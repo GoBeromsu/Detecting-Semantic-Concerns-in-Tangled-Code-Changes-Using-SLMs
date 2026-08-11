@@ -15,7 +15,12 @@ from .grammar_inventory import (
     inventory_dispositions,
     inventory_role,
 )
-from .grammar_manifest import DEFAULT_MANIFEST_PATH, build_grammar_manifest, main, write_grammar_manifest
+from .grammar_manifest import (
+    DEFAULT_MANIFEST_PATH,
+    build_grammar_manifest,
+    main,
+    write_grammar_manifest,
+)
 from .grammar_rules import (
     BINARY_EXTENSIONS,
     DIFF_PATH_PATTERN,
@@ -30,7 +35,11 @@ from .grammar_rules import (
     TEXT_EXTENSIONS,
     exact_rule,
 )
-from .grammar_runtime import TreeSitterRuntime, registered_grammars, validate_rule_grammars
+from .grammar_runtime import (
+    TreeSitterRuntime,
+    registered_grammars,
+    validate_rule_grammars,
+)
 from .grammar_types import (
     CliArguments,
     CommittedDataInventory,

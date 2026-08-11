@@ -12,22 +12,17 @@ import pytest
 import tree_sitter_language_pack as language_pack
 from structural_validity.ast_entities import side_evidence
 from structural_validity.ast_intervals import ByteRange, changed_intervals
-from structural_validity.ast_metrics import (
-    FORBIDDEN_CLAIM_PHRASES,
-    file_evidence,
-    pair_file_evidence,
-    validate_claim,
-)
+from structural_validity.ast_metrics import file_evidence, pair_file_evidence
 from structural_validity.ast_queries import (
     ENTITY_QUERIES,
     STRUCTURED_KEY_NODES,
     entity_map,
 )
-from structural_validity.ast_types import (
-    ComparisonStatus,
-    EvidenceKind,
+from structural_validity.ast_types import ComparisonStatus, EvidenceKind, ParseStatus
+from structural_validity.claim_guard import (
+    FORBIDDEN_CLAIM_PHRASES,
     ForbiddenClaimError,
-    ParseStatus,
+    validate_claim,
 )
 from structural_validity.grammar_rules import RULES
 from structural_validity.grammar_types import FileRole
@@ -85,8 +80,8 @@ def test_two_edits_in_the_same_nested_function_resolve_to_one_qualified_entity()
     pair = pair_file_evidence(left, right, FileRole.SOURCE_AST)
 
     assert pair.status is ComparisonStatus.COMPARED
-    assert pair.name_matched_entity_co_touch is True
-    assert pair.matched_entities == ("Service.handler.inner",)
+    assert pair.shares_function is True
+    assert pair.shared_names == ("Service.handler.inner",)
 
 
 def test_edits_in_different_entities_do_not_match_on_the_enclosing_class() -> None:
@@ -96,8 +91,8 @@ def test_edits_in_different_entities_do_not_match_on_the_enclosing_class() -> No
 
     pair = pair_file_evidence(left, right, FileRole.SOURCE_AST)
 
-    assert pair.name_matched_entity_co_touch is False
-    assert pair.matched_entities == ()
+    assert pair.shares_function is False
+    assert pair.shared_names == ()
 
 
 def test_overloads_stay_distinct_because_arity_joins_the_match_key() -> None:
@@ -108,7 +103,7 @@ def test_overloads_stay_distinct_because_arity_joins_the_match_key() -> None:
 
     assert left.entity_keys == {("Calc.add", "method", 1)}
     assert right.entity_keys == {("Calc.add", "method", 2)}
-    assert pair_file_evidence(left, right, FileRole.SOURCE_AST).name_matched_entity_co_touch is False
+    assert pair_file_evidence(left, right, FileRole.SOURCE_AST).shares_function is False
 
 
 def test_arity_survives_a_parameter_rename_that_a_signature_string_would_split() -> None:
@@ -116,7 +111,7 @@ def test_arity_survives_a_parameter_rename_that_a_signature_string_would_split()
     left = _source("Calc.java", "java", JAVA_OVERLOADS, JAVA_OVERLOADS.replace(b"return a; }", b"return a + 0; }"))
     right = _source("Calc.java", "java", JAVA_OVERLOADS, renamed)
 
-    assert pair_file_evidence(left, right, FileRole.SOURCE_AST).name_matched_entity_co_touch is True
+    assert pair_file_evidence(left, right, FileRole.SOURCE_AST).shares_function is True
 
 
 def test_paths_that_do_not_match_are_never_compared() -> None:
@@ -126,7 +121,7 @@ def test_paths_that_do_not_match_are_never_compared() -> None:
     pair = pair_file_evidence(left, right, FileRole.SOURCE_AST)
 
     assert pair.status is ComparisonStatus.PATH_UNMATCHED
-    assert pair.name_matched_entity_co_touch is None
+    assert pair.shares_function is None
 
 
 # --- dispositions -----------------------------------------------------------
@@ -244,9 +239,9 @@ def test_a_pair_whose_only_evidence_failed_quality_is_unavailable_not_unmatched(
     pair = pair_file_evidence(left, right, FileRole.SOURCE_AST)
 
     assert pair.status is ComparisonStatus.EVIDENCE_UNAVAILABLE
-    assert pair.name_matched_entity_co_touch is None
-    assert pair.syntax_identifier_string_overlap is None
-    assert pair.entity_span_overlap is None
+    assert pair.shares_function is None
+    assert pair.shared_identifier_ratio is None
+    assert pair.shared_name_count == 0
 
 
 # --- structured files -------------------------------------------------------
@@ -274,9 +269,9 @@ def test_structured_files_report_schema_paths_and_never_entity_fields() -> None:
 
     assert left.after.entities == ()
     assert left.after.report.evidence_kind is EvidenceKind.SCHEMA_PATH
-    assert pair.name_matched_entity_co_touch is None
-    assert pair.schema_path_co_touch is True
-    assert "build.target" in pair.matched_entities
+    assert pair.shares_function is None
+    assert pair.shares_config_key is True
+    assert "build.target" in pair.shared_names
 
 
 def test_structured_files_touching_different_keys_do_not_co_touch() -> None:
@@ -285,8 +280,8 @@ def test_structured_files_touching_different_keys_do_not_co_touch() -> None:
 
     pair = pair_file_evidence(left, right, FileRole.STRUCTURED_PARSE_TREE)
 
-    assert pair.schema_path_co_touch is False
-    assert pair.name_matched_entity_co_touch is None
+    assert pair.shares_config_key is False
+    assert pair.shares_function is None
 
 
 @pytest.mark.parametrize(
@@ -325,20 +320,27 @@ def test_robustness_fields_are_reported_but_carry_no_dependency_status() -> None
 
     pair = pair_file_evidence(left, right, FileRole.SOURCE_AST)
 
-    assert pair.syntax_identifier_string_overlap is not None
-    assert 0.0 <= pair.syntax_identifier_string_overlap <= 1.0
-    assert pair.entity_span_overlap is not None
-    assert 0.0 <= pair.entity_span_overlap <= 1.0
+    assert pair.shared_identifier_ratio is not None
+    assert 0.0 <= pair.shared_identifier_ratio <= 1.0
 
 
-def test_span_overlap_is_none_when_neither_side_resolved_an_entity() -> None:
+def test_import_only_edits_share_the_file_without_sharing_a_function() -> None:
+    """Two concerns bumping the same import block are not close in any real sense.
+
+    Path-level `shares_file` cannot tell this apart from two concerns editing the
+    same method; `shares_function` is what keeps them separable, so it has to
+    stay False here rather than inherit the file-level answer.
+    """
     before = b"import os\nCONST = 1\n"
     left = _source("m.py", "python", before, b"import os\nimport sys\nCONST = 1\n")
     right = _source("m.py", "python", before, b"import os\nimport io\nCONST = 1\n")
 
     pair = pair_file_evidence(left, right, FileRole.SOURCE_AST)
 
-    assert pair.entity_span_overlap is None
+    assert pair.status is ComparisonStatus.COMPARED
+    assert pair.shares_function is False
+    assert pair.shared_names == ()
+    assert pair.shared_name_count == 0
 
 
 # --- claim validation -------------------------------------------------------

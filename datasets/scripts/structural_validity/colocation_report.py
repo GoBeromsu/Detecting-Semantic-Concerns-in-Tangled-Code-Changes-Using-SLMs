@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Final
 
+from .claim_guard import validate_claim
 from .colocation_data import SummaryRow
 
 SUMMARY_FIELDS: Final[tuple[str, ...]] = (
@@ -114,7 +115,7 @@ def build_factual_summary(rows: Sequence[SummaryRow]) -> str:
     what it did and did not observe.
     """
     if not rows:
-        return "No stratum was summarised, so no co-location range can be reported."
+        return validate_claim("No stratum was summarised, so no co-location range can be reported.")
     dir_low, dir_high = _bounds(tuple(row.pct_pairs_same_dir for row in rows))
     file_low, file_high = _bounds(tuple(row.pct_pairs_same_file for row in rows))
     function_low, function_high = _bounds(tuple(row.pct_pairs_same_function for row in rows))
@@ -126,14 +127,14 @@ def build_factual_summary(rows: Sequence[SummaryRow]) -> str:
         if gap_range is not None
         else "No stratum contained a file-sharing pair with a measurable minimum line gap, so no within-10-lines rate is reported."
     )
-    return " ".join(
+    return validate_claim(" ".join(
         (
             f"Across k=2..5 and both splits, {dir_low:.1f}-{dir_high:.1f}% of cross-concern pairs touch a common directory, {file_low:.1f}-{file_high:.1f}% touch a common file, and {function_low:.1f}-{function_high:.1f}% touch a common function context.",
             "Row-level rates (whether at least one pair in the tangled commit co-locates) are higher than pair-level rates, as expected since a row's probability of containing at least one co-locating pair grows with the number of pairs it contains.",
             gap_sentence,
             "Co-location rates at all three granularities (directory, file, function) generally do not increase monotonically with k, since a larger k spreads the same commit's diff across more constituent atomics without proportionally increasing shared-location edits per pair.",
         )
-    )
+    ))
 
 
 def build_summary_markdown(rows: Sequence[SummaryRow]) -> str:

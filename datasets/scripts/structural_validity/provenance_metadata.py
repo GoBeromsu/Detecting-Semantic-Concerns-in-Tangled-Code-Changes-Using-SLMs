@@ -40,8 +40,7 @@ def canonical_github_remote(remote: str) -> str | None:
     if prefix is None:
         return None
     suffix = value[len(prefix) :].split("/commit/", maxsplit=1)[0].rstrip("/")
-    if suffix.endswith(".git"):
-        suffix = suffix[:-4]
+    suffix = suffix.removesuffix(".git")
     parts = suffix.split("/")
     if len(parts) != 2 or not all(parts):
         return None

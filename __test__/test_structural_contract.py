@@ -20,54 +20,87 @@ def _run_driver(source: str, *arguments: str) -> subprocess.CompletedProcess[str
     )
 
 
+PROXIMITY_DRIVER = """
+from structural_validity import *
+
+a = ("src/domain/order.py", "src/domain/cart.py", "docs/readme.md")
+b = ("src/domain/order.py", "src/domain/cart.py", "src/api/view.py")
+assert shared_file_count(a, b) == 2
+assert shared_directory_count(a, b) == 1
+assert shared_path_depth(a, b) == 2
+
+assert shared_file_count(a, ()) == 0
+assert shared_directory_count(("README.md",), ("CHANGELOG.md",)) == 1
+assert shared_path_depth(("README.md",), ("README.md",)) == 0
+assert shared_path_depth(("src/domain/a.py",), ("src/domain/b.py",)) == 2
+assert shared_path_depth(("src/a.py",), ("lib/b.py",)) == 0
+print("files=2 directories=1 depth=2")
+"""
+
+
+def test_path_proximity_counts_how_much_two_concerns_have_in_common() -> None:
+    # Given two concerns sharing two of three changed files
+    first = _run_driver(PROXIMITY_DRIVER)
+    second = _run_driver(PROXIMITY_DRIVER)
+
+    # When proximity is measured twice through the real import
+    assert first.returncode == second.returncode == 0, first.stderr + second.stderr
+
+    # Then counts, not flags, distinguish partial from total overlap
+    assert first.stdout == second.stdout == "files=2 directories=1 depth=2\n"
+
+
 SEMANTICS_DRIVER = """
 from structural_validity import *
 
-def pair(a, b, file=False, directory=False, depth=0, reasons=()):
-    return PairPathMetrics(a, b, file, directory, depth, reasons)
+def pair(a, b, files=0, directories=0, depth=0, reasons=()):
+    return PairPathMetrics(a, b, files, directories, depth, reasons)
 
 commit = SyntheticCommit(CommitId("train:7"), Split.TRAIN, "owner/repo", 3, ("a", "b", "c"))
-assert common_parent_prefix_depth(("README.md",), ("README.md",)) == 0
-assert common_parent_prefix_depth(("src/domain/a.py",), ("src/domain/b.py",)) == 2
 
 one_edge = aggregate_commit_metrics(commit, (
-    pair(0, 1, True, True, 2), pair(0, 2), pair(1, 2),
+    pair(0, 1, 1, 1, 2), pair(0, 2), pair(1, 2),
 ))
-assert one_edge.same_file_any is True
-assert one_edge.same_file_all_concerns is False
-assert one_edge.same_leaf_directory_any is True
-assert one_edge.same_leaf_directory_all_concerns is False
+assert one_edge.any_pair_shares_file is True
+assert one_edge.any_pair_shares_directory is True
+assert one_edge.concerns_sharing_file == 2
+assert one_edge.file_share == 2 / 3
+assert one_edge.all_concerns_share_file is False
 
 participation = aggregate_commit_metrics(commit, (
-    pair(0, 1, True, True, 2), pair(0, 2), pair(1, 2, True, True, 3),
+    pair(0, 1, 1, 1, 2), pair(0, 2), pair(1, 2, 4, 1, 3),
 ))
-assert participation.same_file_all_concerns is True
-assert participation.same_file_all_pairs is False
-assert participation.same_leaf_directory_all_concerns is True
-assert participation.same_leaf_directory_all_pairs is False
-assert participation.common_parent_prefix_depth == 3
-assert participation.strict_common_parent_prefix_depth == 2
+assert participation.concerns_sharing_file == 3
+assert participation.file_share == 1.0
+assert participation.all_concerns_share_file is True
+assert participation.all_pairs_share_file is False
+assert participation.all_concerns_share_directory is True
+assert participation.all_pairs_share_directory is False
+assert participation.max_shared_path_depth == 3
+assert participation.min_shared_path_depth == 2
 
 clique = aggregate_commit_metrics(commit, (
-    pair(0, 1, True, True), pair(0, 2, True, True), pair(1, 2, True, True),
+    pair(0, 1, 1, 1), pair(0, 2, 1, 1), pair(1, 2, 1, 1),
 ))
-assert clique.same_file_all_pairs is True
-assert clique.same_leaf_directory_all_pairs is True
+assert clique.all_pairs_share_file is True
+assert clique.all_pairs_share_directory is True
 
 no_overlap = aggregate_commit_metrics(commit, (
     pair(0, 1, reasons=(ReasonCode.AMBIGUOUS_PATH,)), pair(0, 2), pair(1, 2),
 ))
-assert no_overlap.same_file_any is False
-assert no_overlap.same_leaf_directory_any is False
-assert no_overlap.common_parent_prefix_depth == 0
-assert no_overlap.strict_common_parent_prefix_depth == 0
+assert no_overlap.any_pair_shares_file is False
+assert no_overlap.any_pair_shares_directory is False
+assert no_overlap.concerns_sharing_file == 0
+assert no_overlap.file_share == 0.0
+assert no_overlap.max_shared_path_depth == 0
+assert no_overlap.min_shared_path_depth == 0
 assert no_overlap.reason_codes == (ReasonCode.AMBIGUOUS_PATH,)
-print("any=true all-concerns=false; participation-all-concerns=true")
+print("one-edge-share=2/3 participation-share=3/3")
 """
 
 
 def test_pair_and_commit_metric_semantics_are_deterministic() -> None:
-    # Given root, overlap, participation, clique, and failure fixtures
+    # Given single-edge, participation, clique, and failure fixtures
     first = _run_driver(SEMANTICS_DRIVER)
     second = _run_driver(SEMANTICS_DRIVER)
 
@@ -75,7 +108,46 @@ def test_pair_and_commit_metric_semantics_are_deterministic() -> None:
     assert first.returncode == second.returncode == 0, first.stderr + second.stderr
 
     # Then every formula passes and output is byte-deterministic
-    assert first.stdout == second.stdout == "any=true all-concerns=false; participation-all-concerns=true\n"
+    assert first.stdout == second.stdout == "one-edge-share=2/3 participation-share=3/3\n"
+
+
+def test_concern_share_normalises_within_a_commit_before_averaging() -> None:
+    # Given one k=2 and one k=5 commit, each with a single sharing pair
+    result = _run_driver(
+        """
+        from structural_validity import *
+
+        def metrics(k, edges):
+            commit = SyntheticCommit(
+                CommitId(f"train:{k}"), Split.TRAIN, "owner/repo", k,
+                tuple(str(index) for index in range(k)),
+            )
+            pairs = tuple(
+                PairPathMetrics(a, b, 1, 1, 1) if (a, b) in edges else PairPathMetrics(a, b, 0, 0, 0)
+                for a, b in commit.pair_indices()
+            )
+            return aggregate_commit_metrics(commit, pairs)
+
+        small, large = metrics(2, {(0, 1)}), metrics(5, {(0, 1)})
+
+        # Pooling over pairs would weight the k=5 commit ten times the k=2 one.
+        assert small.concerns_sharing_file == large.concerns_sharing_file == 2
+        assert small.file_share == 1.0
+        assert large.file_share == 0.4
+        assert small.any_pair_shares_file is large.any_pair_shares_file is True
+
+        # Sharing is symmetric, so exactly one concern can never be connected.
+        for k in (2, 3, 4, 5):
+            for share in (metrics(k, set()), metrics(k, {(0, 1)})):
+                assert share.concerns_sharing_file != 1
+        print(f"k2={small.file_share} k5={large.file_share}")
+        """
+    )
+
+    # When both contribute exactly one commit-level observation
+    # Then the "at least one pair" flag agrees while the share separates them
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "k2=1.0 k5=0.4\n"
 
 
 def test_boundary_rejects_k_one_sha_mismatch_and_missing_pairs() -> None:
@@ -98,20 +170,39 @@ def test_boundary_rejects_k_one_sha_mismatch_and_missing_pairs() -> None:
             else:
                 raise AssertionError("malformed commit accepted")
 
-        pair = PairPathMetrics(0, 1, False, False, 0)
+        pair = PairPathMetrics(0, 1, 0, 0, 0)
         mutation_rejected = False
         try:
-            setattr(pair, "same_file", True)
+            setattr(pair, "shared_file_count", 1)
         except FrozenInstanceError:
             mutation_rejected = True
         assert mutation_rejected
 
         try:
-            PairPathMetrics(0, 1, True, False, 0, (ReasonCode.UNRESOLVED_PATH,))
+            PairPathMetrics(0, 1, 1, 1, 0, (ReasonCode.UNRESOLVED_PATH,))
         except StructuralContractError as error:
             assert error.reason is ReasonCode.PAIR_CONSERVATION
         else:
             raise AssertionError("reason-coded failure reported overlap")
+
+        # A file cannot be shared without its directory also being shared.
+        try:
+            PairPathMetrics(0, 1, 3, 0, 0)
+        except StructuralContractError as error:
+            assert error.reason is ReasonCode.PAIR_CONSERVATION
+        else:
+            raise AssertionError("shared file accepted with no shared directory")
+
+        # Many files can still sit inside one shared directory.
+        assert PairPathMetrics(0, 1, 5, 1, 2).shares_file is True
+
+        for negative in ((0, 1, -1, 0, 0), (0, 1, 0, -1, 0), (0, 1, 0, 0, -1)):
+            try:
+                PairPathMetrics(*negative)
+            except StructuralContractError as error:
+                assert error.reason is ReasonCode.PAIR_CONSERVATION
+            else:
+                raise AssertionError("negative count accepted")
 
         commit = SyntheticCommit(CommitId("train:7"), Split.TRAIN, "owner/repo", 3, ("a", "b", "c"))
         try:
@@ -148,13 +239,16 @@ def test_metadata_and_pair_record_serialize_with_exact_denominators() -> None:
         json.dumps([COMMIT_ARTIFACT_SCHEMA.as_json(), PAIR_ARTIFACT_SCHEMA.as_json()], sort_keys=True)
 
         commit = SyntheticCommit(CommitId("train:7"), Split.TRAIN, "owner/repo", 3, ("a", "b", "c"))
-        record = PairRecord.from_commit(commit, PairPathMetrics(0, 1, True, False, 2))
+        record = PairRecord.from_commit(commit, PairPathMetrics(0, 1, 3, 1, 2))
         payload = json.loads(json.dumps(record.as_json(), sort_keys=True))
         assert payload["commit_id"] == "train:7"
-        assert payload["same_file"] is True
-        assert payload["same_leaf_directory"] is False
-        assert payload["common_parent_prefix_depth"] == 2
+        assert payload["shared_file_count"] == 3
+        assert payload["shares_file"] is True
+        assert payload["shared_directory_count"] == 1
+        assert payload["shares_directory"] is True
+        assert payload["shared_path_depth"] == 2
         assert payload["reason_codes"] == []
+        assert frozenset(payload) == frozenset(PAIR_ARTIFACT_SCHEMA.required_fields)
         print(json.dumps(payload, sort_keys=True))
         """
     )
@@ -163,7 +257,7 @@ def test_metadata_and_pair_record_serialize_with_exact_denominators() -> None:
     # Then typed values and primary/secondary semantics survive JSON
     assert result.returncode == 0, result.stderr
     assert '"commit_id": "train:7"' in result.stdout
-    assert '"same_file": true' in result.stdout
+    assert '"shared_file_count": 3' in result.stdout
 
 
 def test_committed_data_conserves_1400_commits_and_7000_pairs() -> None:
