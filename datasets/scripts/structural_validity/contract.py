@@ -55,6 +55,12 @@ class PairPathMetrics:
     made "one file in common out of twenty" and "every file in common" the same
     measurement. The booleans are derived so they can never disagree with the
     counts they summarise.
+
+    `shared_directory_count` excludes the repository root, so a pair sharing
+    only a top-level file reports files without directories. That is why no
+    invariant here ties the two counts together: the implication holds for
+    non-root files only, and this type cannot see the paths it would need to
+    tell the two cases apart. `path_proximity` owns that check instead.
     """
 
     concern_a: int
@@ -77,8 +83,6 @@ class PairPathMetrics:
             raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, f"expected 0 <= concern_a < concern_b, got {(self.concern_a, self.concern_b)}")
         if self.shared_file_count < 0 or self.shared_directory_count < 0 or self.shared_path_depth < 0:
             raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, "shared counts and depth cannot be negative")
-        if self.shared_file_count > 0 and self.shared_directory_count == 0:
-            raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, f"a shared file implies a shared directory, got {self.shared_file_count} files in 0 directories")
         if self.reason_codes and (self.shared_file_count or self.shared_directory_count or self.shared_path_depth):
             raise StructuralContractError(CommitId("pair"), ReasonCode.PAIR_CONSERVATION, "reason-coded path failures must remain zero")
 

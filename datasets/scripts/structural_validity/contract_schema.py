@@ -92,7 +92,7 @@ _ALL_PAIRS: Final[str] = "all unordered constituent-concern pairs"
 _RETAIN: Final[str] = "retain_false_or_zero"
 
 HEADLINE_CONTRACT: Final[HeadlineContract] = HeadlineContract(
-    wording="Across N = 1,400 multi-concern synthetic commits with k=2–5, X% contain at least one constituent-concern pair that shares a changed file path, Y% contain at least one pair that shares a leaf directory, and mean commit-level maximum common-prefix depth is Z.",
+    wording="Across N = 1,400 multi-concern synthetic commits with k=2–5, X% contain at least one constituent-concern pair that shares a changed file path, Y% contain at least one pair that shares a non-root leaf directory, and mean commit-level maximum common-prefix depth is Z.",
     commit_denominator=PRIMARY_COMMIT_COUNT,
     pair_denominator=SECONDARY_PAIR_COUNT,
     concern_counts=PRIMARY_K_VALUES,
@@ -100,6 +100,10 @@ HEADLINE_CONTRACT: Final[HeadlineContract] = HeadlineContract(
 
 DENOMINATOR_CONTRACTS: Final[tuple[DenominatorContract, ...]] = (
     DenominatorContract("any_pair_shares_file", ObservationUnit.COMMIT, PRIMARY_COMMIT_COUNT, _ALL_COMMITS, _RETAIN, True),
+    # Directory sharing excludes the repository root: every top-level file
+    # shares it by construction, which made "one concern touched README.md, the
+    # other touched .gitignore" score the same as two concerns inside one
+    # module. That case was 51% of all observed directory sharing.
     DenominatorContract("any_pair_shares_directory", ObservationUnit.COMMIT, PRIMARY_COMMIT_COUNT, _ALL_COMMITS, _RETAIN, True),
     DenominatorContract("mean_max_shared_path_depth", ObservationUnit.COMMIT, PRIMARY_COMMIT_COUNT, _ALL_COMMITS, _RETAIN, True),
     # Concern-share companions. Each commit contributes one observation whatever

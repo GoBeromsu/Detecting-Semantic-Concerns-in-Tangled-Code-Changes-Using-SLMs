@@ -30,8 +30,25 @@ assert shared_directory_count(a, b) == 1
 assert shared_path_depth(a, b) == 2
 
 assert shared_file_count(a, ()) == 0
-assert shared_directory_count(("README.md",), ("CHANGELOG.md",)) == 1
-assert shared_path_depth(("README.md",), ("README.md",)) == 0
+
+# A directory is keyed by its full path, so a shared basename is not a match.
+assert shared_directory_count(("app/utils/x.py",), ("lib/utils/y.py",)) == 0
+assert shared_path_depth(("app/utils/x.py",), ("lib/utils/y.py",)) == 0
+
+# The repository root is excluded: every top-level file would share it.
+assert shared_directory_count(("README.md",), ("CHANGELOG.md",)) == 0
+assert shared_path_depth(("README.md",), ("CHANGELOG.md",)) == 0
+
+# Sharing the same top-level file still registers, as a file rather than a
+# directory -- which is the only case where files exceed directories at zero.
+assert shared_file_count(("README.md",), ("README.md",)) == 1
+assert shared_directory_count(("README.md",), ("README.md",)) == 0
+
+# Below the root, sharing a file always implies sharing its directory.
+for path in ("src/a.py", "src/domain/deep/a.py", "./pkg/mod/a.py"):
+    assert shared_file_count((path,), (path,)) == 1
+    assert shared_directory_count((path,), (path,)) == 1
+
 assert shared_path_depth(("src/domain/a.py",), ("src/domain/b.py",)) == 2
 assert shared_path_depth(("src/a.py",), ("lib/b.py",)) == 0
 print("files=2 directories=1 depth=2")
@@ -185,13 +202,9 @@ def test_boundary_rejects_k_one_sha_mismatch_and_missing_pairs() -> None:
         else:
             raise AssertionError("reason-coded failure reported overlap")
 
-        # A file cannot be shared without its directory also being shared.
-        try:
-            PairPathMetrics(0, 1, 3, 0, 0)
-        except StructuralContractError as error:
-            assert error.reason is ReasonCode.PAIR_CONSERVATION
-        else:
-            raise AssertionError("shared file accepted with no shared directory")
+        # Files without directories is legal: a shared *top-level* file has no
+        # non-root directory to report, so the two counts are not tied here.
+        assert PairPathMetrics(0, 1, 1, 0, 0).shares_file is True
 
         # Many files can still sit inside one shared directory.
         assert PairPathMetrics(0, 1, 5, 1, 2).shares_file is True
