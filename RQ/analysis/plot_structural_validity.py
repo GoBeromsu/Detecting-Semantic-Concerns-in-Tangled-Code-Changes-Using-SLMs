@@ -1,16 +1,15 @@
-"""Figure candidates for the C1.1 structural-proximity study.
+"""The C1.1 structural-proximity figure.
 
-Renders four independent views of the same artifact so the manuscript can pick
-one. Each stands alone; they are not meant to be printed together.
+`forest` is the manuscript figure and the default output: one panel carrying
+all three proximity measures -- same file, same directory, directory depth --
+against both nulls, so the exploratory study costs the paper a single figure.
+The claim reads in one glance: every observed dot on the 1.0 line, every
+repository-free diamond far to its left.
 
-  forest    every estimand on one axis, scaled by its own null mean. The claim
-            "observed proximity is what the sampling constraints already imply"
-            is one glance: all dots on the 1.0 line, repo-free far left.
-  ladder    the pair-level shared-depth distribution, so "same directory" is
-            graded rather than binary.
-  bars      the same three conditions as plain grouped bars, for readers who
-            prefer percentages on the y-axis over a ratio scale.
-  by_k      concern share stratified by k, showing the measure is not k-neutral.
+`--exploratory` additionally renders three working views that were used to
+check the headline and are not meant for the manuscript: `ladder` (the graded
+shared-depth distribution), `bars` (the same numbers as percentages), and
+`by_k` (concern share stratified by k).
 
 Reads the JSON written by `proximity_study`; runs no analysis of its own.
 """
@@ -49,6 +48,33 @@ SHORT_LABELS = {
 }
 PERCENT_KEYS = tuple(key for key in LABELS if key != "mean_max_depth")
 OBSERVED_STYLE = {"color": COLORS["secondary"], "zorder": 5}
+# The seven estimands are three measures asked three ways, not seven findings.
+# Grouping them says so on the figure instead of in the caption.
+GROUPS = (
+    ("Same file", ("commit_file_any", "pair_file_rate", "mean_file_share")),
+    ("Same directory", ("commit_directory_any", "pair_directory_rate", "mean_directory_share")),
+    ("Directory depth", ("mean_max_depth",)),
+)
+FAMILY = {
+    "commit_file_any": "At least one pair",
+    "pair_file_rate": "Typical pair",
+    "mean_file_share": "Concern share",
+    "commit_directory_any": "At least one pair",
+    "pair_directory_rate": "Typical pair",
+    "mean_directory_share": "Concern share",
+    "mean_max_depth": "Mean deepest level",
+}
+
+
+def _forest_rows() -> list[tuple[str, str | None]]:
+    """Row order top to bottom: a group heading, its estimands, then a blank."""
+    rows: list[tuple[str, str | None]] = []
+    for index, (title, keys) in enumerate(GROUPS):
+        if index:
+            rows.append(("", None))
+        rows.append((title, None))
+        rows.extend((f"    {FAMILY[key]}", key) for key in keys)
+    return rows
 
 
 def _summary(artifact: Artifact, name: str) -> dict[str, Any]:
@@ -70,18 +96,24 @@ def plot_forest(artifact: Artifact, out: Path) -> None:
     """
     observed, null, band = _summary(artifact, "observed"), _summary(artifact, "null_same_repo"), _interval(artifact, "null_same_repo")
     free = _summary(artifact, "null_repo_free")
-    keys = list(LABELS)
-    figure, axes = plt.subplots(figsize=(10, 5.5))
-    for row, key in enumerate(keys):
+    rows = _forest_rows()
+    figure, axes = plt.subplots(figsize=(10, 7))
+    for row, (_text, key) in enumerate(rows):
+        if key is None:
+            continue
         scale = null[key]
         low, high = band[key][0] / scale, band[key][1] / scale
         _ = axes.plot([low, high], [row, row], color=COLORS["primary"], linewidth=7, alpha=0.35,
                       solid_capstyle="butt", zorder=2)
+        first = row == 1  # row 0 is a group heading, so the legend attaches to the first estimand
+        # The guide line runs to the annotation column, so it is drawn per estimand
+        # row rather than by the y grid, which would also stripe the headings.
+        _ = axes.axhline(row, color=COLORS["text"], alpha=PLOT_STYLE["grid_alpha"], linewidth=0.8, zorder=0)
         _ = axes.scatter([observed[key] / scale], [row], s=110, marker="o",
-                         label="Observed corpus" if row == 0 else None, **OBSERVED_STYLE)
+                         label="Observed corpus" if first else None, **OBSERVED_STYLE)
         _ = axes.scatter([free[key] / scale], [row], s=110, marker="D", facecolors="none",
                          edgecolors=COLORS["text"], linewidths=1.6, zorder=4,
-                         label="Null: repository constraint dropped" if row == 0 else None)
+                         label="Null: repository constraint dropped" if first else None)
         # The ratio axis hides magnitude, so the absolute observed value rides along.
         unit = "" if key == "mean_max_depth" else "%"
         _ = axes.annotate(f"{observed[key]:.2f}{unit}", (2.6, row), va="center", fontsize=13,
@@ -91,9 +123,12 @@ def plot_forest(artifact: Artifact, out: Path) -> None:
     _ = axes.set_xlim(0.06, 2.2)
     _ = axes.set_xticks([0.1, 0.25, 0.5, 1.0, 2.0])
     _ = axes.set_xticklabels(["0.1x", "0.25x", "0.5x", "1x", "2x"])
-    _ = axes.set_yticks(range(len(keys)))
-    _ = axes.set_yticklabels([LABELS[key] for key in keys])
-    _ = axes.invert_yaxis()
+    _ = axes.set_yticks(range(len(rows)))
+    _ = axes.set_yticklabels([text for text, _key in rows])
+    for label, (_text, key) in zip(axes.get_yticklabels(), rows, strict=True):
+        if key is None:
+            label.set_fontweight("bold")
+    _ = axes.set_ylim(len(rows) - 0.4, -0.6)  # replaces invert_yaxis; trims the dead margin
     _ = axes.set_xlabel("Value relative to the same-repository null mean")
     _ = axes.set_title("Structural proximity is fully explained by the sampling constraints")
     # The band was drawn once per row without a label, so it needs a proxy handle.
@@ -102,6 +137,8 @@ def plot_forest(artifact: Artifact, out: Path) -> None:
     _ = axes.legend([*handles, band_proxy], [*texts, "Null: repository and type fixed (95%)"],
                     loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=3, frameon=False, fontsize=12)
     _ = axes.grid(axis="x", alpha=PLOT_STYLE["grid_alpha"])
+    _ = axes.grid(axis="y", visible=False)
+    axes.tick_params(axis="y", length=0)
     figure.tight_layout()
     figure.savefig(out, dpi=DPI)
     plt.close(figure)
@@ -207,16 +244,22 @@ def plot_by_k(artifact: Artifact, out: Path) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Render C1.1 figure candidates")
+    parser = argparse.ArgumentParser(description="Render the C1.1 structural-proximity figure")
     _ = parser.add_argument("--artifact", type=Path, default=Path("results/structural_validity/proximity_seed43.json"))
     _ = parser.add_argument("--out", type=Path, default=Path("results/structural_validity/figures"))
+    _ = parser.add_argument("--exploratory", action="store_true",
+                            help="also render the working views that are not manuscript figures")
     arguments = parser.parse_args(argv)
     out: Path = arguments.out
     artifact = json.loads(Path(arguments.artifact).read_text(encoding="utf-8"))
 
+    figures = [("forest", plot_forest)]
+    if arguments.exploratory:
+        figures += [("ladder", plot_ladder), ("bars", plot_bars), ("by_k", plot_by_k)]
+
     setup_plot_style()
     out.mkdir(parents=True, exist_ok=True)
-    for name, render in (("forest", plot_forest), ("ladder", plot_ladder), ("bars", plot_bars), ("by_k", plot_by_k)):
+    for name, render in figures:
         target = out / f"structural_proximity_{name}.png"
         render(artifact, target)
         print(f"wrote {target}")
