@@ -1,0 +1,766 @@
+{
+  "grammars": [
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".bash",
+        ".bats",
+        ".sh"
+      ],
+      "grammar": "bash",
+      "grammar_abi": 14,
+      "language": "bash",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".c",
+        ".h"
+      ],
+      "grammar": "c",
+      "grammar_abi": 14,
+      "language": "c",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".cs"
+      ],
+      "grammar": "csharp",
+      "grammar_abi": 15,
+      "language": "c_sharp",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".clar"
+      ],
+      "grammar": "clarity",
+      "grammar_abi": 14,
+      "language": "clarity",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".cc",
+        ".cpp",
+        ".cxx",
+        ".hh",
+        ".hpp"
+      ],
+      "grammar": "cpp",
+      "grammar_abi": 15,
+      "language": "cpp",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".css"
+      ],
+      "grammar": "css",
+      "grammar_abi": 14,
+      "language": "css",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".csv"
+      ],
+      "grammar": "csv",
+      "grammar_abi": 14,
+      "language": "csv",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".cue"
+      ],
+      "grammar": "cue",
+      "grammar_abi": 14,
+      "language": "cue",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [],
+      "grammar": "dockerfile",
+      "grammar_abi": 14,
+      "language": "dockerfile",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".ex",
+        ".exs"
+      ],
+      "grammar": "elixir",
+      "grammar_abi": 14,
+      "language": "elixir",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".erb"
+      ],
+      "grammar": "embeddedtemplate",
+      "grammar_abi": 14,
+      "language": "erb",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".er"
+      ],
+      "grammar": "erg",
+      "grammar_abi": null,
+      "language": "erg",
+      "parser_disposition": "unsupported_source",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".gn",
+        ".gni"
+      ],
+      "grammar": "gn",
+      "grammar_abi": 14,
+      "language": "gn",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".go"
+      ],
+      "grammar": "go",
+      "grammar_abi": 14,
+      "language": "go",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".gradle"
+      ],
+      "grammar": "groovy",
+      "grammar_abi": 14,
+      "language": "groovy",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".hcl",
+        ".tf"
+      ],
+      "grammar": "hcl",
+      "grammar_abi": 14,
+      "language": "hcl",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".html",
+        ".htm"
+      ],
+      "grammar": "html",
+      "grammar_abi": 14,
+      "language": "html",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".java"
+      ],
+      "grammar": "java",
+      "grammar_abi": 14,
+      "language": "java",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".js",
+        ".mjs",
+        ".cjs"
+      ],
+      "grammar": "javascript",
+      "grammar_abi": 14,
+      "language": "javascript",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".json"
+      ],
+      "grammar": "json",
+      "grammar_abi": 14,
+      "language": "json",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".jsx"
+      ],
+      "grammar": "javascript",
+      "grammar_abi": 14,
+      "language": "jsx",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [],
+      "grammar": "just",
+      "grammar_abi": 14,
+      "language": "just",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [],
+      "grammar": "make",
+      "grammar_abi": 13,
+      "language": "make",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".md",
+        ".mdx",
+        ".qmd"
+      ],
+      "grammar": "markdown",
+      "grammar_abi": 14,
+      "language": "markdown",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".nix"
+      ],
+      "grammar": "nix",
+      "grammar_abi": 13,
+      "language": "nix",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".m",
+        ".mm"
+      ],
+      "grammar": "objc",
+      "grammar_abi": 14,
+      "language": "objective_c",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".ps1",
+        ".psm1"
+      ],
+      "grammar": "powershell",
+      "grammar_abi": 14,
+      "language": "powershell",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".proto"
+      ],
+      "grammar": "proto",
+      "grammar_abi": 14,
+      "language": "proto",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".pug"
+      ],
+      "grammar": "pug",
+      "grammar_abi": 14,
+      "language": "pug",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".py"
+      ],
+      "grammar": "python",
+      "grammar_abi": 14,
+      "language": "python",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".rb"
+      ],
+      "grammar": "ruby",
+      "grammar_abi": 14,
+      "language": "ruby",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "grammar": "rust",
+      "grammar_abi": 14,
+      "language": "rust",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".scss"
+      ],
+      "grammar": "scss",
+      "grammar_abi": 14,
+      "language": "scss",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".sql"
+      ],
+      "grammar": "sql",
+      "grammar_abi": 14,
+      "language": "sql",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".swift"
+      ],
+      "grammar": "swift",
+      "grammar_abi": 14,
+      "language": "swift",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".toml"
+      ],
+      "grammar": "toml",
+      "grammar_abi": 14,
+      "language": "toml",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "grammar": "tsx",
+      "grammar_abi": 14,
+      "language": "tsx",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".ts"
+      ],
+      "grammar": "typescript",
+      "grammar_abi": 14,
+      "language": "typescript",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".vue"
+      ],
+      "grammar": "vue",
+      "grammar_abi": 14,
+      "language": "vue",
+      "parser_disposition": "available",
+      "role": "source_ast"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".dmn",
+        ".xml"
+      ],
+      "grammar": "xml",
+      "grammar_abi": 14,
+      "language": "xml",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    },
+    {
+      "detector_order": [
+        "exact_filename",
+        "extension",
+        "shebang",
+        "content_signature",
+        "parser_score",
+        "ambiguous"
+      ],
+      "extensions": [
+        ".yaml",
+        ".yml"
+      ],
+      "grammar": "yaml",
+      "grammar_abi": 14,
+      "language": "yaml",
+      "parser_disposition": "available",
+      "role": "structured_parse_tree"
+    }
+  ],
+  "package": {
+    "distribution": "tree-sitter-language-pack",
+    "version": "1.14.3"
+  },
+  "runtime": {
+    "distribution": "tree-sitter",
+    "language_abi_max": 15,
+    "language_abi_min": 13,
+    "version": "0.26.0"
+  },
+  "schema_version": 1
+}

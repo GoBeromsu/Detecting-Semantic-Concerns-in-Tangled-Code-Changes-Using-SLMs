@@ -30,6 +30,7 @@ dependencies = [
     "trl>=0.20",
     "scipy>=1.15.3",
     "scikit-learn>=1.7.2",
+    "tree-sitter-language-pack==1.14.3",
 ]
 
 [project.optional-dependencies]
@@ -77,8 +78,14 @@ packages = ["utils", "visual_eval"]
 
 
 [tool.pytest.ini_options]
+pythonpath = ["datasets/scripts"]
 markers = [
     "slow: long-running checks (full-dataset re-encodes, pipeline re-runs)",
     "network: requires network access",
     "gpu: requires a CUDA device",
 ]
+
+[tool.basedpyright]
+venvPath = "."
+venv = ".venv"
+extraPaths = ["datasets/scripts"]
