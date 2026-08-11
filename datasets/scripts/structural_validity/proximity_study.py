@@ -24,11 +24,12 @@ from __future__ import annotations
 
 import argparse
 import collections
+import itertools
 import json
 import random
 import statistics
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
@@ -41,7 +42,13 @@ from .contract import (
 )
 from .contract_types import PRIMARY_COMMIT_COUNT, SECONDARY_PAIR_COUNT, ReasonCode
 from .path_proximity import shared_directory_count, shared_file_count, shared_path_depth
-from .proximity_corpus import Corpus, ObservedCommit, PathsBySha, load_corpus
+from .proximity_corpus import (
+    Corpus,
+    ObservedCommit,
+    PathsBySha,
+    SamplingCells,
+    load_corpus,
+)
 
 PROJECT_ROOT: Final[Path] = Path(__file__).resolve().parents[3]
 DEFAULT_DATA_DIR: Final[Path] = PROJECT_ROOT / "datasets" / "data"
@@ -86,18 +93,14 @@ class NullResult:
 
 def measure_commit(commit: SyntheticCommit, paths: PathsBySha) -> tuple[CommitMetrics, list[PairPathMetrics]]:
     """Measure one commit, keeping unresolved sides in the denominator."""
-    pairs: list[PairPathMetrics] = []
-    for a, b in commit.pair_indices():
+    def measure(a: int, b: int) -> PairPathMetrics:
         left, right = paths.get(commit.shas[a], ()), paths.get(commit.shas[b], ())
         if not left or not right:
-            pairs.append(PairPathMetrics(a, b, 0, 0, 0, (ReasonCode.UNRESOLVED_PATH,)))
-            continue
-        pairs.append(PairPathMetrics(
-            a, b,
-            shared_file_count(left, right),
-            shared_directory_count(left, right),
-            shared_path_depth(left, right),
-        ))
+            return PairPathMetrics(a, b, 0, 0, 0, (ReasonCode.UNRESOLVED_PATH,))
+        return PairPathMetrics(a, b, shared_file_count(left, right),
+                               shared_directory_count(left, right), shared_path_depth(left, right))
+
+    pairs = [measure(a, b) for a, b in commit.pair_indices()]
     return aggregate_commit_metrics(commit, pairs), pairs
 
 
@@ -124,7 +127,7 @@ def summarise(label: str, commits: Sequence[SyntheticCommit], paths: PathsBySha)
     )
 
 
-def _resample(entry: ObservedCommit, pool: Callable[[str, str], Sequence[str]], rng: random.Random) -> tuple[SyntheticCommit, int]:
+def _resample(entry: ObservedCommit, cells: SamplingCells, rng: random.Random) -> tuple[SyntheticCommit, int]:
     """Redraw one commit's constituents, holding its type combination and k.
 
     Already-drawn SHAs are excluded so the redrawn commit stays as distinct as a
@@ -137,7 +140,7 @@ def _resample(entry: ObservedCommit, pool: Callable[[str, str], Sequence[str]], 
     chosen: list[str] = []
     unresolved = 0
     for index, annotated in enumerate(entry.types):
-        options = [sha for sha in pool(entry.commit.repo, annotated) if sha not in chosen]
+        options = [sha for sha in cells.get((entry.commit.repo, annotated), ()) if sha not in chosen]
         if not options:
             chosen.append(entry.commit.shas[index])
             unresolved += 1
@@ -151,12 +154,15 @@ def _resample(entry: ObservedCommit, pool: Callable[[str, str], Sequence[str]], 
 
 def permutation_null(label: str, corpus: Corpus, *, repository_free: bool, draws: int) -> NullResult:
     """Mean and 95% percentile interval over `draws` resamplings of the corpus."""
-    pooled: dict[str, list[str]] = collections.defaultdict(list)
-    for (_repo, annotated), shas in corpus.cells.items():
-        pooled[annotated].extend(shas)
-
-    def pool(repo: str, annotated: str) -> Sequence[str]:
-        return pooled[annotated] if repository_free else corpus.cells.get((repo, annotated), ())
+    cells = corpus.cells
+    if repository_free:
+        # Dropping the repository constraint is expressed as data rather than as
+        # a branch inside the resampler: every cell of a type sees one pool.
+        pooled: dict[str, list[str]] = collections.defaultdict(list)
+        for (_repo, annotated), shas in corpus.cells.items():
+            pooled[annotated].extend(shas)
+        by_type = {annotated: tuple(shas) for annotated, shas in pooled.items()}
+        cells = {key: by_type[key[1]] for key in corpus.cells}
 
     rng = random.Random(SEED)
     samples: list[Summary] = []
@@ -164,7 +170,7 @@ def permutation_null(label: str, corpus: Corpus, *, repository_free: bool, draws
     for _draw in range(draws):
         redrawn: list[SyntheticCommit] = []
         for entry in corpus.commits:
-            commit, missing = _resample(entry, pool, rng)
+            commit, missing = _resample(entry, cells, rng)
             redrawn.append(commit)
             unresolved += missing
         samples.append(summarise(label, redrawn, corpus.paths))
@@ -173,12 +179,8 @@ def permutation_null(label: str, corpus: Corpus, *, repository_free: bool, draws
     averaged = {key: statistics.fmean(values) for key, values in sorted_values.items()}
     # Depth is a distribution, not a scalar, so it is averaged bin by bin. Short
     # histograms are padded: a draw with no depth-9 pair contributes 0% there.
-    span = max(len(sample.depth_histogram) for sample in samples)
-    histogram = tuple(
-        statistics.fmean([sample.depth_histogram[depth] if depth < len(sample.depth_histogram) else 0.0
-                          for sample in samples])
-        for depth in range(span)
-    )
+    histogram = tuple(statistics.fmean(bins) for bins in itertools.zip_longest(
+        *(sample.depth_histogram for sample in samples), fillvalue=0.0))
     return NullResult(
         summary=Summary(label, samples[0].commits, samples[0].pairs, averaged, histogram),
         interval={key: (values[int(0.025 * draws)], values[min(int(0.975 * draws), draws - 1)])
@@ -188,17 +190,16 @@ def permutation_null(label: str, corpus: Corpus, *, repository_free: bool, draws
 
 
 class _CliNamespace(argparse.Namespace):
-    data: Path
-    out: Path
-    draws: int
-    repo_free_draws: int
+    """Names, types and defaults for the parsed arguments.
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.data = DEFAULT_DATA_DIR
-        self.out = DEFAULT_ARTIFACT
-        self.draws = DRAWS
-        self.repo_free_draws = DRAWS // 4
+    argparse leaves an attribute it already finds alone, so these class-body
+    values are what an unpassed flag resolves to; `main` declares them to match.
+    """
+
+    data: Path = DEFAULT_DATA_DIR
+    out: Path = DEFAULT_ARTIFACT
+    draws: int = DRAWS
+    repo_free_draws: int = DRAWS // 4
 
 
 def main(argv: Sequence[str] | None = None) -> int:

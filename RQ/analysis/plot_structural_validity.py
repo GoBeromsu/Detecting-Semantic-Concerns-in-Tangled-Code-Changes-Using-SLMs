@@ -29,15 +29,6 @@ from plot_utils import COLORS, HATCH_PATTERNS, PLOT_STYLE, setup_plot_style
 Artifact = dict[str, Any]
 DPI = PLOT_STYLE["dpi"]
 
-LABELS = {
-    "commit_file_any": "Commit shares a file",
-    "commit_directory_any": "Commit shares a directory",
-    "mean_file_share": "Concern share (file)",
-    "mean_directory_share": "Concern share (directory)",
-    "pair_file_rate": "Pair shares a file",
-    "pair_directory_rate": "Pair shares a directory",
-    "mean_max_depth": "Mean deepest shared path",
-}
 SHORT_LABELS = {
     "commit_file_any": "Commit\nsame file",
     "commit_directory_any": "Commit\nsame dir.",
@@ -46,34 +37,31 @@ SHORT_LABELS = {
     "pair_file_rate": "Pair\nsame file",
     "pair_directory_rate": "Pair\nsame dir.",
 }
-PERCENT_KEYS = tuple(key for key in LABELS if key != "mean_max_depth")
-OBSERVED_STYLE = {"color": COLORS["secondary"], "zorder": 5}
+PERCENT_KEYS = tuple(SHORT_LABELS)
 # The seven estimands are three measures asked three ways, not seven findings.
 # Grouping them says so on the figure instead of in the caption.
 GROUPS = (
-    ("Same file", ("commit_file_any", "pair_file_rate", "mean_file_share")),
-    ("Same directory", ("commit_directory_any", "pair_directory_rate", "mean_directory_share")),
-    ("Directory depth", ("mean_max_depth",)),
+    ("Same file", (("At least one pair", "commit_file_any"),
+                   ("Typical pair", "pair_file_rate"),
+                   ("Concern share", "mean_file_share"))),
+    ("Same directory", (("At least one pair", "commit_directory_any"),
+                        ("Typical pair", "pair_directory_rate"),
+                        ("Concern share", "mean_directory_share"))),
+    ("Directory depth", (("Mean deepest level", "mean_max_depth"),)),
 )
-FAMILY = {
-    "commit_file_any": "At least one pair",
-    "pair_file_rate": "Typical pair",
-    "mean_file_share": "Concern share",
-    "commit_directory_any": "At least one pair",
-    "pair_directory_rate": "Typical pair",
-    "mean_directory_share": "Concern share",
-    "mean_max_depth": "Mean deepest level",
-}
 
 
 def _forest_rows() -> list[tuple[str, str | None]]:
-    """Row order top to bottom: a group heading, its estimands, then a blank."""
+    """Row order top to bottom: a bold heading, its estimands, then a blank spacer.
+
+    A row with no key is a heading or a spacer and carries no data.
+    """
     rows: list[tuple[str, str | None]] = []
-    for index, (title, keys) in enumerate(GROUPS):
+    for index, (title, members) in enumerate(GROUPS):
         if index:
             rows.append(("", None))
         rows.append((title, None))
-        rows.extend((f"    {FAMILY[key]}", key) for key in keys)
+        rows.extend((f"    {family}", key) for family, key in members)
     return rows
 
 
@@ -94,7 +82,8 @@ def plot_forest(artifact: Artifact, out: Path) -> None:
     one axis. The 1.0 line is "exactly what the sampling constraints produce";
     the log scale keeps the repository-free null visible without crushing it.
     """
-    observed, null, band = _summary(artifact, "observed"), _summary(artifact, "null_same_repo"), _interval(artifact, "null_same_repo")
+    observed = _summary(artifact, "observed")
+    null, band = _summary(artifact, "null_same_repo"), _interval(artifact, "null_same_repo")
     free = _summary(artifact, "null_repo_free")
     rows = _forest_rows()
     figure, axes = plt.subplots(figsize=(10, 7))
@@ -105,15 +94,13 @@ def plot_forest(artifact: Artifact, out: Path) -> None:
         low, high = band[key][0] / scale, band[key][1] / scale
         _ = axes.plot([low, high], [row, row], color=COLORS["primary"], linewidth=7, alpha=0.35,
                       solid_capstyle="butt", zorder=2)
-        first = row == 1  # row 0 is a group heading, so the legend attaches to the first estimand
         # The guide line runs to the annotation column, so it is drawn per estimand
         # row rather than by the y grid, which would also stripe the headings.
         _ = axes.axhline(row, color=COLORS["text"], alpha=PLOT_STYLE["grid_alpha"], linewidth=0.8, zorder=0)
         _ = axes.scatter([observed[key] / scale], [row], s=110, marker="o",
-                         label="Observed corpus" if first else None, **OBSERVED_STYLE)
+                         color=COLORS["secondary"], zorder=5)
         _ = axes.scatter([free[key] / scale], [row], s=110, marker="D", facecolors="none",
-                         edgecolors=COLORS["text"], linewidths=1.6, zorder=4,
-                         label="Null: repository constraint dropped" if first else None)
+                         edgecolors=COLORS["text"], linewidths=1.6, zorder=4)
         # The ratio axis hides magnitude, so the absolute observed value rides along.
         unit = "" if key == "mean_max_depth" else "%"
         _ = axes.annotate(f"{observed[key]:.2f}{unit}", (2.6, row), va="center", fontsize=13,
@@ -131,10 +118,16 @@ def plot_forest(artifact: Artifact, out: Path) -> None:
     _ = axes.set_ylim(len(rows) - 0.4, -0.6)  # replaces invert_yaxis; trims the dead margin
     _ = axes.set_xlabel("Value relative to the same-repository null mean")
     _ = axes.set_title("Structural proximity is fully explained by the sampling constraints")
-    # The band was drawn once per row without a label, so it needs a proxy handle.
-    handles, texts = axes.get_legend_handles_labels()
-    band_proxy = plt.Line2D([], [], color=COLORS["primary"], linewidth=7, alpha=0.35)
-    _ = axes.legend([*handles, band_proxy], [*texts, "Null: repository and type fixed (95%)"],
+    # Every mark is drawn once per row, so the legend is built from proxies rather
+    # than from labels attached to whichever row happened to be plotted first.
+    handles = [
+        plt.Line2D([], [], marker="o", linestyle="", markersize=11, color=COLORS["secondary"]),
+        plt.Line2D([], [], marker="D", linestyle="", markersize=11, markerfacecolor="none",
+                   markeredgecolor=COLORS["text"], markeredgewidth=1.6),
+        plt.Line2D([], [], color=COLORS["primary"], linewidth=7, alpha=0.35),
+    ]
+    _ = axes.legend(handles, ["Observed corpus", "Null: repository constraint dropped",
+                              "Null: repository and type fixed (95%)"],
                     loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=3, frameon=False, fontsize=12)
     _ = axes.grid(axis="x", alpha=PLOT_STYLE["grid_alpha"])
     _ = axes.grid(axis="y", visible=False)
@@ -159,11 +152,10 @@ def plot_ladder(artifact: Artifact, out: Path) -> None:
         ("Null: repository constraint dropped", "null_repo_free", COLORS["accent"], ":", "D"),
     ]
     pairs = int(_summary(artifact, "observed")["pairs"])
-    curves = {
-        name: [sum(_summary(artifact, name)["depth_histogram"][depth:])
-               for depth in range(len(_summary(artifact, name)["depth_histogram"]))]
-        for _label, name, _color, _dashes, _marker in series
-    }
+    curves: dict[str, list[float]] = {}
+    for _label, name, *_style in series:
+        histogram = _summary(artifact, name)["depth_histogram"]
+        curves[name] = [sum(histogram[depth:]) for depth in range(len(histogram))]
     # Past the point where the observed corpus holds fewer than ten pairs, a log
     # axis magnifies single-pair noise into an apparent divergence. The tail is
     # cut and its total stated instead of being drawn as if it were resolved.
@@ -192,7 +184,8 @@ def plot_ladder(artifact: Artifact, out: Path) -> None:
 
 def plot_bars(artifact: Artifact, out: Path) -> None:
     """The percentage estimands as grouped bars, with the null's 95% interval."""
-    observed, null, band = _summary(artifact, "observed"), _summary(artifact, "null_same_repo"), _interval(artifact, "null_same_repo")
+    observed = _summary(artifact, "observed")
+    null, band = _summary(artifact, "null_same_repo"), _interval(artifact, "null_same_repo")
     free = _summary(artifact, "null_repo_free")
     positions = np.arange(len(PERCENT_KEYS))
     width = 0.27
@@ -225,10 +218,9 @@ def plot_by_k(artifact: Artifact, out: Path) -> None:
     by_k = artifact["by_concern_count"]
     counts = sorted(by_k, key=int)
     positions = np.arange(len(counts))
-    width = 0.35
     figure, (left, right) = plt.subplots(1, 2, figsize=(11, 5))
     for axes, key, title in ((left, "mean_file_share", "Same file"), (right, "mean_directory_share", "Same directory")):
-        _ = axes.bar(positions, [by_k[k][key] for k in counts], width * 2, color=COLORS["secondary"],
+        _ = axes.bar(positions, [by_k[k][key] for k in counts], 0.7, color=COLORS["secondary"],
                      hatch=HATCH_PATTERNS[0], edgecolor="white", linewidth=0.8)
         _ = axes.set_xticks(positions)
         _ = axes.set_xticklabels([f"k={k}\n(n={int(by_k[k]['commits'])})" for k in counts], fontsize=12)
