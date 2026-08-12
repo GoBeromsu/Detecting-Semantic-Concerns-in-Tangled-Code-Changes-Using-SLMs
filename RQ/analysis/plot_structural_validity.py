@@ -227,9 +227,6 @@ def plot_by_k(artifact: Artifact, out: Path) -> None:
         _ = axes.set_title(title)
         _ = axes.set_ylabel("Concerns sharing ground with another (%)")
         _ = axes.grid(axis="y", alpha=PLOT_STYLE["grid_alpha"])
-    # Directory share climbs monotonically; file share does not (k=5 sits below
-    # k=4), so the title claims dependence on k rather than a rising trend.
-    _ = figure.suptitle("Concern share depends on k, so every estimate is reported k-stratified")
     figure.tight_layout()
     figure.savefig(out, dpi=DPI)
     plt.close(figure)
