@@ -30,7 +30,6 @@ dependencies = [
     "trl>=0.20",
     "scipy>=1.15.3",
     "scikit-learn>=1.7.2",
-    "tree-sitter-language-pack==1.14.3",
 ]
 
 [project.optional-dependencies]

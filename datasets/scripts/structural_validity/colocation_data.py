@@ -4,21 +4,18 @@ from __future__ import annotations
 
 import csv
 import json
-import math
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from itertools import combinations
 from pathlib import Path
-from statistics import median
-from typing import Final
+from typing import Final, Literal
 
 from pydantic import TypeAdapter
 
 from .diff_metrics import pair_diff_metrics, parse_committed_diff
 
 CONCERN_COUNTS: Final[tuple[int, ...]] = (2, 3, 4, 5)
-LINE_GAP_THRESHOLDS: Final[tuple[int, int]] = (10, 50)
 SPLIT_NAMES: Final[tuple[str, str]] = ("train", "test")
 _SHA_LIST_ADAPTER: Final[TypeAdapter[list[str]]] = TypeAdapter(list[str])
 _DATA_DIR: Final[Path] = Path(__file__).resolve().parents[1] / "data"
@@ -39,21 +36,13 @@ class PairRow:
 @dataclass(frozen=True, slots=True)
 class SummaryRow:
     split: str
-    k: int
+    k: int | None
     n_rows: int
-    pct_rows_same_dir: float
-    pct_rows_same_file: float
-    pct_rows_same_function: float
     n_pairs: int
-    pct_pairs_same_dir: float
+    pct_rows_same_file: float
+    pct_rows_same_dir: float
     pct_pairs_same_file: float
-    pct_pairs_same_function: float
-    n_sharing_pairs: int
-    median_min_line_gap: float | None
-    q1_min_line_gap: float | None
-    q3_min_line_gap: float | None
-    pct_gap_le10: float | None
-    pct_gap_le50: float | None
+    pct_pairs_same_dir: float
 
 
 def load_diff_by_sha(path: Path) -> dict[str, str]:
@@ -105,88 +94,64 @@ def load_pairs_by_split_k(
 
 
 def summarize_by_split_k(pairs: Sequence[PairRow]) -> tuple[SummaryRow, ...]:
-    """Aggregate pair evidence into the historical train/test by-k schema."""
+    """Aggregate pair evidence into per-k, per-split pooled, and combined rows.
+
+    Emits one row per (split, k) stratum for k=2..5, followed by one pooled
+    `overall` row per split (`k=None`, aggregating that split's own k=2..5
+    rows), followed by one combined `all`-split pooled row (`k=None`,
+    aggregating both splits together) so the 1,400-row multi-concern
+    denominator has a direct row in the output.
+    """
     summaries: list[SummaryRow] = []
     for split_name in SPLIT_NAMES:
+        split_rows = tuple(row for row in pairs if row.split == split_name)
         for concern_count in CONCERN_COUNTS:
-            stratum = tuple(
-                row
-                for row in pairs
-                if row.split == split_name and row.concern_count == concern_count
-            )
+            stratum = tuple(row for row in split_rows if row.concern_count == concern_count)
             if not stratum:
                 continue
-            gaps = tuple(
-                row.min_line_gap
-                for row in stratum
-                if row.same_file and row.min_line_gap is not None
-            )
-            summaries.append(_summarize_stratum(split_name, concern_count, stratum, gaps))
+            summaries.append(_summarize_stratum(split_name, concern_count, stratum))
+        if split_rows:
+            summaries.append(_summarize_stratum(split_name, None, split_rows))
+    if pairs:
+        summaries.append(_summarize_stratum("all", None, tuple(pairs)))
     return tuple(summaries)
 
 
 def _summarize_stratum(
     split_name: str,
-    concern_count: int,
+    concern_count: int | None,
     rows: Sequence[PairRow],
-    gaps: Sequence[int],
 ) -> SummaryRow:
-    row_ids = frozenset(row.row_idx for row in rows)
+    n_rows = len({(row.split, row.row_idx) for row in rows})
     return SummaryRow(
         split=split_name,
         k=concern_count,
-        n_rows=len(row_ids),
-        pct_rows_same_dir=_row_any_rate(rows, row_ids, "dir"),
-        pct_rows_same_file=_row_any_rate(rows, row_ids, "file"),
-        pct_rows_same_function=_row_any_rate(rows, row_ids, "function"),
+        n_rows=n_rows,
         n_pairs=len(rows),
-        pct_pairs_same_dir=_bool_rate(tuple(row.same_dir for row in rows)),
+        pct_rows_same_file=_row_any_rate(rows, "file"),
+        pct_rows_same_dir=_row_any_rate(rows, "dir"),
         pct_pairs_same_file=_bool_rate(tuple(row.same_file for row in rows)),
-        pct_pairs_same_function=_bool_rate(tuple(row.same_function for row in rows)),
-        n_sharing_pairs=len(gaps),
-        median_min_line_gap=float(median(gaps)) if gaps else None,
-        q1_min_line_gap=_percentile(gaps, 0.25),
-        q3_min_line_gap=_percentile(gaps, 0.75),
-        pct_gap_le10=_threshold_rate(gaps, LINE_GAP_THRESHOLDS[0]),
-        pct_gap_le50=_threshold_rate(gaps, LINE_GAP_THRESHOLDS[1]),
+        pct_pairs_same_dir=_bool_rate(tuple(row.same_dir for row in rows)),
     )
 
 
-def _row_any_rate(
-    rows: Sequence[PairRow], row_ids: frozenset[int], metric: str
-) -> float:
-    positives = 0
-    for row_idx in row_ids:
-        row_pairs = tuple(row for row in rows if row.row_idx == row_idx)
-        if metric == "dir":
-            matched = any(row.same_dir for row in row_pairs)
-        elif metric == "file":
-            matched = any(row.same_file for row in row_pairs)
-        else:
-            matched = any(row.same_function for row in row_pairs)
-        positives += int(matched)
-    return 100.0 * positives / len(row_ids)
+def _row_any_rate(rows: Sequence[PairRow], metric: Literal["dir", "file"]) -> float:
+    """Share of distinct (split, row_idx) commits with >=1 co-locating pair.
+
+    Keyed by (split, row_idx) rather than row_idx alone so that pooling pairs
+    across both splits (the combined `all` row) never conflates a train row
+    and a test row that happen to share a row_idx.
+    """
+    seen: dict[tuple[str, int], bool] = {}
+    for row in rows:
+        key = (row.split, row.row_idx)
+        matched = row.same_dir if metric == "dir" else row.same_file
+        seen[key] = seen.get(key, False) or matched
+    return 100.0 * sum(seen.values()) / len(seen)
 
 
 def _bool_rate(values: Sequence[bool]) -> float:
     return 100.0 * sum(values) / len(values)
-
-
-def _threshold_rate(gaps: Sequence[int], threshold: int) -> float | None:
-    return 100.0 * sum(gap <= threshold for gap in gaps) / len(gaps) if gaps else None
-
-
-def _percentile(values: Sequence[int], quantile: float) -> float | None:
-    if not values:
-        return None
-    ordered = sorted(values)
-    position = (len(ordered) - 1) * quantile
-    lower = math.floor(position)
-    upper = math.ceil(position)
-    if lower == upper:
-        return float(ordered[lower])
-    weight = position - lower
-    return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
 
 
 def _required(row: Mapping[str, str | None], key: str) -> str:
