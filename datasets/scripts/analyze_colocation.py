@@ -22,6 +22,26 @@ train/test and by concern_count k=2..5, plus a pooled `overall` row per
 split and one combined all-splits pooled row over the 1,400 multi-concern
 rows (train 1,120 + test 280).
 
+Interpretation notes (why the numbers look the way they do):
+
+  * Row-level rates rise with k mostly by opportunity count, not by pairs
+    getting closer: a k-concern row holds C(k,2) pairs, so the per-pair
+    folder rate stays roughly flat across k (train ~3-7%) while the
+    "any pair co-locates" row rate climbs from 3.2% (k=2, one pair) to
+    39.6% (k=5, ten pairs).
+  * Per-cell test-split rates are small-sample, repo-composition effects
+    (70 rows per k drawn from 15 repositories), which is how test k=5
+    reaches 92.9% same-folder. Quote the pooled all/overall row (1,400
+    rows: 7.1% same-file, 28.6% same-folder) as the headline, not
+    individual cells.
+  * Same-file is NOT monotonic in k (train: 10.7% at k=4 -> 8.6% at k=5):
+    larger k spreads a commit across more atomics without proportionally
+    adding shared-file edits per pair. Phrase any rises-with-k claim
+    against the folder rate, not the file rate.
+  * Folder identity is full-dirname equality with the repository root
+    included, so these rates are not comparable to the older published
+    16.7% "non-root directory" figure.
+
 Read-only w.r.t. datasets/data/: never writes there, and the pool/HF are
 never touched.
 Run with: uv run python datasets/scripts/analyze_colocation.py --output-dir DIR
