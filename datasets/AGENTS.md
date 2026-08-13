@@ -14,7 +14,7 @@ Stage 1: taxonomy remap (style/perf→refactor, chore dropped → 7 types), toke
 Stage 2: **intra-repo tangling only** (no cross-repo — avoids style leakage), seeded reuse-weighted selection, repo-disjoint 80/20 split.
 Stage 3: asserts repo-disjointness, per-type uniformity, exact per-count row counts, no duplicate SHA-sets, real tiktoken budget re-check.
 
-Other scripts (`analyze_token_distribution`, `concern_token_boxplot`, `analyze_colocation`, `compare_synthetic_vs_real_tangled`, `audit_combination_coverage`, `verify_hf_sync`, plot_*) are diagnostics — not part of the build chain.
+Other scripts (`analyze_token_distribution`, `concern_token_boxplot`, `analyze_colocation`, `audit_combination_coverage`, `verify_hf_sync`, plot_*) are diagnostics — not part of the build chain.
 
 ## Invariants (assertion boundaries — scripts fail loudly)
 - `SEED=43`, `MAX_TOKENS=12288`, 7 types, concern counts 1–5.

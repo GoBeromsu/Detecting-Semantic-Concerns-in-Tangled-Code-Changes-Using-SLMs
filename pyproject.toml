@@ -77,8 +77,14 @@ packages = ["utils", "visual_eval"]
 
 
 [tool.pytest.ini_options]
+pythonpath = ["datasets/scripts"]
 markers = [
     "slow: long-running checks (full-dataset re-encodes, pipeline re-runs)",
     "network: requires network access",
     "gpu: requires a CUDA device",
 ]
+
+[tool.basedpyright]
+venvPath = "."
+venv = ".venv"
+extraPaths = ["datasets/scripts"]

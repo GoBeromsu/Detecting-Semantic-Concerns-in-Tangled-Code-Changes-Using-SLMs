@@ -168,11 +168,6 @@ def plot_distribution(
     fig.legend(
         handles, labels, loc="upper center", ncol=n_types, bbox_to_anchor=(0.5, 1.04), framealpha=0.9
     )
-    fig.suptitle(
-        "Exact 1/7 uniform label distribution per concern count (seed 42)",
-        y=1.1,
-        fontweight="bold",
-    )
 
     plt.tight_layout()
     output_path.parent.mkdir(parents=True, exist_ok=True)
