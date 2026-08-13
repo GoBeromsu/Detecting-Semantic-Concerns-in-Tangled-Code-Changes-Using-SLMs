@@ -53,25 +53,28 @@ TEST_EXPECTED_TOTAL_PER_TYPE = sum(TEST_EXPECTED_PER_TYPE_PER_K.values())  # 150
 # are assigned by type identity, never by rank/count, so they stay stable
 # across panels and future re-runs even if the underlying counts change.
 TYPE_COLORS = {
+    # First three reuse the palette the RQ figures already establish
+    # (COLORS primary / secondary / accent); the remaining four extend that
+    # family at the same saturation band, spaced apart in grayscale luminance.
     "feat": "#2E86AB",
     "fix": "#A23B72",
     "refactor": "#F18F01",
-    "test": "#C73E1D",
-    "docs": "#5B8C5A",
-    "build": "#6A4C93",
-    "ci": "#7A9CB4",
+    "test": "#B02E26",
+    "docs": "#3FA34D",
+    "build": "#7B4EA8",
+    "ci": "#8FB3C7",
 }
 
 # One distinct hatch per type so the seven bars stay separable in grayscale,
 # mirroring the colour+hatch pairing the RQ boxplots already use.
 TYPE_HATCHES = {
     "feat": "",
-    "fix": "///",
-    "refactor": "xxx",
-    "test": "|||",
-    "docs": "...",
-    "build": "--",
-    "ci": "++",
+    "fix": "//",
+    "refactor": "xx",
+    "test": "||",
+    "docs": "..",
+    "build": "-",
+    "ci": "+",
 }
 
 # ASCII dot-art scale: 1 dot per N labels, chosen so the widest bar (k=5)
@@ -140,45 +143,46 @@ def validate_counts(
 def plot_distribution(
     train_counts: Dict[int, Counter], test_counts: Dict[int, Counter], output_path: Path
 ) -> Path:
-    """Two-panel grouped bar chart (train, test); x-axis = concern count k,
-    one bar per type at each k. Counts are exactly uniform across types at
-    every k by design, so the visual point is that all 7 bars are identical
-    height at every k.
+    """Single-panel grouped bar chart over the whole tangled dataset; x-axis =
+    concern count k, one bar per type at each k. Train and test are pooled
+    because the pipeline enforces the same exact-uniform label frequency in
+    both splits, so two panels would show the same shape twice; the split-wise
+    counts are still validated separately before pooling, and the ASCII matrix
+    below still prints them per split.
     """
     setup_plot_style()
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    fig, ax = plt.subplots(figsize=PLOT_STYLE["figure_size"])
 
     n_types = len(TYPES)
     bar_width = 0.8 / n_types
     x_positions = list(range(len(CONCERN_COUNTS)))
 
-    for ax, counts, split_name in zip(axes, [train_counts, test_counts], ["Train", "Test"]):
-        for i, t in enumerate(TYPES):
-            offsets = [xi + (i - n_types / 2 + 0.5) * bar_width for xi in x_positions]
-            values = [counts[k][t] for k in CONCERN_COUNTS]
-            ax.bar(
-                offsets,
-                values,
-                width=bar_width,
-                color=TYPE_COLORS[t],
-                hatch=TYPE_HATCHES[t],
-                label=t,
-                edgecolor=COLORS["text"],
-                linewidth=0.5,
-            )
+    for i, t in enumerate(TYPES):
+        offsets = [xi + (i - n_types / 2 + 0.5) * bar_width for xi in x_positions]
+        values = [train_counts[k][t] + test_counts[k][t] for k in CONCERN_COUNTS]
+        ax.bar(
+            offsets,
+            values,
+            width=bar_width,
+            color=TYPE_COLORS[t],
+            hatch=TYPE_HATCHES[t],
+            label=t,
+            edgecolor=COLORS["text"],
+            linewidth=0.5,
+        )
 
-        ax.set_xticks(x_positions)
-        ax.set_xticklabels([str(k) for k in CONCERN_COUNTS])
-        ax.set_xlabel(f"Concern Count ({split_name})", fontweight="bold", color=COLORS["text"])
-        ax.set_ylabel("Label Count", fontweight="bold", color=COLORS["text"])
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels([str(k) for k in CONCERN_COUNTS])
+    ax.set_xlabel("Concern Count", fontweight="bold", color=COLORS["text"])
+    ax.set_ylabel("Label Count", fontweight="bold", color=COLORS["text"])
 
-        ax.grid(True, axis="y", alpha=PLOT_STYLE["grid_alpha"], linestyle="-", linewidth=0.5)
-        ax.grid(False, axis="x")
-        ax.set_axisbelow(True)
+    ax.grid(True, axis="y", alpha=PLOT_STYLE["grid_alpha"], linestyle="-", linewidth=0.5)
+    ax.grid(False, axis="x")
+    ax.set_axisbelow(True)
 
-    handles, labels = axes[0].get_legend_handles_labels()
+    handles, labels = ax.get_legend_handles_labels()
     fig.legend(
-        handles, labels, loc="upper center", ncol=n_types, bbox_to_anchor=(0.5, 1.04), framealpha=0.9
+        handles, labels, loc="upper center", ncol=n_types, bbox_to_anchor=(0.5, 1.02), framealpha=0.9
     )
 
     plt.tight_layout()
