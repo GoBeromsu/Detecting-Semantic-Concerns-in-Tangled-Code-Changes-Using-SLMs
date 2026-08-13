@@ -10,19 +10,17 @@ unreliability is the stated reason for removing FilterByAtomicity (C2.5).
 For every synthetic tangled row with concern_count k>=2, this reconstructs
 each constituent atomic commit's diff (via `shas` -> data/CCS Dataset.csv)
 and measures, over all C(k,2) concern pairs within the row, how often the
-two concerns land in the same place at three granularities:
+two concerns land in the same place at two granularities:
 
-  FILES:      share a common file; share a common directory (full dirname,
-              see NOTE below).
-  FUNCTIONS:  share a common function context, using an `@@ hunk header`
-              heuristic (see NOTE below on its limits).
-  LINES:      for pairs that share a file, the minimum line-gap between
-              their edits in that file (median, IQR, and the share of
-              sharing pairs within 10/50 lines).
+  FILES:    share a common file.
+  FOLDERS:  share a common directory (full dirname, repository root
+            included -- two root-level files count as sharing a folder).
 
 Both a per-row rate (does >=1 pair in the row co-locate) and a per-pair
 rate (what fraction of all pairs co-locate) are reported, split by
-train/test and by concern_count k=2..5.
+train/test and by concern_count k=2..5, plus a pooled `overall` row per
+split and one combined all-splits pooled row over the 1,400 multi-concern
+rows (train 1,120 + test 280).
 
 Read-only w.r.t. datasets/data/: never writes there, and the pool/HF are
 never touched.
@@ -50,7 +48,6 @@ from structural_validity.colocation_cli import (
 )
 from structural_validity.colocation_data import (
     CONCERN_COUNTS,
-    LINE_GAP_THRESHOLDS,
     PairRow,
     SummaryRow,
     load_pairs_by_split_k,
@@ -59,7 +56,6 @@ from structural_validity.colocation_data import (
 from structural_validity.colocation_report import (
     build_factual_summary,
     build_summary_markdown,
-    format_latex_table,
     format_markdown_table,
     write_summary_csv,
 )
@@ -81,7 +77,6 @@ __all__ = (
     "DATA_DIR",
     "DEFAULT_OUTPUT_DIR",
     "ExistingOutputError",
-    "LINE_GAP_THRESHOLDS",
     "OUTPUT_DIR",
     "PROJECT_ROOT",
     "PairRow",
@@ -92,7 +87,6 @@ __all__ = (
     "build_summary_markdown",
     "dirname_of",
     "file_path_from_block",
-    "format_latex_table",
     "format_markdown_table",
     "load_pairs_by_split_k",
     "main",
