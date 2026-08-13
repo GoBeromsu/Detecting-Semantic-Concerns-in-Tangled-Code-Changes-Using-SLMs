@@ -53,13 +53,25 @@ TEST_EXPECTED_TOTAL_PER_TYPE = sum(TEST_EXPECTED_PER_TYPE_PER_K.values())  # 150
 # are assigned by type identity, never by rank/count, so they stay stable
 # across panels and future re-runs even if the underlying counts change.
 TYPE_COLORS = {
-    "feat": "#2a78d6",
-    "fix": "#eb6834",
-    "refactor": "#1baf7a",
-    "test": "#eda100",
-    "docs": "#e87ba4",
-    "build": "#008300",
-    "ci": "#4a3aa7",
+    "feat": "#2E86AB",
+    "fix": "#A23B72",
+    "refactor": "#F18F01",
+    "test": "#C73E1D",
+    "docs": "#5B8C5A",
+    "build": "#6A4C93",
+    "ci": "#7A9CB4",
+}
+
+# One distinct hatch per type so the seven bars stay separable in grayscale,
+# mirroring the colour+hatch pairing the RQ boxplots already use.
+TYPE_HATCHES = {
+    "feat": "",
+    "fix": "///",
+    "refactor": "xxx",
+    "test": "|||",
+    "docs": "...",
+    "build": "--",
+    "ci": "++",
 }
 
 # ASCII dot-art scale: 1 dot per N labels, chosen so the widest bar (k=5)
@@ -149,16 +161,16 @@ def plot_distribution(
                 values,
                 width=bar_width,
                 color=TYPE_COLORS[t],
+                hatch=TYPE_HATCHES[t],
                 label=t,
                 edgecolor=COLORS["text"],
                 linewidth=0.5,
             )
 
         ax.set_xticks(x_positions)
-        ax.set_xticklabels([f"k={k}" for k in CONCERN_COUNTS])
-        ax.set_xlabel("Concern Count", fontweight="bold", color=COLORS["text"])
+        ax.set_xticklabels([str(k) for k in CONCERN_COUNTS])
+        ax.set_xlabel(f"Concern Count ({split_name})", fontweight="bold", color=COLORS["text"])
         ax.set_ylabel("Label Count", fontweight="bold", color=COLORS["text"])
-        ax.set_title(split_name, fontweight="bold")
 
         ax.grid(True, axis="y", alpha=PLOT_STYLE["grid_alpha"], linestyle="-", linewidth=0.5)
         ax.grid(False, axis="x")
