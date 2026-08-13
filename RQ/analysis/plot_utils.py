@@ -15,12 +15,12 @@ from typing import Optional
 # Human‑readable display names for model labels in figures
 # Keeps CSV/model keys intact while unifying how names appear in legends/ticks
 DISPLAY_NAME_MAP = {
-    "Qwen": "Qwen3",
-    "Qwen (FT)": "Qwen3-FT",
-    "QwenFT": "Qwen3-FT",
+    "Qwen": "Qwen3.6",
+    "Qwen (FT)": "Qwen3.6-FT",
+    "QwenFT": "Qwen3.6-FT",
     "LLM": "GPT-4.1",
-    "SLM": "Qwen3",
-    "Fine-tuned SLM": "Qwen3-FT",
+    "SLM": "Qwen3.6",
+    "Fine-tuned SLM": "Qwen3.6-FT",
 }
 
 
