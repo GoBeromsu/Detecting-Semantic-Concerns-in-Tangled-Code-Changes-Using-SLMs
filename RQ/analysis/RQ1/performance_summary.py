@@ -242,6 +242,21 @@ def main():
     csv_path = output_dir / "performance_summary.csv"
     df.to_csv(csv_path, index=False, float_format="%.2f")
 
+    # Long-format avg/min/max summary for the manuscript table (one row per model)
+    latex_rows = []
+    for model_name, model_df in csv_data.items():
+        hl_values = model_df["hamming_loss"]
+        latex_rows.append(
+            {
+                "group_key": display_model_name(model_name),
+                "avg": round(float(hl_values.mean()), 2),
+                "min": round(float(hl_values.min()), 2),
+                "max": round(float(hl_values.max()), 2),
+            }
+        )
+    latex_csv_path = output_dir / "performance_summary_latex.csv"
+    pd.DataFrame(latex_rows).to_csv(latex_csv_path, index=False, float_format="%.2f")
+
     # Print summary table
     print("\n=== Performance Summary ===")
     columns = list(df.columns)
@@ -257,6 +272,7 @@ def main():
 
     print(f"\nResults saved to:")
     print(f"  Summary CSV: {csv_path}")
+    print(f"  Table CSV: {latex_csv_path}")
     print(f"  Box plot: {plot_path}")
 
 

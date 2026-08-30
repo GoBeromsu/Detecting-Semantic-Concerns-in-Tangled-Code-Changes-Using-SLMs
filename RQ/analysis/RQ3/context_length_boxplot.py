@@ -230,6 +230,41 @@ def main():
         f"Loaded {total_samples} total samples across {total_contexts} context lengths from {len(script_config['models'])} models"
     )
 
+    # Long-format avg/min/max summary for the manuscript table (model x context length)
+    context_lengths = sorted(csv_data_by_context.keys(), key=lambda v: int(v))
+    model_names = []
+    for context_data in csv_data_by_context.values():
+        for name in context_data.keys():
+            if name not in model_names:
+                model_names.append(name)
+    latex_rows = []
+    for model_name in model_names:
+        for context_length in context_lengths:
+            context_data = csv_data_by_context.get(context_length, {})
+            if model_name not in context_data:
+                print(f"WARNING: missing {model_name} at context length {context_length}")
+                latex_rows.append(
+                    {
+                        "group_key": f"{display_model_name(model_name)}|{context_length}",
+                        "avg": "",
+                        "min": "",
+                        "max": "",
+                    }
+                )
+                continue
+            hl_values = context_data[model_name]["hamming_loss"]
+            latex_rows.append(
+                {
+                    "group_key": f"{display_model_name(model_name)}|{context_length}",
+                    "avg": round(float(hl_values.mean()), 2),
+                    "min": round(float(hl_values.min()), 2),
+                    "max": round(float(hl_values.max()), 2),
+                }
+            )
+    latex_csv_path = output_dir / "context_length_summary_latex.csv"
+    pd.DataFrame(latex_rows).to_csv(latex_csv_path, index=False, float_format="%.2f")
+    print(f"Table CSV: {latex_csv_path}")
+
     # Generate Hamming Loss box plot only
     print("\nGenerating Context Length Hamming Loss box plot...")
 

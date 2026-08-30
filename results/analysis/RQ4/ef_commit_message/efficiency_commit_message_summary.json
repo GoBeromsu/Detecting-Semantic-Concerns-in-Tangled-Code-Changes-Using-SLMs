@@ -1,6 +1,6 @@
 {
   "analysis_info": {
-    "timestamp": "2026-08-06T11:10:02.507264+00:00",
+    "timestamp": "2026-08-25T15:22:52.594328+00:00",
     "analysis_type": "efficiency_commit_message_correlation",
     "input_files": [
       "/Users/beomsu/Documents/01_Project/EMSE/Concern-is-All-You-Need/results/Qwen3.6-27B-LoRA/avg_result/msg0/12288_zs.csv",

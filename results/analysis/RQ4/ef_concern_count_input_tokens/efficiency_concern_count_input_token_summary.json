@@ -1,6 +1,6 @@
 {
   "analysis_info": {
-    "timestamp": "2026-08-06T11:10:06.442544+00:00",
+    "timestamp": "2026-08-25T15:22:56.155118+00:00",
     "analysis_type": "efficiency_concern_count_input_token_analysis",
     "input_files": [
       "/Users/beomsu/Documents/01_Project/EMSE/Concern-is-All-You-Need/results/Qwen3.6-27B-LoRA/avg_result/msg1/qwen3.6_aggregated.csv"

@@ -353,6 +353,34 @@ def main():
     for model_name, model_data in csv_data.items():
         print(f"  {model_name}: {sum(len(df) for df in model_data.values())} samples")
 
+    # Long-format avg/min/max summary for the manuscript table (model x condition)
+    latex_rows = []
+    for model_name, model_data in csv_data.items():
+        for condition in ["Without Msg", "With Msg"]:
+            if condition not in model_data:
+                print(f"WARNING: missing condition {condition} for {model_name}")
+                latex_rows.append(
+                    {
+                        "group_key": f"{display_model_name(model_name)}|{condition}",
+                        "avg": "",
+                        "min": "",
+                        "max": "",
+                    }
+                )
+                continue
+            hl_values = model_data[condition]["hamming_loss"]
+            latex_rows.append(
+                {
+                    "group_key": f"{display_model_name(model_name)}|{condition}",
+                    "avg": round(float(hl_values.mean()), 2),
+                    "min": round(float(hl_values.min()), 2),
+                    "max": round(float(hl_values.max()), 2),
+                }
+            )
+    latex_csv_path = output_dir / "msg_impact_summary_latex.csv"
+    pd.DataFrame(latex_rows).to_csv(latex_csv_path, index=False, float_format="%.2f")
+    print(f"Table CSV: {latex_csv_path}")
+
     # Generate clean box plot
     print("\nGenerating Message Impact box plot...")
     plot_path = create_msg_impact_boxplot(csv_data, output_dir)
