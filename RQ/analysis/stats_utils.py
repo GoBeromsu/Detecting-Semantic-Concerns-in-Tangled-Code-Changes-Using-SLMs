@@ -6,6 +6,7 @@ Provides:
 - wilcoxon_signed_rank: Paired non-parametric significance test
 - detect_outliers_iqr: Outlier detection using IQR method
 - compute_pairwise_stats: Wrapper that computes stats + formatted values
+- mean_ci: Commit-level mean with a normal confidence interval
 
 Statistical Test Choice (following Arcuri & Briand 2014):
 - Wilcoxon Signed-Rank Test is used for pairwise model comparisons because:
@@ -21,7 +22,7 @@ import json
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
-from scipy.stats import rankdata, wilcoxon
+from scipy.stats import norm, rankdata, sem, wilcoxon
 
 # Default threshold for outlier detection
 OUTLIER_THRESHOLD_IQR = 1.5
@@ -258,6 +259,46 @@ def detect_outliers_iqr(
 # Formatting constants
 P_VALUE_THRESHOLD = 0.001
 DECIMAL_PLACES = 3
+
+
+def mean_ci(df: pd.DataFrame, metric: str = "hamming_loss", confidence: float = 0.95) -> dict:
+    """Commit-level mean of `metric` with a normal confidence interval.
+
+    Each `avg_result` file holds every repeated run of the same commit, so rows are clustered
+    by commit rather than independent. The metric is first averaged within each commit
+    (keyed by the normalized `shas`), and the interval is then computed over those per-commit
+    means with `scipy.stats.norm.interval` and `scipy.stats.sem`.
+
+    Returns:
+        dict with mean, ci_low, ci_high, n_commits, n_rows
+    """
+    required = {"shas", metric}
+    missing = required.difference(df.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {', '.join(sorted(missing))}")
+    if not 0 < confidence < 1:
+        raise ValueError("confidence must be between 0 and 1")
+    if df.empty:
+        raise ValueError("Cannot summarize an empty data frame")
+    if df["shas"].isna().any():
+        raise ValueError("shas must not contain missing values")
+    metric_values = pd.to_numeric(df[metric], errors="coerce")
+    if metric_values.isna().any() or not np.isfinite(metric_values).all():
+        raise ValueError(f"{metric} must contain finite numeric values")
+    per_commit = metric_values.groupby(df["shas"].map(commit_key)).mean()
+    n = len(per_commit)
+    mean = float(per_commit.mean())
+    if n > 1:
+        ci_low, ci_high = norm.interval(confidence, loc=mean, scale=sem(per_commit))
+    else:
+        ci_low = ci_high = mean
+    return {
+        "mean": mean,
+        "ci_low": float(ci_low),
+        "ci_high": float(ci_high),
+        "n_commits": int(n),
+        "n_rows": int(len(df)),
+    }
 
 
 def compute_pairwise_stats(model_a: ArrayLike, model_b: ArrayLike, sig_threshold: float = 0.05) -> dict:

@@ -42,6 +42,10 @@ rq1:
         "Qwen (FT)":
           csv_path: "results/Qwen3.6-27B-LoRA/avg_result/msg1/12288_zs.csv"
 
+    performance_summary_ci:
+      file: "performance_summary_ci.py"
+      description: "Summary table by concern count with commit-level 95% CI (manuscript Table 1)"
+
     concern_count_boxplot:
       file: "concern_count_boxplot.py"
       description: "Generates concern count box plots by concern count and model"
@@ -108,6 +112,10 @@ rq2:
           msg0_path: "results/Qwen3.6-27B-LoRA/avg_result/msg0/12288_zs.csv"
           msg1_path: "results/Qwen3.6-27B-LoRA/avg_result/msg1/12288_zs.csv"
 
+    msg_impact_summary_ci:
+      file: "msg_impact_summary_ci.py"
+      description: "Summary table by commit-message inclusion with commit-level 95% CI (manuscript Table 3)"
+
     msg_impact_pairwise_pvalue:
       file: "msg_impact_pairwise_pvalue.py"
       description: "Generates pairwise p-value tables for message impact (msg0 vs msg1)"
@@ -141,6 +149,10 @@ rq3:
           csv_path_pattern: "results/Qwen3.6-27B/avg_result/msg1/{context}_zs.csv"
         "Qwen (FT)":
           csv_path_pattern: "results/Qwen3.6-27B-LoRA/avg_result/msg1/{context}_zs.csv"
+
+    context_length_summary_ci:
+      file: "context_length_summary_ci.py"
+      description: "Summary table by token budget with commit-level 95% CI (manuscript Table 5)"
 
     context_length_boxplot:
       file: "context_length_boxplot.py"
