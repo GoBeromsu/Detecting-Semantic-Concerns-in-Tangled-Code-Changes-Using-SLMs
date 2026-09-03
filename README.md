@@ -4,7 +4,7 @@ Replication package for the preprint **[Detecting Multiple Semantic Concerns in 
 
 | | |
 |---|---|
-| **Paper** | [arXiv:2601.21298](https://arxiv.org/abs/2601.21298) — preprint; extended version currently under peer review |
+| **Paper** | [arXiv:2601.21298](https://arxiv.org/abs/2601.21298) — preprint|
 | **Authors** | Beomsu Koh, Neil Walkinshaw, Donghwan Shin |
 | **Affiliation** | The main part of this work was carried out at the **University of Sheffield** |
 | **Dataset** | [`Berom0227/tangled-ccs-commits`](https://huggingface.co/datasets/Berom0227/tangled-ccs-commits) |
