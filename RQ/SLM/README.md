@@ -4,8 +4,8 @@ Two independent paths are preserved:
 
 | Path | Purpose | Entry points |
 |---|---|---|
-| Local Unsloth | Qwen3.6-27B BF16, unmerged LoRA adapter | `python -m RQ.SLM.unsloth.{probe,preflight,train,memory,infer}` |
-| Legacy | Published Qwen3-14B/GGUF results | `RQ/SLM/{train,infer,convert_to_gguf}.py` and protected legacy shells |
+| Current manuscript | Qwen3.6-27B BF16, unmerged LoRA adapter | `python -m RQ.SLM.unsloth.{probe,preflight,train,memory,infer}` |
+| arXiv v1 legacy | Qwen3-14B/GGUF results | `RQ/SLM/{train,infer,convert_to_gguf}.py` and protected legacy shells |
 
 The legacy path is unchanged. The local path is the `RQ/SLM/unsloth/` package.
 
@@ -98,9 +98,9 @@ Inference flags are `--config`, `--adapter`, `--data-source {local,hub}`, `--res
 | `unsloth/infer_options.py` | GPU-free inference options |
 | `unsloth/_types.py`, `unsloth/_memory_types.py`, `unsloth/_memory_worker.py` | private shared support |
 
-## Legacy path
+## arXiv v1 legacy path
 
-The published-results path remains unchanged:
+The arXiv v1 results path remains unchanged:
 
 ```bash
 python RQ/SLM/train.py --config RQ/SLM/configs/qwen.yml

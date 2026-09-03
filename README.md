@@ -1,208 +1,194 @@
-# Detecting Multiple Semantic Concerns in Tangled Code Commits using Small Language Models
+# Detecting Multiple Semantic Concerns in Tangled Code Commits
 
-**Author:** Beomsu Koh
-**Institution:** University of Sheffield
-**Project Type:** MSc Computer Science Dissertation
-**Dataset:** [Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs](https://huggingface.co/datasets/Berom0227/Detecting-Semantic-Concerns-in-Tangled-Code-Changes-Using-SLMs)
+Replication package for the preprint **[Detecting Multiple Semantic Concerns in Tangled Code Commits](https://arxiv.org/abs/2601.21298)** (arXiv:2601.21298, cs.SE).
+
+| | |
+|---|---|
+| **Paper** | [arXiv:2601.21298](https://arxiv.org/abs/2601.21298) — preprint; extended version currently under peer review |
+| **Authors** | Beomsu Koh, Neil Walkinshaw, Donghwan Shin |
+| **Affiliation** | The main part of this work was carried out at the **University of Sheffield** |
+| **Dataset** | [`Berom0227/tangled-ccs-commits`](https://huggingface.co/datasets/Berom0227/tangled-ccs-commits) |
+| **Model** | [`Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter`](https://huggingface.co/Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter) (LoRA adapter) |
+| **License** | MIT |
+
+Until the paper completes peer review, please cite the arXiv version ([citation](#citation)). This repository tracks the **revised manuscript**, whose primary SLM is Qwen3.6-27B; the arXiv v1 preprint reports the earlier Qwen3-14B configuration, which is kept here unchanged for provenance.
 
 ## Overview
 
-This repository contains the complete implementation and analysis for detecting semantic concerns in tangled code changes using Small Language Models (SLMs). The project investigates how fine-tuned SLMs can identify and separate different types of concerns (e.g., fixes, features, refactoring) in multi-concern commits.
+Commits should be atomic, but developers routinely bundle several concerns into a single tangled commit. This repository frames multi-concern detection as a **multi-label classification** problem over the Conventional Commits Specification (CCS) taxonomy, builds a controlled dataset of artificially tangled commits from real-world data, and evaluates Small Language Models (SLMs) against a GPT-4.1 baseline.
 
-## Project Structure
+The package contains everything needed to reproduce the study end to end:
 
-```text
-├── datasets/                    # Dataset creation and processing
-│   ├── data/                   # Raw and processed datasets
-│   │   ├── CCS Dataset.csv
-│   │   ├── repo_grouped_pool.csv
-│   │   ├── repo_split.json
-│   │   ├── tangled_ccs_dataset_train.csv
-│   │   ├── tangled_ccs_dataset_test.csv
-│   │   └── legacy/              # Backups of superseded cross-repo tangled CSVs
-│   └── scripts/                # Dataset generation scripts (repo-grouped pipeline)
-│       ├── build_repo_pool.py       # Stage 1: CCS Dataset.csv -> repo_grouped_pool.csv
-│       ├── generate_repo_tangled.py # Stage 2: repo_grouped_pool.csv -> tangled_ccs_dataset_{train,test}.csv
-│       ├── validate_repo_dataset.py # Stage 3: validates Stage 2 outputs
-│       ├── analyze_token_distribution.py
-│       ├── concern_token_boxplot.py
-│       └── upload_to_huggingface.py
-│
-├── RQ/                          # Research Questions - Models and Analysis
-│   ├── GPT/                    # GPT-4.1 inference pipeline
-│   ├── SLM/                    # Small Language Models (see RQ/SLM/README.md)
-│   │   ├── configs/            # Legacy configs + local host profile
-│   │   │   └── hosts/          # Recorded facts for the local GPU host
-│   │   ├── unsloth/            # Current Qwen3.6-27B BF16 LoRA package
-│   │   │   ├── configs/qwen3_6_27b.yml
-│   │   │   ├── {config,data,runtime,train,infer,memory,preflight}.py
-│   │   │   └── {adapter,results,generation,infer_options}.py
-│   │   ├── train.py            # Legacy: Qwen3-14B LoRA fine-tuning
-│   │   ├── infer.py            # Legacy: inference script
-│   │   └── convert_to_gguf.py  # Legacy: GGUF conversion for deployment
-│   ├── analysis/               # Unified analysis scripts
-│   │   ├── config.yaml         # Single source of truth for all RQs
-│   │   ├── run.py              # Main analysis runner
-│   │   ├── RQ1/                # Impact of Concern Count
-│   │   ├── RQ2/                # Impact of Commit Message
-│   │   ├── RQ3/                # Token-Budget Robustness
-│   │   └── RQ4/                # Inference Efficiency
-│   └── main.py
-│
-├── results/                     # Generated outputs only, never hand-edited
-│   ├── analysis/               # Analysis results by RQ
-│   │   ├── RQ1/
-│   │   ├── RQ2/
-│   │   ├── RQ3/
-│   │   └── RQ4/
-│   ├── gpt/                    # GPT-4.1 inference results
-│   ├── Qwen/                   # Qwen3-14B inference results
-│   ├── Qwen3-14B-LoRA/         # Fine-tuned Qwen3-14B results (paper)
-│   └── Qwen3.6-27B-LoRA/       # Fine-tuned Qwen3.6-27B results (timestamped runs)
-│
-├── visual_eval/                 # Interactive Streamlit dashboard
-│   ├── components.py
-│   ├── dataset.py
-│   ├── session.py
-│   └── setup.py
-│
-├── scripts/                     # Deployment scripts
-│   └── hpc/stanage-slurm/            # Frozen Sheffield Stanage SLURM scripts (14B paper results)
-│       ├── setup_env.sh                  # HPC (Stanage) environment setup
-│       ├── run_training.sh               # HPC legacy training
-│       ├── run_lora_pipeline.sh
-│       ├── run_infer_huggingface.sh
-│       └── run_gguf_conversion.sh
-│
-├── utils/                       # Shared utilities
-│   ├── eval.py                 # Evaluation metrics
-│   ├── prompt.py               # Prompt templates
-│   ├── model.py                # Data models
-│   └── llms/                   # LLM API connectors
-│       ├── openai.py
-│       ├── hugging_face.py
-│       ├── lmstudio.py
-│       └── constant.py
-│
-├── __test__/                    # Test suite
-│   ├── test_api.py
-│   └── test_eval.py
-│
-└── app.py                       # Main Streamlit application
+1. **Dataset construction** — a 3-stage, seeded, repo-disjoint tangling pipeline (`datasets/`)
+2. **Inference** — GPT-4.1 zero-shot and Qwen zero-shot / LoRA fine-tuned runs (`RQ/GPT/`, `RQ/SLM/`)
+3. **Analysis** — one dispatcher covering RQ1–RQ4 with statistics and figures (`RQ/analysis/`)
+4. **Exploration** — a Streamlit dashboard over the raw prediction CSVs (`app.py`, `visual_eval/`)
+
+### Two model paths in this repository
+
+| Path | Model | Status | Results |
+|------|-------|--------|---------|
+| **Current manuscript** | Qwen3.6-27B + LoRA (BF16, Unsloth), trained on a single local workstation GPU | Active — `RQ/analysis/config.yaml` points here, and every table/figure in the revision comes from it | `results/gpt-seed43/`, `results/Qwen3.6-27B/`, `results/Qwen3.6-27B-LoRA/` |
+| **arXiv v1** | Qwen3-14B + LoRA, trained on Sheffield's Stanage HPC (A100/H100) | Frozen — scripts are hash-locked and must stay byte-identical | `results/gpt/`, `results/Qwen/`, `results/Qwen3-14B-LoRA/` |
+
+`results/analysis/` is regenerated from whichever arm `RQ/analysis/config.yaml` selects; `supplementary/` mirrors the tables reported in the current manuscript. Re-point the `models:` block at the 14B result directories to reproduce the arXiv v1 figures.
+
+## Quickstart
+
+```bash
+uv sync                             # base deps  (extras: --extra dev|hpc|local-gpu)
+uv run pytest __test__/ -q          # CPU-only test suite (same as CI)
+python RQ/analysis/run.py --list    # show every analysis script
+python RQ/analysis/run.py --all     # regenerate results/analysis/
+streamlit run app.py                # interactive result explorer
 ```
 
-## Research Questions
+Python is pinned to 3.12 (`.python-version`); the package floor is `>=3.10`.
+Environment variables: `OPENAI_API_KEY` (GPT inference), `HF_HUB_TOKEN` (HuggingFace), `WANDB_API_KEY` (27B training runs).
 
-### RQ1: Impact of Concern Count
+## Repository structure
 
-Evaluates model performance as semantic complexity increases:
+```text
+├── datasets/                       # 3-stage tangled-commit pipeline (see datasets/AGENTS.md)
+│   ├── data/                       # CCS Dataset.csv, repo_grouped_pool.csv, repo_split.json,
+│   │                               # tangled_ccs_dataset_{train,test}.csv, legacy/
+│   └── scripts/
+│       ├── build_repo_pool.py            # Stage 1: CCS Dataset.csv -> repo_grouped_pool.csv
+│       ├── generate_repo_tangled.py      # Stage 2: pool -> train/test CSVs + repo_split.json
+│       ├── validate_repo_dataset.py      # Stage 3: PASS/FAIL validation report
+│       ├── upload_to_huggingface.py      # publish validated CSVs to HuggingFace
+│       ├── structural_validity/          # diff-level colocation / structural-validity checks
+│       └── analyze_*.py, plot_*.py       # diagnostics, not part of the build chain
+│
+├── RQ/
+│   ├── GPT/infer.py                # GPT-4.1 zero-shot inference -> results/gpt*/
+│   ├── SLM/                        # two independent model paths (see RQ/SLM/AGENTS.md)
+│   │   ├── train.py infer.py convert_to_gguf.py   # frozen arXiv v1 14B path
+│   │   ├── configs/                # legacy model configs + hosts/ profile
+│   │   └── unsloth/                # Qwen3.6-27B BF16 LoRA package + RUNBOOK.md
+│   ├── analysis/                   # unified RQ1-4 dispatcher (see RQ/analysis/AGENTS.md)
+│   │   ├── config.yaml             # single source of truth for every RQ script
+│   │   ├── run.py                  # entry point
+│   │   ├── RQ1/ RQ2/ RQ3/ RQ4/     # per-RQ scripts
+│   │   ├── data_aggregation/       # aggregate/average repeated experiment runs
+│   │   └── plot_utils.py stats_utils.py summary_ci.py
+│   └── main.py                     # header-preserving token-truncation helper
+│
+├── utils/                          # eval.py prompt.py model.py llms/{openai,hugging_face,lmstudio}
+├── visual_eval/                    # Streamlit dashboard components
+├── scripts/
+│   ├── hpc/stanage-slurm/          # frozen Sheffield Stanage SLURM scripts (arXiv v1)
+│   └── blackwell/                  # local GPU-host session helpers
+├── results/                        # generated output only, timestamped, never hand-edited
+├── supplementary/                  # extended result tables from the paper
+├── __test__/                       # pytest suite (CPU-only), incl. unsloth/ subtree
+└── app.py                          # Streamlit entrypoint
+```
 
-- `performance_summary.py`: Performance comparison across models (GPT-4.1, Qwen, Fine-tuned Qwen)
-- `concern_count_boxplot.py`: Box plot visualization by concern count
-- `concerncount-by-model.py`: Performance comparison by model
-- `model_comparison_analysis.py`: Head-to-head model comparison with failure analysis
-- `concern_count_pairwise_pvalue.py`: Statistical significance testing
+## Dataset
 
-### RQ2: Impact of Commit Message Inclusion
+Built from the Conventional Commits Specification (CCS) dataset by tangling atomic commits **within the same repository** (no cross-repo tangling, which would leak coding style).
 
-Investigates whether commit messages provide additional semantic cues:
+- **Train** — `tangled_ccs_dataset_train.csv`: 1400 rows, 280 per concern count, 21 repositories
+- **Test** — `tangled_ccs_dataset_test.csv`: 350 rows, 70 per concern count, 15 repositories
+- Concern counts 1–5, 7 concern types, per-type uniformity enforced to 0.00pp deviation
+- Repo-disjoint 80/20 split, `SEED=43`, token budget 12288 (cl100k)
 
-- `msg_impact_analysis.py`: Analyzes performance with/without commit messages
-- `msg_impact_pairwise_pvalue.py`: Pairwise statistical comparison
+Reproduce with `build_repo_pool.py` → `generate_repo_tangled.py` → `validate_repo_dataset.py`. Never hand-edit `datasets/data/*.csv`.
 
-### RQ3: Token-Budget Robustness
+## Research questions
 
-Examines model reliability when token budget is reduced (1024-12288 tokens):
+| RQ | Question | Signal |
+|----|----------|--------|
+| **RQ1** | How does performance degrade as concern count grows? | `hamming_loss` × `concern_count` |
+| **RQ2** | Do commit messages provide useful semantic cues? | `hamming_loss` × `with_message` |
+| **RQ3** | How robust are models to header-preserving truncation? | `hamming_loss` × `context_len` (1024–12288) |
+| **RQ4** | What drives inference latency? | `inference_time` × count / tokens / message |
 
-- `context_length_performance.py`: Performance across context lengths
-- `context_length_boxplot.py`: Box plot visualization by context length
-- `context_length_pairwise_pvalue.py`: Statistical significance testing
+RQ1–RQ3 include performance summaries, boxplots, pairwise significance tests (Wilcoxon / Mann-Whitney), and 95% confidence intervals for the manuscript tables; RQ4 reports inference-efficiency analyses. Run them through `RQ/analysis/run.py`; outputs land in `results/analysis/RQ<N>/`.
 
-### RQ4: Inference Efficiency
+## Models
 
-Analyzes how factors influence inference latency:
+- **GPT-4.1** — OpenAI API baseline, zero-shot
+- **Qwen3.6-27B** — base SLM, zero-shot
+- **Qwen3.6-27B-LoRA** — fine-tuned SLM reported in the current manuscript (rank=32, alpha=48, dropout=0.05, BF16, unmerged PEFT adapter), released as [`Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter`](https://huggingface.co/Berom0227/Semantic-Concern-SLM-Qwen3.6-27B-adapter)
+- **Qwen3-14B / Qwen3-14B-LoRA** — the arXiv v1 arm (rank=32, alpha=48), retained unchanged
 
-- `efficiency_commit_message.py`: Correlation with commit message presence
-- `efficiency_concern_count.py`: Correlation with concern count
-- `efficiency_input_tokens.py`: Correlation with input tokens
-- `efficiency_concern_count_input_token.py`: Multiple regression analysis
+### Qwen3.6-27B (current)
 
-## Key Components
+Full flags, memory-qualification ladder, and evidence requirements are in [`RQ/SLM/README.md`](RQ/SLM/README.md). Highlights:
 
-### Models
-
-- **GPT-4.1**: OpenAI API baseline (zero-shot)
-- **Qwen3-14B**: Base SLM for comparison
-- **Qwen3-14B-LoRA**: Fine-tuned SLM with LoRA (rank=32, alpha=48)
-- **Qwen3.6-27B-LoRA**: Current fine-tuning target, BF16 LoRA with an unmerged PEFT adapter (rank=32, alpha=48, dropout=0.05)
-
-The reported paper results come from the legacy Qwen3-14B path (`train.py` -> `infer.py` -> `convert_to_gguf.py`) on Sheffield Stanage SLURM. That path is unchanged. The Qwen3.6-27B path is separate: it trains through Unsloth, evaluates through Transformers and PEFT, and produces no merged model and no GGUF. The Stanage A100/H100 allocation is no longer accessible, so the 27B work targets a single local Blackwell workstation GPU instead and HPC execution is out of scope for it.
-
-### Dataset
-
-- **Train**: `tangled_ccs_dataset_train.csv` (80% split, 1400 validated rows)
-- **Test**: `tangled_ccs_dataset_test.csv` (20% split, 350 rows)
-- Based on Conventional Commits Specification (CCS)
-- The 27B path pins `Berom0227/tangled-ccs-commits` at revision `65b09af76f3e9badf4a28bf7a641b1d2930a26b5`; under the Qwen3.6-27B tokenizer at `max_seq_length=16384`, zero rows overflow the budget, so all **1400 train rows** are retained
-
-### Qwen3.6-27B workflow
-
-Full instructions, exact flags, and evidence requirements live in [`RQ/SLM/README.md`](RQ/SLM/README.md). In short:
-
-- Model `Qwen/Qwen3.6-27B` pinned at revision `6a9e13bd6fc8f0983b9b99948120bc37f49c13e9`, text tower only, configured by `RQ/SLM/unsloth/configs/qwen3_6_27b.yml`.
-- BF16 end to end. No quantization: 4-bit, 8-bit, and `adamw_8bit` are rejected by config validation, as are `flash_attention_2`, left padding, packing, and `device_map: auto`.
-- Response-only supervision: loss is masked to the assistant turn, recorded in the manifest as `objective: response_only_json_eos`.
-- Inference requires a real pad token that differs from the EOS token; if they match, the run stops rather than padding with EOS.
+- `Qwen/Qwen3.6-27B` pinned at revision `6a9e13bd6fc8f0983b9b99948120bc37f49c13e9`, text tower only, configured by `RQ/SLM/unsloth/configs/qwen3_6_27b.yml`
+- BF16 end to end — 4-bit, 8-bit, `adamw_8bit`, `flash_attention_2`, left padding, packing, and `device_map: auto` are rejected by config validation
+- Response-only supervision (loss masked to the assistant turn), recorded as `objective: response_only_json_eos`
+- Training refuses to start until `python -m RQ.SLM.unsloth.memory` records `approved_16384` evidence whose config, host-profile, and measurement hashes still match on disk
+- Dataset pinned to `Berom0227/tangled-ccs-commits` @ `65b09af76f3e9badf4a28bf7a641b1d2930a26b5`; at `max_seq_length=16384` no row overflows, so all 1400 train rows are retained
 
 ```bash
 uv sync --frozen --python 3.12 --extra local-gpu
-uv run pytest __test__/ -q
+python -m RQ.SLM.unsloth.train --config RQ/SLM/unsloth/configs/qwen3_6_27b.yml
+python -m RQ.SLM.unsloth.infer --adapter outputs/unsloth/<run>/adapter \
+  --config RQ/SLM/unsloth/configs/qwen3_6_27b.yml --output results
 ```
 
-Phase A (CPU) is complete and covered by the test suite. Phase B is not done: loading the model, memory qualification, and training all allocate the entire GPU on a workstation that also drives a display. Full training refuses to start until `python -m RQ.SLM.unsloth.memory` records `approved_16384` qualification evidence whose config, host profile, and measurement hashes still match on disk.
+### Qwen3-14B (arXiv v1)
 
-`results/` contains generated output only. Regenerate it by re-running the step that produced it rather than editing files by hand.
+```bash
+python RQ/SLM/train.py --config RQ/SLM/configs/qwen.yml
+python RQ/SLM/infer.py
+python RQ/SLM/convert_to_gguf.py --model qwen
+```
 
-### Utilities
+These three scripts and the Stanage SLURM job scripts under `scripts/hpc/stanage-slurm/` are hash-locked in `__test__/fixtures/slm/protected-files.sha256` so the earlier pipeline stays byte-identical.
 
-- **`eval.py`**: Evaluation metrics (Hamming Loss, F1, Precision, Recall)
-- **`prompt.py`**: Prompt templates for zero-shot and few-shot learning
-- **`llms/`**: Unified API connectors for OpenAI, HuggingFace, and LM Studio
+## Supplementary results
 
-## Supplementary Materials
+Mean Hamming Loss with 95% confidence intervals, as reported in the current manuscript. Machine-readable copies live in `supplementary/`; their generated sources live under `results/analysis/RQ1/`, `RQ2/`, and `RQ3/`.
 
-Extended result tables from the paper are available in the `supplementary/` directory.
+### By concern count (RQ1)
 
-### Mean Hamming Loss by Concern Count (RQ1)
+| Count | GPT-4.1 | Qwen3.6 | Qwen3.6-FT |
+|-------|---------|---------|------------|
+| 1 | 0.10 [0.07, 0.13] | 0.09 [0.06, 0.13] | 0.04 [0.02, 0.06] |
+| 2 | 0.16 [0.12, 0.20] | 0.18 [0.13, 0.23] | 0.12 [0.08, 0.16] |
+| 3 | 0.20 [0.16, 0.25] | 0.26 [0.20, 0.31] | 0.14 [0.10, 0.18] |
+| 4 | 0.21 [0.17, 0.25] | 0.24 [0.20, 0.28] | 0.14 [0.10, 0.18] |
+| 5 | 0.14 [0.11, 0.17] | 0.16 [0.13, 0.19] | 0.06 [0.03, 0.09] |
+| **All** | **0.16 [0.15, 0.18]** | **0.19 [0.17, 0.21]** | **0.10 [0.09, 0.12]** |
 
-| Count | GPT-4.1 | Qwen3 | Qwen3-FT |
-|-------|---------|-------|----------|
-| 1 | 0.07 | 0.11 | 0.04 |
-| 2 | 0.09 | 0.23 | 0.13 |
-| 3 | 0.09 | 0.33 | 0.15 |
-| 4 | 0.10 | 0.33 | 0.20 |
-| 5 | 0.12 | 0.27 | 0.17 |
+### By commit-message inclusion (RQ2)
 
-### Mean Hamming Loss by Commit Message Inclusion (RQ2)
+| Condition | GPT-4.1 | Qwen3.6 | Qwen3.6-FT |
+|-----------|---------|---------|------------|
+| Without Msg | 0.18 [0.17, 0.20] | 0.21 [0.19, 0.22] | 0.15 [0.13, 0.17] |
+| With Msg | 0.16 [0.15, 0.18] | 0.19 [0.17, 0.21] | 0.10 [0.09, 0.12] |
 
-| Condition | GPT-4.1 | Qwen3 | Qwen3-FT |
-|-----------|---------|-------|----------|
-| Without Msg | 0.11 | 0.28 | 0.25 |
-| With Msg | 0.09 | 0.25 | 0.14 |
-| Delta | 0.02 | 0.03 | 0.11 |
+For Qwen3.6-FT, including the commit message reduces Hamming Loss from 0.15 to 0.10 — a 31% relative reduction, the largest effect of the three models.
 
-> **Note**: For Qwen3-FT, commit message inclusion reduces Hamming Loss by 44% ((0.25 - 0.14) / 0.25 = 0.44).
+### By token budget (RQ3)
 
-### Mean Hamming Loss by Input Token Length (RQ3)
+| Token budget | GPT-4.1 | Qwen3.6 | Qwen3.6-FT |
+|--------------|---------|---------|------------|
+| 1024 | 0.15 [0.14, 0.17] | 0.17 [0.15, 0.19] | 0.12 [0.10, 0.14] |
+| 2048 | 0.16 [0.14, 0.17] | 0.18 [0.16, 0.19] | 0.11 [0.10, 0.13] |
+| 4096 | 0.16 [0.14, 0.17] | 0.19 [0.17, 0.21] | 0.11 [0.09, 0.13] |
+| 8192 | 0.16 [0.14, 0.17] | 0.19 [0.17, 0.21] | 0.10 [0.08, 0.12] |
+| 12288 | 0.16 [0.15, 0.18] | 0.19 [0.17, 0.21] | 0.10 [0.09, 0.12] |
 
-| Token Length | GPT-4.1 | Qwen3 | Qwen3-FT |
-|--------------|---------|-------|----------|
-| 1024 | 0.10 | 0.26 | 0.15 |
-| 2048 | 0.10 | 0.26 | 0.15 |
-| 4096 | 0.10 | 0.25 | 0.15 |
-| 8192 | 0.10 | 0.25 | 0.14 |
-| 12288 | 0.09 | 0.26 | 0.14 |
+## Citation
+
+```bibtex
+@misc{koh2026detecting,
+  title         = {Detecting Multiple Semantic Concerns in Tangled Code Commits},
+  author        = {Koh, Beomsu and Walkinshaw, Neil and Shin, Donghwan},
+  year          = {2026},
+  eprint        = {2601.21298},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.SE},
+  url           = {https://arxiv.org/abs/2601.21298}
+}
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
