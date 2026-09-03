@@ -99,7 +99,7 @@ def create_boxplot(df: pd.DataFrame, output_dir: Path) -> Path:
     legend_elements.append(
         Line2D([0], [0], color=COLORS["success"], linewidth=PLOT_STYLE["line_width"], label="Median")
     )
-    ax.legend(handles=legend_elements, loc="lower right", framealpha=0.9)
+    ax.legend(handles=legend_elements, loc="upper right", framealpha=0.9)
 
     plt.tight_layout()
 
