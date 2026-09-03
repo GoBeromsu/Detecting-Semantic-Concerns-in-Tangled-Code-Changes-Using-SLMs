@@ -4,11 +4,11 @@ Two paths coexist here. They share no configs and never import each other. Confu
 
 ## LEGACY 14B (frozen — do not touch)
 - Files: `train.py`, `infer.py`, `convert_to_gguf.py`; configs `configs/{qwen,phi,gpt_oss}.yml`, `sweep.yaml`, `deepspeed.json`.
-- Produced the **published paper** results on Sheffield Stanage SLURM (A100/H100). Kept for reproducibility.
+- Produced the **arXiv preprint (2601.21298)** results on Sheffield Stanage SLURM (A100/H100). Kept for reproducibility.
 - `train.py`, `infer.py`, `convert_to_gguf.py` are **hash-locked** (`__test__/fixtures/slm/protected-files.sha256`) + AST-characterized (`__test__/test_slm_legacy_contract.py`). Keep byte-identical.
 - Invoke flat: `python RQ/SLM/train.py --config RQ/SLM/configs/qwen.yml`.
 
-## NEW Qwen3.6-27B (`unsloth/` package)
+## CURRENT MANUSCRIPT — Qwen3.6-27B (`unsloth/` package)
 - Isolated vertical slice. Invoke as modules: `python -m RQ.SLM.unsloth.{train,infer,memory}`.
 - Config: `unsloth/configs/qwen3_6_27b.yml` (single source of truth). Host facts: `configs/hosts/blackwell-rtx-pro-6000.yml`.
 - Trains via Unsloth, evaluates via Transformers+PEFT. **No merged model, no GGUF.** Adapter stays unmerged.
@@ -39,7 +39,9 @@ Two paths coexist here. They share no configs and never import each other. Confu
 - `max_seq_length` is config-only (16384). There is NO CLI override flag — the guard lives in `config.py`.
 
 ### Status
-Phase A (CPU: config/preflight/data/adapter/results/orchestration) done, covered by `__test__/unsloth/`. **Phase B (real model load, memory qualification, training, inference) is GPU-only and NOT run** — requires the owner present at the Blackwell host. Full run refuses to start until `memory.py` records `approved_16384` whose config/host/measurement hashes still match on disk.
+Phase A (CPU: config/preflight/data/adapter/results/orchestration) done, covered by `__test__/unsloth/`.
+Phase B **has been executed** on the Blackwell host: training + the SEED=43 inference sweep produced three archived repeats under `results/Qwen3.6-27B-LoRA/` (each with `run_identity.json` binding `adapter_sha256`/`config_sha256`), aggregated into `avg_result/`. `RQ/analysis/config.yaml` reads from these.
+The gate still applies to every new run: training refuses to start until `memory.py` records `approved_16384` whose config/host/measurement hashes still match on disk. Local `outputs/unsloth/` dirs on a non-GPU machine are empty scaffolding — adapters live on the GPU host.
 
 ### DO NOT
 - Point 27B tooling at legacy configs, or vice versa.
